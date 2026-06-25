@@ -5,9 +5,8 @@ pub struct SpeedMeter { samples: Vec<(Instant, u64)>, window: Duration, last_tot
 impl SpeedMeter {
     pub fn new(window: Duration) -> Self { Self { samples: Vec::new(), window, last_total: 0 } }
     pub fn record(&mut self, now: Instant, bytes_done_total: u64) {
-        if let Some(last) = self.samples.last() {
-            if bytes_done_total < last.1 { self.samples.clear(); }
-        }
+        if let Some(last) = self.samples.last()
+            && bytes_done_total < last.1 { self.samples.clear(); }
         self.samples.push((now, bytes_done_total));
         let cutoff = now - self.window;
         while self.samples.len() > 2 && self.samples[0].0 < cutoff { self.samples.remove(0); }
@@ -50,6 +49,6 @@ mod tests {
         m.record(t0, 0);
         m.record(t0 + Duration::from_secs(1), 1_000_000);
         let bps = m.bps();
-        assert!(bps >= 900_000 && bps <= 1_100_000, "got {bps}");
+        assert!((900_000..=1_100_000).contains(&bps), "got {bps}");
     }
 }

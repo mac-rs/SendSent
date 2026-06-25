@@ -127,15 +127,10 @@ async fn data_frame_reassembly() {
     let writer = AtomicWriter::new(&save, "s1").unwrap();
     let pp = writer.part_path("x.txt");
     std::fs::write(&pp, vec![0u8; 11]).unwrap();
-    loop {
-        match read_data(&mut server).await {
-            Ok(c) => {
-                let mut f = std::fs::OpenOptions::new().write(true).open(&pp).unwrap();
-                f.seek(SeekFrom::Start(c.offset)).unwrap();
-                f.write_all(&c.data).unwrap();
-            }
-            Err(_) => break,
-        }
+    while let Ok(c) = read_data(&mut server).await {
+        let mut f = std::fs::OpenOptions::new().write(true).open(&pp).unwrap();
+        f.seek(SeekFrom::Start(c.offset)).unwrap();
+        f.write_all(&c.data).unwrap();
     }
     let dest = writer.finalize("x.txt").unwrap();
     assert_eq!(std::fs::read(&dest).unwrap(), b"hello world");

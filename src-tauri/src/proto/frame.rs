@@ -72,7 +72,7 @@ mod tests {
     }
     #[tokio::test]
     async fn bad_magic_rejected() {
-        let buf = vec![0x00u8, PROTO_VER, 0x01, 0, 0, 0, 0];
+        let buf = [0x00u8, PROTO_VER, 0x01, 0, 0, 0, 0];
         let err = read_control(&mut &buf[..]).await.unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
     }

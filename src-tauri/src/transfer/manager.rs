@@ -58,11 +58,10 @@ impl SessionManager {
             MsgType::DataOpen => {
                 let d: DataOpen = bincode::deserialize(&buf)?;
                 let mut guard = self.pending.lock().await;
-                if let Some(ch) = guard.get_mut(&d.session_id) {
-                    if let Some(xtx) = ch.data_tx.take() {
+                if let Some(ch) = guard.get_mut(&d.session_id)
+                    && let Some(xtx) = ch.data_tx.take() {
                         let _ = xtx.send(stream);
                     }
-                }
                 Ok(())
             }
             other => Err(anyhow::anyhow!("unexpected first frame {other:?}")),
@@ -71,11 +70,10 @@ impl SessionManager {
 
     pub async fn respond(&self, session_id: Uuid, accept: bool, save_dir: PathBuf) -> anyhow::Result<()> {
         let mut guard = self.pending.lock().await;
-        if let Some(ch) = guard.get_mut(&session_id) {
-            if let Some(dtx) = ch.decision_tx.take() {
+        if let Some(ch) = guard.get_mut(&session_id)
+            && let Some(dtx) = ch.decision_tx.take() {
                 let _ = dtx.send(Decision { accept, save_dir });
             }
-        }
         Ok(())
     }
 

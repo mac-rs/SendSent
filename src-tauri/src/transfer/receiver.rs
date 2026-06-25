@@ -137,9 +137,8 @@ pub async fn drain_data(
 
     let mut all_ok = true;
     for f in &manifest.files {
-        if f.kind == FileKind::File {
-            if writer.finalize(&f.rel_path).is_err() { all_ok = false; }
-        }
+        if f.kind == FileKind::File
+            && writer.finalize(&f.rel_path).is_err() { all_ok = false; }
     }
     writer.cleanup();
     let _ = events.send(TransferEvent::Finished {

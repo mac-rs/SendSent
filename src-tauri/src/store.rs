@@ -16,7 +16,7 @@ pub fn default_save_dir() -> Result<PathBuf> {
 
 fn home_dir() -> Option<PathBuf> {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    { return std::env::var_os("HOME").map(PathBuf::from); }
+    { std::env::var_os("HOME").map(PathBuf::from)}
     #[cfg(target_os = "windows")]
     { return std::env::var_os("USERPROFILE").map(PathBuf::from); }
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]

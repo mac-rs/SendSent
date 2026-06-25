@@ -54,7 +54,7 @@ impl Discovery for MdnsDiscovery {
             SERVICE_TYPE,
             &id.name,
             &host_name,
-            &my_ip,
+            my_ip,
             self.port,
             props,
         )
@@ -178,12 +178,10 @@ fn pick_primary_ip() -> Option<IpAddr> {
 fn local_ip_iter() -> Vec<IpAddr> {
     use std::net::UdpSocket;
     let mut out = Vec::new();
-    if let Ok(s) = UdpSocket::bind("0.0.0.0:0") {
-        if s.connect("8.8.8.8:80").is_ok() {
-            if let Ok(addr) = s.local_addr() {
+    if let Ok(s) = UdpSocket::bind("0.0.0.0:0")
+        && s.connect("8.8.8.8:80").is_ok()
+            && let Ok(addr) = s.local_addr() {
                 out.push(addr.ip());
             }
-        }
-    }
     out
 }
