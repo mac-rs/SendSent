@@ -6,7 +6,6 @@ use crate::transfer::atomic::AtomicWriter;
 use crate::transfer::meter::{SpeedMeter, Throttle};
 use anyhow::Result;
 use std::path::{Path, PathBuf};
-use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
@@ -28,8 +27,8 @@ pub async fn run_receiver(
     mut control: TcpStream,
     hello: Hello,
     events: mpsc::UnboundedSender<TransferEvent>,
-    mut decision_rx: oneshot::Receiver<Decision>,
-    mut data_rx: oneshot::Receiver<TcpStream>,
+    decision_rx: oneshot::Receiver<Decision>,
+    data_rx: oneshot::Receiver<TcpStream>,
     our: Identity,
 ) -> Result<()> {
     let session_id = hello.session_id;
