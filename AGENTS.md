@@ -31,3 +31,18 @@ LAN auto-discovery + peer-to-peer transfer over a custom raw-TCP protocol. Desig
 - Session logic is decoupled from Tauri: it emits `TransferEvent` (see `events.rs`) over an `mpsc` channel; `SessionManager` forwards them as Tauri events (`peer://found|lost`, `transfer://request|progress|finished`). Frontend treats events as the source of truth (the `send_files` command also returns the session id, but the id arrives via the first `transfer://progress` event too).
 - Modules are `pub mod` so `tests/loopback.rs` can exercise the real TCP path end-to-end (two in-process nodes, mDNS skipped via direct connection).
 - Adding a new Tauri command: define it in `commands.rs`, register in `lib.rs`'s `generate_handler!`. A new wire message: add the struct in `proto/messages.rs` + a `MsgType` variant + handle it in `sender.rs`/`receiver.rs`.
+
+## iOS development
+
+The iOS target lives in `src-tauri/gen/apple/` (Tauri-generated Xcode project). Hard-won gotchas:
+
+- **Init needs CocoaPods:** `brew install cocoapods`, then `pnpm tauri ios init` (regenerates the Xcode project from `gen/apple/project.yml`).
+- **Never build via Xcode GUI directly.** The "Build Rust Code" phase runs `tauri ios xcode-script`, which connects back to an IPC server that only `tauri ios dev`/`tauri ios build` start. Always run via `pnpm tauri ios dev "<sim name>"` / `pnpm tauri ios build`. (The `project.yml` build phase exports `PATH` so the phase finds `pnpm`/`cargo` regardless of how Xcode was launched.)
+- **Command args are camelCase from JS (Tauri 2):** `invoke("send_files", { peerDeviceId, files })`, not `peer_device_id`. Mismatch → "missing required key peerDeviceId".
+- **Device vs simulator:** a physical iPhone on iOS N needs a matching Xcode (e.g. iOS 27 needs Xcode 27 beta); Xcode 26.5 can't deploy to iOS 27 and silently falls back to "My Mac". The simulator runs the Mac's iOS runtime (no such constraint).
+- **Same-host port collisions (Mac app + iOS simulator together):** both bind 52225 and both start a Vite on 1420.
+  - Transfer port is configurable via `SENDSENT_PORT`; the simulator auto-uses **52226** (`cfg!(target_abi = "sim")` in `lib.rs`). Mac stays 52225.
+  - Share one Vite: run the Mac app normally (`pnpm tauri dev`), then run the simulator with `pnpm tauri ios dev "iPhone 17" -c '{"build":{"beforeDevCommand":""}}'` so it reuses the existing Vite on 1420.
+- **iOS sandbox `$HOME` is read-only** (`EROFS`). The save directory is resolved from `app.path().document_dir()` at startup and threaded through `AppState.save_dir` (not from an env var). Desktop still uses `~/Downloads/sendsent`.
+- **Signing:** `DEVELOPMENT_TEAM` is baked into `gen/apple/project.yml` (re-init preserves it). Set the team / bundle id there, not just in Xcode UI (which gets wiped on re-init).
+- **iPhone→Mac sending is not wired** in v1: `@tauri-apps/plugin-dialog`'s file `open()` is unsupported on iOS. iOS can only receive. Sending needs a native iOS document picker (deferred).
