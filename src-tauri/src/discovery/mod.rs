@@ -1,1 +1,85 @@
 pub mod mdns;
+
+use async_trait::async_trait;
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::time::{Duration, Instant};
+
+pub const STALE_AFTER: Duration = Duration::from_secs(90);
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Platform { Macos, Windows, Linux, Ios, Android }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Peer {
+    pub device_id: String,
+    pub name: String,
+    pub platform: Platform,
+    pub proto_version: u16,
+    pub addrs: Vec<SocketAddr>,
+    pub port: u16,
+    pub last_seen_ms: u128,
+}
+
+#[derive(Debug, Clone)]
+pub enum PeerEvent { Found(Peer), Lost(String) }
+
+#[async_trait]
+pub trait Discovery: Send + Sync {
+    async fn start(&self) -> anyhow::Result<()>;
+    async fn peers(&self) -> Vec<Peer>;
+    async fn set_display_name(&self, name: &str) -> anyhow::Result<()>;
+}
+
+#[derive(Default)]
+pub struct PeerRegistry { peers: HashMap<String, Peer> }
+
+impl PeerRegistry {
+    pub fn new() -> Self { Self::default() }
+    pub fn upsert(&mut self, now: Instant, mut p: Peer) -> Option<PeerEvent> {
+        p.last_seen_ms = now.elapsed().as_millis();
+        let id = p.device_id.clone();
+        let existed = self.peers.contains_key(&id);
+        self.peers.insert(id.clone(), p.clone());
+        if existed { None } else { Some(PeerEvent::Found(p)) }
+    }
+    pub fn remove(&mut self, device_id: &str) -> Option<PeerEvent> {
+        if self.peers.remove(device_id).is_some() { Some(PeerEvent::Lost(device_id.to_string())) } else { None }
+    }
+    pub fn sweep(&mut self, now: Instant) -> Vec<PeerEvent> {
+        let now_ms = now.elapsed().as_millis();
+        let stale: Vec<String> = self.peers.iter()
+            .filter(|(_, p)| now_ms.saturating_sub(p.last_seen_ms) > STALE_AFTER.as_millis())
+            .map(|(k, _)| k.clone()).collect();
+        stale.into_iter().filter_map(|k| self.remove(&k)).collect()
+    }
+    pub fn list(&self) -> Vec<Peer> { self.peers.values().cloned().collect() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn peer(id: &str) -> Peer {
+        Peer { device_id: id.into(), name: id.into(), platform: Platform::Macos,
+               proto_version: 1, addrs: vec!["127.0.0.1:52225".parse().unwrap()],
+               port: 52225, last_seen_ms: 0 }
+    }
+    #[test]
+    fn upsert_dedup_emits_only_once() {
+        let mut r = PeerRegistry::new();
+        let now = Instant::now();
+        assert!(matches!(r.upsert(now, peer("a")), Some(PeerEvent::Found(_))));
+        assert!(r.upsert(now, peer("a")).is_none());
+        assert_eq!(r.list().len(), 1);
+    }
+    #[test]
+    fn remove_emits_lost() {
+        let mut r = PeerRegistry::new();
+        let now = Instant::now();
+        r.upsert(now, peer("a"));
+        assert!(matches!(r.remove("a"), Some(PeerEvent::Lost(_))));
+        assert!(r.list().is_empty());
+    }
+}
