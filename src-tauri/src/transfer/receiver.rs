@@ -73,7 +73,7 @@ pub async fn run_receiver(
         &bincode::serialize(&Accept { save_dir: decision.save_dir.to_string_lossy().into() })?).await;
 
     let data = match data_rx.await {
-        Ok(s) => s,
+        Ok(s) => { tracing::info!("receiver: data channel ready"); s }
         Err(_) => {
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ConnectionLost, message: "no data connection".into() }) });
@@ -83,13 +83,16 @@ pub async fn run_receiver(
 
     match drain_data(data, &manifest, &decision.save_dir, session_id, events.clone()).await {
         Ok(true) => {
+            tracing::info!("receiver: drain completed");
             let _ = write_control(&mut control, MsgType::Complete, &bincode::serialize(&Complete)?).await;
         }
         Ok(false) => {
+            tracing::warn!("receiver: drain incomplete (truncated)");
             let _ = write_control(&mut control, MsgType::Error,
                 &bincode::serialize(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?).await;
         }
         Err(e) => {
+            tracing::error!("receiver: drain error: {e}");
             let _ = write_control(&mut control, MsgType::Error,
                 &bincode::serialize(&ErrorMsg { code: ErrorCode::WriteFailed, message: e.to_string() })?).await;
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
@@ -146,6 +149,10 @@ pub async fn drain_data(
 
     let complete = total_done == manifest.total_size
         && parts.values().all(|(m, _, r)| *r == m.size);
+    tracing::info!(
+        "drain loop ended: total_done={total_done} total={} files_expected={} parts_len={} complete={complete}",
+        manifest.total_size, files_total, parts.len()
+    );
 
     if complete {
         for f in &manifest.files {

@@ -20,6 +20,7 @@ pub async fn run_sender(
 ) -> Result<()> {
     let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), events.clone()).await;
     if let Err(e) = &result {
+        tracing::error!("sender failed: {e}");
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::Internal, message: e.to_string() }) });
     }
