@@ -30,12 +30,14 @@ pub fn run() {
                 else { "unknown" };
             let host = hostname().unwrap_or_else(|| "device".into());
             let identity = load_or_create(&data_dir, platform, &host).expect("identity");
-            // Default 52225; overridable via SENDSENT_PORT (e.g. so two instances on one host
-            // — like a Mac app + an iOS simulator app — don't collide on the same port).
+            // Default 52225; the iOS SIMULATOR gets 52226 automatically (it shares the Mac's
+            // network stack, so it must not collide with a Mac app also binding 52225).
+            // Overridable in all cases via SENDSENT_PORT.
+            let default_port: u16 = if cfg!(target_abi = "sim") { 52226 } else { 52225 };
             let port: u16 = std::env::var("SENDSENT_PORT")
                 .ok()
                 .and_then(|s| s.parse().ok())
-                .unwrap_or(52225);
+                .unwrap_or(default_port);
 
             let handle = app.handle().clone();
 
