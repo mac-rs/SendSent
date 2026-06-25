@@ -20,6 +20,11 @@ impl AtomicWriter {
     }
     pub fn cleanup(&self) {
         let _ = std::fs::remove_dir_all(&self.tmp_dir);
+        // also remove the `.sendsent-tmp` parent when it is now empty
+        // (remove_dir only succeeds on an empty dir, so other in-flight sessions are preserved)
+        if let Some(parent) = self.tmp_dir.parent() {
+            let _ = std::fs::remove_dir(parent);
+        }
     }
 }
 
@@ -90,6 +95,7 @@ mod tests {
         let p = w.part_path("a.txt"); std::fs::write(&p, b"x").unwrap();
         w.cleanup();
         assert!(!p.exists());
+        assert!(!root.join(".sendsent-tmp").exists(), "parent .sendsent-tmp should also be removed when empty");
         let _ = std::fs::remove_dir_all(&root);
     }
 }
