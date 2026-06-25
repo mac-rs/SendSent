@@ -31,7 +31,7 @@ pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, file
 pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool, save_dir: Option<String>) -> Result<(), String> {
     let dir = match save_dir {
         Some(d) => PathBuf::from(d),
-        None => crate::store::default_save_dir().map_err(|e| e.to_string())?,
+        None => state.save_dir.clone(),
     };
     state.sessions.respond(session_id, accept, dir).await.map_err(|e| e.to_string())
 }
@@ -40,6 +40,6 @@ pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool,
 pub async fn cancel(_state: State<'_, AppState>, _session_id: Uuid) -> Result<(), String> { Ok(()) }
 
 #[tauri::command]
-pub fn get_default_save_dir() -> Result<String, String> {
-    crate::store::default_save_dir().map(|p| p.to_string_lossy().into_owned()).map_err(|e| e.to_string())
+pub fn get_default_save_dir(state: State<'_, AppState>) -> Result<String, String> {
+    Ok(state.save_dir.to_string_lossy().into_owned())
 }

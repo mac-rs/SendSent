@@ -41,6 +41,18 @@ pub fn run() {
 
             let handle = app.handle().clone();
 
+            // Resolve a writable save directory. On iOS the sandbox $HOME is read-only, so use the
+            // app's Documents container (writable + visible in the Files app). Desktop uses ~/Downloads.
+            let save_dir = if cfg!(target_os = "ios") {
+                app.path().document_dir()
+                    .map(|d| d.join("sendsent"))
+                    .unwrap_or_else(|_| default_save_dir().unwrap_or_default())
+            } else {
+                default_save_dir().unwrap_or_else(|_| app.path().document_dir().unwrap_or_default().join("sendsent"))
+            };
+            let _ = std::fs::create_dir_all(&save_dir);
+            tracing::info!("save_dir = {}", save_dir.display());
+
             let (ptx, mut prx) = mpsc::unbounded_channel::<PeerEvent>();
             let discovery: Arc<dyn Discovery> = Arc::new(MdnsDiscovery::new(identity.clone(), port, ptx));
             {
@@ -96,7 +108,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, discovery, sessions });
+            app.manage(AppState { identity, discovery, sessions, save_dir });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
