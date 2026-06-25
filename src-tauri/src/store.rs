@@ -11,7 +11,14 @@ pub struct Identity {
 }
 
 pub fn default_save_dir() -> Result<PathBuf> {
-    Ok(home_dir().unwrap_or_else(|| std::env::current_dir().unwrap_or_default()).join("Downloads").join("sendsent"))
+    let base = home_dir().unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+    // macOS/Linux/Windows: <home>/Downloads/sendsent
+    // iOS: <sandbox>/Documents/sendsent (visible in the Files app: "On My iPhone > sendsent")
+    #[cfg(target_os = "ios")]
+    let dir = base.join("Documents").join("sendsent");
+    #[cfg(not(target_os = "ios"))]
+    let dir = base.join("Downloads").join("sendsent");
+    Ok(dir)
 }
 
 fn home_dir() -> Option<PathBuf> {
