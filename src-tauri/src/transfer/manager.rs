@@ -48,10 +48,13 @@ impl SessionManager {
     }
 
     async fn handle_incoming(self: Arc<Self>, mut stream: tokio::net::TcpStream) -> anyhow::Result<()> {
+        let peer = stream.peer_addr().ok();
         let (ty, buf) = read_control(&mut stream).await?;
+        tracing::info!("incoming connection from {peer:?}: first frame {ty:?}");
         match ty {
             MsgType::Hello => {
                 let hello: Hello = bincode::deserialize(&buf)?;
+                tracing::info!("Hello from '{}' session {}", hello.name, hello.session_id);
                 let session_id = hello.session_id;
                 let (dtx, drx) = oneshot::channel::<Decision>();
                 let (xtx, xrx) = oneshot::channel::<tokio::net::TcpStream>();

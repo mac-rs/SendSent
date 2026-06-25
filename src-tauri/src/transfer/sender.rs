@@ -36,7 +36,10 @@ async fn run_sender_inner(
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Connecting,
         bytes_done: 0, bytes_total: 0, files_done: 0, files_total: 0, speed_bps: 0 });
 
-    let mut control = connect_any(&peer_addrs).await?;
+    let mut control = match connect_any(&peer_addrs).await {
+        Ok(s) => { tracing::info!("sender connected (tried {peer_addrs:?})"); s }
+        Err(e) => { tracing::warn!("sender connect failed for {peer_addrs:?}: {e}"); return Err(e); }
+    };
     let hello = Hello { device_id: our.device_id.clone(), name: our.name.clone(),
         platform: Platform::Macos, session_id, proto_ver: PROTO_VER };
     write_control(&mut control, MsgType::Hello, &bincode::serialize(&hello)?).await?;

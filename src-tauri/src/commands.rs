@@ -18,9 +18,12 @@ pub async fn list_peers(state: State<'_, AppState>) -> Result<Vec<Peer>, String>
 #[tauri::command]
 pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, files: Vec<String>) -> Result<Uuid, String> {
     let peers = state.discovery.peers().await;
+    let n = peers.len();
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
+        tracing::warn!("send_files: peer {peer_device_id} not found ({n} peers known)");
         return Err("peer not found".into());
     };
+    tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
     state.sessions.start_send(p.addrs, files).map_err(|e| e.to_string())
 }
 
