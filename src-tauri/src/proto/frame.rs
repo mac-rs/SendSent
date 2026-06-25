@@ -9,19 +9,19 @@ pub async fn write_control<W: AsyncWriteExt + Unpin>(w: &mut W, ty: MsgType, pay
     if payload.len() as u32 > MAX_CONTROL_PAYLOAD {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "control payload too large"));
     }
-    let mut hdr = [0u8; 6];
+    let mut hdr = [0u8; 7];
     hdr[0] = MAGIC; hdr[1] = PROTO_VER; hdr[2] = ty as u8;
-    hdr[3..6].copy_from_slice(&(payload.len() as u32).to_be_bytes()[1..]);
+    hdr[3..7].copy_from_slice(&(payload.len() as u32).to_be_bytes());
     w.write_all(&hdr).await?; w.write_all(payload).await?; Ok(())
 }
 
 pub async fn read_control<R: AsyncReadExt + Unpin>(r: &mut R) -> io::Result<(MsgType, Vec<u8>)> {
-    let mut hdr = [0u8; 6];
+    let mut hdr = [0u8; 7];
     r.read_exact(&mut hdr).await?;
     if hdr[0] != MAGIC { return Err(io::Error::new(io::ErrorKind::InvalidData, "bad magic")); }
     if hdr[1] != PROTO_VER { return Err(io::Error::new(io::ErrorKind::InvalidData, "incompatible version")); }
     let ty = MsgType::try_from(hdr[2]).map_err(|()| io::Error::new(io::ErrorKind::InvalidData, "bad msg type"))?;
-    let len = u32::from_be_bytes([0, hdr[3], hdr[4], hdr[5]]);
+    let len = u32::from_be_bytes(hdr[3..7].try_into().unwrap());
     if len > MAX_CONTROL_PAYLOAD { return Err(io::Error::new(io::ErrorKind::InvalidData, "control payload too large")); }
     let mut buf = vec![0u8; len as usize];
     r.read_exact(&mut buf).await?; Ok((ty, buf))
@@ -72,7 +72,7 @@ mod tests {
     }
     #[tokio::test]
     async fn bad_magic_rejected() {
-        let buf = vec![0x00u8, PROTO_VER, 0x01, 0, 0, 0];
+        let buf = vec![0x00u8, PROTO_VER, 0x01, 0, 0, 0, 0];
         let err = read_control(&mut &buf[..]).await.unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidData);
     }
