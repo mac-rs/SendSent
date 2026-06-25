@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		020188B276C2E88B822A1D28 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = C995177DD39488AB0F0CD9D7 /* libapp.a */; };
 		2FB7724DC932C071EF745CB8 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20BC257BB5DBE566AA9A2D81 /* MetalKit.framework */; };
 		43D805E4D72356B0D6DC9074 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBE460BE249E2A044EF92F4A /* CoreGraphics.framework */; };
 		6BAB60DBFA0EEA710D7402B5 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B867F86F2182F07B9609E50 /* QuartzCore.framework */; };
@@ -46,6 +47,7 @@
 		B2F6900C0A8029D29D5DBD43 /* atomic.rs */ = {isa = PBXFileReference; path = atomic.rs; sourceTree = "<group>"; };
 		C702FFBF0ECDFBCB6D8F5B69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C936BC218229D7EC1613B25C /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
+		C995177DD39488AB0F0CD9D7 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		CA0E559FEFE091A08C4A1992 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		D3ACBB9B2AFF155E983AA74C /* frame.rs */ = {isa = PBXFileReference; path = frame.rs; sourceTree = "<group>"; };
 		D4B2853F5F50226745AC0279 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
@@ -133,8 +135,17 @@
 		56D133D526FF614428813884 /* Externals */ = {
 			isa = PBXGroup;
 			children = (
+				A18C5FC8475115AC19E90451 /* arm64 */,
 			);
 			path = Externals;
+			sourceTree = "<group>";
+		};
+		5DB36D490A5451C079078A64 /* debug */ = {
+			isa = PBXGroup;
+			children = (
+				C995177DD39488AB0F0CD9D7 /* libapp.a */,
+			);
+			path = debug;
 			sourceTree = "<group>";
 		};
 		6003330EB2F60BAE8AFE75E0 /* proto */ = {
@@ -153,6 +164,14 @@
 				6F4CF2C28B5262EFFC768311 /* sendsent_iOS.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A18C5FC8475115AC19E90451 /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+				5DB36D490A5451C079078A64 /* debug */,
+			);
+			path = arm64;
 			sourceTree = "<group>";
 		};
 		A81BA0FAD3F8799460697C69 /* Sources */ = {
@@ -204,6 +223,13 @@
 			path = sendsent_iOS;
 			sourceTree = "<group>";
 		};
+		"TEMP_D582ADB1-595B-4FC9-B84B-981922C1269E" /* x86_64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = x86_64;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -236,6 +262,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					BFCAB85D43560EDB277A484A = {
+						DevelopmentTeam = FXD98A98Q5;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 8B26BA58B405A3DCD6FBA923 /* Build configuration list for PBXProject "sendsent" */;
@@ -265,6 +295,7 @@
 				D557DC6EF6FF1BCC20D07D0D /* Assets.xcassets in Resources */,
 				6D09CD92509535C224878B1A /* LaunchScreen.storyboard in Resources */,
 				A1EBA88933EE3F61133C2449 /* assets in Resources */,
+				020188B276C2E88B822A1D28 /* libapp.a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,7 +321,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+			shellScript = "export PATH=\"/opt/homebrew/bin:$HOME/.cargo/bin:$PATH\"\npnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -316,6 +347,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sendsent_iOS/sendsent_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FXD98A98Q5;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -410,6 +443,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sendsent_iOS/sendsent_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = FXD98A98Q5;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
