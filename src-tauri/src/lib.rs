@@ -30,7 +30,12 @@ pub fn run() {
                 else { "unknown" };
             let host = hostname().unwrap_or_else(|| "device".into());
             let identity = load_or_create(&data_dir, platform, &host).expect("identity");
-            let port: u16 = 52225;
+            // Default 52225; overridable via SENDSENT_PORT (e.g. so two instances on one host
+            // — like a Mac app + an iOS simulator app — don't collide on the same port).
+            let port: u16 = std::env::var("SENDSENT_PORT")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(52225);
 
             let handle = app.handle().clone();
 
