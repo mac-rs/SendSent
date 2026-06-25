@@ -38,6 +38,8 @@ pub async fn run_receiver(
 
     let (ty, buf) = read_control(&mut control).await?;
     if ty != MsgType::Manifest {
+        let _ = write_control(&mut control, MsgType::Error,
+            &bincode::serialize(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected manifest".into() })?).await;
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: "expected manifest".into() }) });
         return Ok(());
@@ -45,6 +47,8 @@ pub async fn run_receiver(
     let manifest: Manifest = match bincode::deserialize(&buf) {
         Ok(m) => m,
         Err(e) => {
+            let _ = write_control(&mut control, MsgType::Error,
+                &bincode::serialize(&ErrorMsg { code: ErrorCode::ProtocolError, message: e.to_string() })?).await;
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: e.to_string() }) });
             return Ok(());
@@ -78,10 +82,16 @@ pub async fn run_receiver(
     };
 
     match drain_data(data, &manifest, &decision.save_dir, session_id, events.clone()).await {
-        Ok(()) => {
+        Ok(true) => {
             let _ = write_control(&mut control, MsgType::Complete, &bincode::serialize(&Complete)?).await;
         }
+        Ok(false) => {
+            let _ = write_control(&mut control, MsgType::Error,
+                &bincode::serialize(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?).await;
+        }
         Err(e) => {
+            let _ = write_control(&mut control, MsgType::Error,
+                &bincode::serialize(&ErrorMsg { code: ErrorCode::WriteFailed, message: e.to_string() })?).await;
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::WriteFailed, message: e.to_string() }) });
         }
@@ -95,7 +105,7 @@ pub async fn drain_data(
     save_dir: &Path,
     session_id: Uuid,
     events: mpsc::UnboundedSender<TransferEvent>,
-) -> Result<()> {
+) -> Result<bool> {
     let writer = AtomicWriter::new(save_dir, &session_id.to_string())?;
     let mut parts: std::collections::HashMap<Uuid, (FileMeta, PathBuf, u64)> = std::collections::HashMap::new();
     for f in &manifest.files {
@@ -117,13 +127,12 @@ pub async fn drain_data(
 
     loop {
         let chunk = match read_data(&mut data).await { Ok(c) => c, Err(_) => break };
-        if let Some((meta, pp, recvd)) = parts.get_mut(&chunk.file_id) {
+        if let Some((_meta, pp, recvd)) = parts.get_mut(&chunk.file_id) {
             use std::io::{Seek, SeekFrom, Write};
             let mut fl = std::fs::OpenOptions::new().write(true).open(pp)?;
             fl.seek(SeekFrom::Start(chunk.offset))?;
             fl.write_all(&chunk.data)?;
             *recvd += chunk.data.len() as u64;
-            let _ = meta;
             total_done = total_done.saturating_add(chunk.data.len() as u64);
         }
         let now = std::time::Instant::now();
@@ -135,16 +144,27 @@ pub async fn drain_data(
         }
     }
 
-    let mut all_ok = true;
-    for f in &manifest.files {
-        if f.kind == FileKind::File
-            && writer.finalize(&f.rel_path).is_err() { all_ok = false; }
+    let complete = total_done == manifest.total_size
+        && parts.values().all(|(m, _, r)| *r == m.size);
+
+    if complete {
+        for f in &manifest.files {
+            if f.kind == FileKind::File { let _ = writer.finalize(&f.rel_path); }
+        }
+        writer.cleanup();
+        let _ = events.send(TransferEvent::Finished {
+            session_id,
+            state: FinishedState::Completed,
+            error: None,
+        });
+        return Ok(true);
     }
+
     writer.cleanup();
     let _ = events.send(TransferEvent::Finished {
         session_id,
-        state: if all_ok { FinishedState::Completed } else { FinishedState::Failed },
-        error: if all_ok { None } else { Some(ErrorPayload { code: ErrorCode::WriteFailed, message: "finalize failed".into() }) },
+        state: FinishedState::Failed,
+        error: Some(ErrorPayload { code: ErrorCode::ConnectionLost, message: "transfer incomplete".into() }),
     });
-    Ok(())
+    Ok(false)
 }

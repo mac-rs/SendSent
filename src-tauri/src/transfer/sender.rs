@@ -18,6 +18,21 @@ pub async fn run_sender(
     our: Identity,
     events: mpsc::UnboundedSender<TransferEvent>,
 ) -> Result<()> {
+    let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), events.clone()).await;
+    if let Err(e) = &result {
+        let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
+            error: Some(ErrorPayload { code: ErrorCode::Internal, message: e.to_string() }) });
+    }
+    result
+}
+
+async fn run_sender_inner(
+    session_id: Uuid,
+    peer_addrs: Vec<SocketAddr>,
+    files: Vec<String>,
+    our: Identity,
+    events: mpsc::UnboundedSender<TransferEvent>,
+) -> Result<()> {
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Connecting,
         bytes_done: 0, bytes_total: 0, files_done: 0, files_total: 0, speed_bps: 0 });
 
@@ -29,10 +44,11 @@ pub async fn run_sender(
     if ty != MsgType::HelloAck { return Err(anyhow!("expected helloack, got {ty:?}")); }
 
     let (manifest, file_map) = build_manifest(session_id, &files)?;
+    let files_total = manifest.files.iter().filter(|f| f.kind == FileKind::File).count() as u64;
     write_control(&mut control, MsgType::Manifest, &bincode::serialize(&manifest)?).await?;
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::AwaitingAccept,
         bytes_done: 0, bytes_total: manifest.total_size, files_done: 0,
-        files_total: manifest.total_count, speed_bps: 0 });
+        files_total, speed_bps: 0 });
 
     let (ty, _buf) = read_control(&mut control).await?;
     if ty == MsgType::Reject {
@@ -45,7 +61,7 @@ pub async fn run_sender(
     write_control(&mut data, MsgType::DataOpen, &bincode::serialize(&DataOpen { session_id })?).await?;
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Transferring,
         bytes_done: 0, bytes_total: manifest.total_size, files_done: 0,
-        files_total: manifest.total_count, speed_bps: 0 });
+        files_total, speed_bps: 0 });
 
     let mut done: u64 = 0;
     let mut files_done: u64 = 0;
@@ -56,14 +72,14 @@ pub async fn run_sender(
             files_done += 1;
             let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Transferring,
                 bytes_done: done, bytes_total: manifest.total_size, files_done,
-                files_total: manifest.total_count, speed_bps: 0 });
+                files_total, speed_bps: 0 });
         }
     }
     let _ = data.shutdown().await;
 
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Finalizing,
         bytes_done: done, bytes_total: manifest.total_size, files_done,
-        files_total: manifest.total_count, speed_bps: 0 });
+        files_total, speed_bps: 0 });
     let (ty, _) = read_control(&mut control).await?;
     let final_state = if ty == MsgType::Complete { FinishedState::Completed } else { FinishedState::Failed };
     let _ = events.send(TransferEvent::Finished { session_id, state: final_state,

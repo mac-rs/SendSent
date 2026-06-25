@@ -29,11 +29,21 @@ impl SessionManager {
     }
 
     pub async fn run_listener(self: Arc<Self>, port: u16) -> anyhow::Result<()> {
-        let listener = TcpListener::bind(("0.0.0.0", port)).await?;
+        let listener = match TcpListener::bind(("0.0.0.0", port)).await {
+            Ok(l) => l,
+            Err(e) => {
+                tracing::error!("listener bind failed on port {port}: {e}");
+                return Err(e.into());
+            }
+        };
         loop {
-            let (stream, _peer) = listener.accept().await?;
-            let me = self.clone();
-            tokio::spawn(async move { let _ = me.handle_incoming(stream).await; });
+            match listener.accept().await {
+                Ok((stream, _)) => {
+                    let me = self.clone();
+                    tokio::spawn(async move { let _ = me.handle_incoming(stream).await; });
+                }
+                Err(e) => { tracing::warn!("accept error: {e}"); continue; }
+            }
         }
     }
 
@@ -75,6 +85,10 @@ impl SessionManager {
                 let _ = dtx.send(Decision { accept, save_dir });
             }
         Ok(())
+    }
+
+    pub async fn cleanup_session(&self, session_id: Uuid) {
+        self.pending.lock().await.remove(&session_id);
     }
 
     pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>) -> anyhow::Result<Uuid> {

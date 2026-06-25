@@ -1,21 +1,22 @@
+use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-pub struct SpeedMeter { samples: Vec<(Instant, u64)>, window: Duration, last_total: u64 }
+pub struct SpeedMeter { samples: VecDeque<(Instant, u64)>, window: Duration, last_total: u64 }
 
 impl SpeedMeter {
-    pub fn new(window: Duration) -> Self { Self { samples: Vec::new(), window, last_total: 0 } }
+    pub fn new(window: Duration) -> Self { Self { samples: VecDeque::new(), window, last_total: 0 } }
     pub fn record(&mut self, now: Instant, bytes_done_total: u64) {
-        if let Some(last) = self.samples.last()
+        if let Some(last) = self.samples.back()
             && bytes_done_total < last.1 { self.samples.clear(); }
-        self.samples.push((now, bytes_done_total));
+        self.samples.push_back((now, bytes_done_total));
         let cutoff = now - self.window;
-        while self.samples.len() > 2 && self.samples[0].0 < cutoff { self.samples.remove(0); }
+        while self.samples.len() > 2 && self.samples[0].0 < cutoff { self.samples.pop_front(); }
         self.last_total = bytes_done_total;
     }
     pub fn bps(&self) -> u64 {
         if self.samples.len() < 2 { return 0; }
         let (t0, b0) = self.samples[0];
-        let (t1, b1) = *self.samples.last().unwrap();
+        let (t1, b1) = *self.samples.back().unwrap();
         let secs = (t1 - t0).as_secs_f64().max(1e-6);
         (((b1 - b0) as f64) / secs) as u64
     }

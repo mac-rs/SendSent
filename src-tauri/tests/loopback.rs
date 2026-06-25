@@ -3,7 +3,7 @@ use sendsent_lib::proto::frame::{read_control, read_data, write_control, write_d
 use sendsent_lib::proto::messages::*;
 use sendsent_lib::store::Identity;
 use sendsent_lib::transfer::atomic::AtomicWriter;
-use sendsent_lib::transfer::receiver::{run_receiver, Decision};
+use sendsent_lib::transfer::receiver::{drain_data, run_receiver, Decision};
 use sendsent_lib::transfer::sender::run_sender;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -134,5 +134,45 @@ async fn data_frame_reassembly() {
     }
     let dest = writer.finalize("x.txt").unwrap();
     assert_eq!(std::fs::read(&dest).unwrap(), b"hello world");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn drain_data_reports_failed_on_truncation() {
+    use tokio::io::AsyncWriteExt;
+    let dir = std::env::temp_dir().join(format!("ss-trunc-{}", Uuid::new_v4()));
+    let save = dir.clone();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let conn = tokio::spawn(async move { TcpStream::connect(addr).await.unwrap() });
+    let (server, _) = listener.accept().await.unwrap();
+    let mut client = conn.await.unwrap();
+
+    let id = Uuid::new_v4();
+    // manifest claims a 1000-byte file
+    let manifest = Manifest {
+        session_id: Uuid::new_v4(),
+        files: vec![FileMeta { id, name: "big.bin".into(), rel_path: "big.bin".into(),
+            size: 1000, kind: FileKind::File, hash: None }],
+        total_size: 1000, total_count: 1,
+    };
+    // send only 400 bytes then close (truncation)
+    write_data(&mut client, id, 0, &vec![7u8; 400]).await.unwrap();
+    client.shutdown().await.unwrap();
+
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<TransferEvent>();
+    let completed = drain_data(server, &manifest, &save, manifest.session_id, tx).await.unwrap();
+    assert!(!completed, "truncated transfer must NOT be complete");
+
+    // must have emitted exactly one Finished::Failed
+    let mut got = None;
+    while let Ok(Some(ev)) = tokio::time::timeout(std::time::Duration::from_secs(2), rx.recv()).await {
+        if let TransferEvent::Finished { state, .. } = ev { got = Some(state); }
+    }
+    assert_eq!(got, Some(FinishedState::Failed), "expected Failed event, got {got:?}");
+    // temp cleaned
+    assert!(!save.join(".sendsent-tmp").exists(), "temp must be cleaned on truncation");
+    // no finalized file
+    assert!(!save.join("big.bin").exists(), "partial file must not be finalized");
     let _ = std::fs::remove_dir_all(&dir);
 }

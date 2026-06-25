@@ -64,6 +64,7 @@ pub fn run() {
             }
             {
                 let h = handle.clone();
+                let sessions = sessions.clone();
                 tauri::async_runtime::spawn(async move {
                     while let Some(ev) = trx.recv().await {
                         let (n, val) = match &ev {
@@ -78,6 +79,9 @@ pub fn run() {
                             }
                         };
                         let _ = h.emit(n, val);
+                        if let TransferEvent::Finished { session_id, .. } = &ev {
+                            sessions.cleanup_session(*session_id).await;
+                        }
                     }
                 });
             }
