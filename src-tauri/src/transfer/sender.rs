@@ -12,12 +12,12 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 pub async fn run_sender(
+    session_id: Uuid,
     peer_addrs: Vec<SocketAddr>,
     files: Vec<String>,
     our: Identity,
     events: mpsc::UnboundedSender<TransferEvent>,
 ) -> Result<()> {
-    let session_id = Uuid::new_v4();
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Connecting,
         bytes_done: 0, bytes_total: 0, files_done: 0, files_total: 0, speed_bps: 0 });
 
