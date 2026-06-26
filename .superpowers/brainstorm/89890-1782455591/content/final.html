@@ -1,0 +1,79 @@
+<h2>最后版:聚焦功能的设计</h2>
+<p class="subtitle">左:亮色 / 右:暗色。设备列表有出现动画(从透明渐入+上移),在线状态脉冲呼吸灯。</p>
+
+<div class="split">
+  <!-- LIGHT -->
+  <div class="mockup">
+    <div class="mockup-header">Light</div>
+    <div class="mockup-body" style="background:#fff;padding:16px;border-radius:10px;font-family:-apple-system,sans-serif;min-height:360px">
+      <b style="font-size:14px;color:#111">SendSent</b>
+      <div style="float:right;font-size:11px;color:#999;display:flex;align-items:center;gap:4px">☀️ <span style="width:28px;height:14px;background:#ccc;border-radius:7px;display:inline-block;position:relative"><span style="position:absolute;left:2px;top:1px;width:12px;height:12px;background:#fff;border-radius:50%;display:inline-block;border:1px solid #ddd"></span></span> 🌙</div>
+      <div style="clear:both;margin-top:12px;font-size:10px;font-weight:600;text-transform:uppercase;color:#aaa;letter-spacing:0.5px">附近设备 · 2 台</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #eee;animation:fadeIn 0.4s ease">
+          <span style="width:8px;height:8px;background:#34c759;border-radius:50%;animation:pulse 2s infinite"></span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#111">iPhone 17</div><div style="font-size:10px;color:#999">iOS · 192.168.1.108</div></div>
+          <input type="checkbox" style="accent-color:#007aff">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #eee;animation:fadeIn 0.6s ease">
+          <span style="width:8px;height:8px;background:#34c759;border-radius:50%;animation:pulse 2s infinite;animation-delay:0.5s"></span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#111">mankong-mac</div><div style="font-size:10px;color:#999">macOS · 52225</div></div>
+          <input type="checkbox" style="accent-color:#007aff">
+        </div>
+      </div>
+      <div style="margin-top:12px;border:1px dashed #ddd;border-radius:10px;padding:16px;text-align:center;font-size:12px;color:#aaa">
+        📁 拖放文件或点击选择
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input placeholder="或输入文字发送…" style="flex:1;font-size:11px;padding:8px;border:1px solid #ddd;border-radius:6px;outline:none">
+        <button style="padding:6px 14px;background:#007aff;color:#fff;border:none;border-radius:6px;font-size:11px">发送</button>
+      </div>
+    </div>
+  </div>
+  <!-- DARK -->
+  <div class="mockup">
+    <div class="mockup-header">Dark</div>
+    <div class="mockup-body" style="background:#111;padding:16px;border-radius:10px;font-family:-apple-system,sans-serif;min-height:360px;color:#ddd">
+      <b style="font-size:14px;color:#fff">SendSent</b>
+      <div style="float:right;font-size:11px;color:#666;display:flex;align-items:center;gap:4px">☀️ <span style="width:28px;height:14px;background:#333;border-radius:7px;display:inline-block;position:relative"><span style="position:absolute;right:2px;top:1px;width:12px;height:12px;background:#007aff;border-radius:50%;display:inline-block"></span></span> 🌙</div>
+      <div style="clear:both;margin-top:12px;font-size:10px;font-weight:600;text-transform:uppercase;color:#555;letter-spacing:0.5px">附近设备 · 2 台</div>
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #222;animation:fadeIn 0.4s ease">
+          <span style="width:8px;height:8px;background:#34c759;border-radius:50%;animation:pulse 2s infinite"></span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#fff">iPhone 17</div><div style="font-size:10px;color:#666">iOS · 192.168.1.108</div></div>
+          <input type="checkbox" style="accent-color:#007aff">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #222;animation:fadeIn 0.6s ease">
+          <span style="width:8px;height:8px;background:#34c759;border-radius:50%;animation:pulse 2s infinite;animation-delay:0.5s"></span>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#fff">mankong-mac</div><div style="font-size:10px;color:#666">macOS · 52225</div></div>
+          <input type="checkbox" style="accent-color:#007aff">
+        </div>
+      </div>
+      <div style="margin-top:12px;border:1px dashed #333;border-radius:10px;padding:16px;text-align:center;font-size:12px;color:#555">
+        📁 拖放文件或点击选择
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input placeholder="或输入文字发送…" style="flex:1;font-size:11px;padding:8px;background:#222;border:1px solid #333;border-radius:6px;outline:none;color:#fff">
+        <button style="padding:6px 14px;background:#007aff;color:#fff;border:none;border-radius:6px;font-size:11px">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:16px">动画说明</h3>
+<div class="section" style="font-size:12px;line-height:1.6">
+  <p><b>设备出现</b> — <code>@keyframes fadeIn</code>:从 <code>opacity:0;transform:translateY(8px)</code> 渐入上移,stagger 0.2s 间隔,逐个出现。</p>
+  <p><b>在线指示</b> — <code>@keyframes pulse</code>:绿点呼吸缩放 <code>scale(1→1.4→1)</code>,2s 循环。</p>
+  <p><b>主题切换</b> — toggle 滑动,`document.documentElement` class 切换 `dark`,所有颜色用 CSS 变量驱动,0.3s 过渡。</p>
+  <p><b>进度条</b> — 宽条 + shimmer 流动高光(从左扫到右)。完成时绿色脉冲。</p>
+  <p><b>接收弹窗</b> — 从底部滑入(slide-up),带 backdrop 暗遮罩。</p>
+</div>
+
+<div class="cards" style="margin-top:12px">
+  <div class="card" data-choice="go" onclick="toggleSelect(this)">
+    <div class="card-body"><h3>就这个 — 开始写代码</h3><p>明暗双主题 + 设备出现动画 + 在线呼吸灯 + 简洁布局</p></div>
+  </div>
+  <div class="card" data-choice="more" onclick="toggleSelect(this)">
+    <div class="card-body"><h3>差一点</h3><p>具体哪里要改,在终端说</p></div>
+  </div>
+</div>

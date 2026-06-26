@@ -1,0 +1,40 @@
+<h2>SendSent UI 现代化:选择视觉风格</h2>
+<p class="subtitle">当前界面是 Tauri 模板默认样式(白底黑字,rudimentary)。你希望整体风格走向哪个方向?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>macOS 原生 / Apple HIG</h3>
+      <p>磨砂玻璃(blur)、SF 字体风格、圆角卡片、系统级配色。像 AirDrop 或系统设置界面。桌面端 Mac 体验、iOS 也融合。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>现代暗色 / 科技感</h3>
+      <p>深色主题、微妙的渐变色强调、紧凑布局。类似 Vercel/Linear/Raycast 的气质。开发者和科技用户偏好。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>多彩 / 亲切友好</h3>
+      <p>明亮色彩、大卡片布局、圆润边角。像 LocalSend 或现代聊天应用。消费者级、对新手友好。</p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px">当前界面(对照)</h3>
+<div class="mockup">
+  <div class="mockup-header">SendSent — 现在</div>
+  <div class="mockup-body" style="background:#fff;color:#000;padding:16px;border-radius:4px;font-family:system-ui">
+    <div class="mock-nav" style="background:#f5f5f5;padding:8px;margin-bottom:8px">· SendSent</div>
+    <p style="color:#666;font-size:13px">正在发现附近设备…</p>
+    <button class="mock-button" style="margin:4px">mankong-mac (macos)</button>
+    <div style="margin:8px 0"><input class="mock-input" placeholder="手动添加 IP:port" style="width:160px"> <button class="mock-button">添加</button></div>
+    <div style="margin:8px 0"><button class="mock-button">选择文件发送</button> <label style="font-size:12px;margin-left:8px"><input type="checkbox"> 加密</label></div>
+    <div style="margin:8px 0"><textarea rows="2" placeholder="发送文本…" style="width:260px"></textarea></div>
+    <div style="margin-top:8px"><input placeholder="保存名字(重启生效)"></div>
+  </div>
+</div>

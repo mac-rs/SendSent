@@ -1,21 +1,18 @@
-import { respond, getDefaultSaveDir } from "../lib/invoke";
+import { respond } from "../lib/invoke";
 import type { RequestView } from "../hooks/useTransfer";
 
 export function IncomingRequest({ req }: { req: RequestView | null }) {
   if (!req) return null;
-  const r = req;
-  const sizeMiB = (r.size / (1024 * 1024)).toFixed(1);
-  async function accept() {
-    const dir = await getDefaultSaveDir();
-    await respond(r.session_id, true, dir);
-  }
-  async function reject() { await respond(r.session_id, false); }
+  const sizeMiB = (req.size / (1024 * 1024)).toFixed(1);
   return (
-    <div style={{ border: "1px solid #ccc", padding: 12 }}>
-      <strong>{req.sender_name}</strong> 想发送 {req.count} 个文件({sizeMiB} MiB)
-      <div style={{ marginTop: 8 }}>
-        <button onClick={accept}>接受</button>
-        <button onClick={reject} style={{ marginLeft: 8 }}>拒绝</button>
+    <div className="request-backdrop" onClick={(e) => { if (e.target === e.currentTarget) respond(req.session_id, false); }}>
+      <div className="request-card">
+        <h3>{req.sender_name}</h3>
+        <div className="meta">{req.count} 个文件 · {sizeMiB} MiB</div>
+        <div className="actions">
+          <button className="btn-reject" onClick={() => respond(req.session_id, false)}>拒绝</button>
+          <button className="btn-accept" onClick={() => respond(req.session_id, true, undefined)}>接受</button>
+        </div>
       </div>
     </div>
   );

@@ -9,15 +9,27 @@ function fmt(bps: number) {
 export function TransferProgress({ items }: { items: ProgressView[] }) {
   if (items.length === 0) return null;
   return (
-    <ul style={{ listStyle: "none", padding: 0 }}>
+    <div className="progress-section">
       {items.map((p) => {
-        const pct = p.bytes_total ? (p.bytes_done / p.bytes_total) * 100 : 0;
+        const pct = p.bytes_total ? Math.min((p.bytes_done / p.bytes_total) * 100, 100) : 0;
+        const cls = p.done
+          ? (p.error ? "failed" : "done")
+          : "active";
         return (
-          <li key={p.session_id}>
-            {p.done ? (p.error ? `失败:${p.error}` : "完成") : `${pct.toFixed(0)}% · ${fmt(p.speed_bps)}`}
-          </li>
+          <div key={p.session_id} className={`progress-item ${cls}`}>
+            <span style={{ fontSize: 11, minWidth: 60, flexShrink: 0 }}>
+              {p.done ? (p.error ? "失败" : "完成") : `${pct.toFixed(0)}%`}
+            </span>
+            <div className="progress-track">
+              <div
+                className={`progress-fill ${cls}`}
+                style={{ width: `${Math.max(pct, 2)}%` }}
+              />
+            </div>
+            <span className="progress-speed">{p.done ? "" : fmt(p.speed_bps)}</span>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }

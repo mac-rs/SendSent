@@ -5,52 +5,38 @@ import { useState } from "react";
 
 export function FilePicker({ peers }: { peers: Peer[] }) {
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState("");
   const [secure, setSecure] = useState(false);
 
   async function pick() {
-    if (peers.length === 0) { setStatus("未选择 peer"); return; }
-    setStatus("打开选择器…");
-    setStatus("打开选择器…");
-    let selected;
+    if (peers.length === 0) { setStatus("请先选择至少一台设备"); return; }
     try {
-      selected = await open({ multiple: true, directory: false });
-    } catch (e) {
-      console.error("[FilePicker] open() 抛错", e);
-      setStatus("选择器错误: " + String(e));
-      return;
-    }
-    console.log("[FilePicker] open() 返回", selected);
-    if (!selected || (Array.isArray(selected) && selected.length === 0)) {
-      setStatus("未选文件");
-      return;
-    }
-    const files = Array.isArray(selected) ? selected : [selected];
-    setBusy(true);
-    setStatus(`发送 ${files.length} 个文件到 ${peers.length} 个设备…`);
-    try {
-      for (const p of peers) {
-        await sendFiles(p.device_id, files, secure);
-      }
+      const selected = await open({ multiple: true, directory: false });
+      if (!selected || (Array.isArray(selected) && selected.length === 0)) return;
+      const files = Array.isArray(selected) ? selected : [selected];
+      setBusy(true);
+      setStatus(`发送 ${files.length} 文件到 ${peers.length} 设备…`);
+      for (const p of peers) await sendFiles(p.device_id, files, secure);
       setStatus("已发起");
-    } catch (e) {
-      console.error("[FilePicker] sendFiles 抛错", e);
-      setStatus("发送错误: " + String(e));
-    } finally {
-      setBusy(false);
-    }
+    } catch (e: any) { setStatus("出错: " + String(e)); }
+    finally { setBusy(false); }
   }
 
+  const names = peers.map((p) => p.name).join(", ");
+
   return (
-    <div>
-      <button disabled={peers.length === 0 || busy} onClick={pick}>
-        选择文件发送{peers.length > 0 ? ` → ${peers.map(p=>p.name).join(", ")}` : ""}
+    <div className="drop-zone" onClick={busy ? undefined : pick}>
+      <div className="drop-zone-icon">📁</div>
+      <div className="drop-zone-text">
+        {peers.length === 0 ? "请先选择设备" : `发到 ${names}`}
+      </div>
+      <button className="drop-zone-btn" disabled={peers.length === 0 || busy} onClick={(e) => { e.stopPropagation(); pick(); }}>
+        {busy ? "发送中…" : "选择文件"}
       </button>
-      <label style={{ marginLeft: 12 }}>
-        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />
-        加密
+      <label className="secure-row" onClick={(e) => e.stopPropagation()}>
+        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />加密传输
       </label>
-      {status ? <span style={{ marginLeft: 12 }}>{status}</span> : null}
+      {status && <span className="status-text">{status}</span>}
     </div>
   );
 }

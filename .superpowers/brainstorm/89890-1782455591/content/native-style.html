@@ -1,0 +1,82 @@
+<h2>SendSent 原生 App 质感 — 两版对比</h2>
+<p class="subtitle">左:精致 native 感觉。右:说明设计语言背后的原则。</p>
+
+<div class="split">
+  <!-- LEFT: Premium Mockup -->
+  <div class="mockup">
+    <div class="mockup-header">Native App Style (macOS)</div>
+    <div class="mockup-body" style="background:#f5f5f7;padding:0;border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden;min-height:400px">
+      <!-- Title bar -->
+      <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.08)">
+        <b style="font-size:13px;color:#1d1d1f">SendSent</b>
+        <span style="font-size:11px;color:#86868b">mankong-mac</span>
+      </div>
+      <div style="padding:16px;display:flex;gap:20px">
+        <!-- Device list (sidebar-ish) -->
+        <div style="width:200px">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;color:#86868b;letter-spacing:0.5px;margin-bottom:8px">附近设备</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="padding:8px 10px;background:rgba(0,122,255,0.08);border-radius:6px;font-size:12px;display:flex;align-items:center;gap:6px;font-weight:500;color:#1d1d1f">
+              <span style="width:8px;height:8px;background:#34c759;border-radius:50%;display:inline-block"></span> iPhone 17
+            </div>
+            <div style="padding:8px 10px;border-radius:6px;font-size:12px;display:flex;align-items:center;gap:6px;color:#86868b">
+              <span style="width:8px;height:8px;background:#ccc;border-radius:50%;display:inline-block"></span> mankong-mac
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <input placeholder="+ 手动添加 IP" style="width:100%;font-size:10px;padding:5px 8px;background:#fff;border:1px solid #e5e5ea;border-radius:5px;color:#1d1d1f;outline:none">
+          </div>
+        </div>
+        <!-- Action area -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+          <div style="border:1px dashed #d2d2d7;border-radius:10px;padding:20px;text-align:center;background:rgba(255,255,255,0.5)">
+            <div style="font-size:24px;margin-bottom:6px">📁</div>
+            <div style="font-size:12px;color:#86868b;margin-bottom:8px">拖放文件到此处,或点击选择</div>
+            <button style="padding:6px 16px;background:#007aff;color:#fff;border:none;border-radius:16px;font-size:11px;cursor:pointer">选择文件</button>
+            <label style="display:block;font-size:10px;color:#86868b;margin-top:6px"><input type="checkbox" checked> 加密传输</label>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <textarea rows="1" placeholder="或直接输入文字发送…" style="flex:1;font-size:11px;padding:7px 10px;background:#fff;border:1px solid #e5e5ea;border-radius:8px;resize:none;outline:none;font-family:inherit"></textarea>
+            <button style="padding:6px 14px;background:#007aff;color:#fff;border:none;border-radius:16px;font-size:11px;white-space:nowrap">发送</button>
+          </div>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="margin:0 16px 12px;padding:10px 14px;background:#fff;border-radius:8px;border:1px solid #e5e5ea;display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:#1d1d1f">📦 IMG_3937.PNG</span>
+        <div style="flex:1;height:4px;background:#e5e5ea;border-radius:2px"><div style="width:72%;height:100%;background:#007aff;border-radius:2px"></div></div>
+        <span style="font-size:10px;color:#86868b;white-space:nowrap">18.3 MB/s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Design language explanation -->
+  <div style="background:#fff;border-radius:12px;padding:16px;font-size:12px;line-height:1.6;color:#1d1d1f">
+    <h3 style="font-size:14px;margin-bottom:10px">设计语言</h3>
+
+    <p style="font-size:11px;margin-bottom:8px;color:#86868b">这些原则让界面看起来像原生 app 而不是网页:</p>
+
+    <p><b>· 磨砂标题栏</b> —`backdrop-filter:blur(20px)`,像 macOS 窗口</p>
+    <p><b>· 无边框卡片</b> — 圆角 6–10px,极淡背景、不用粗边框</p>
+    <p><b>· 系统字体</b> — `-apple-system`/SF Pro,不自定义</p>
+    <p><b>· 系统色</b> — `#007aff`(iOS 蓝)、`#34c759`(在线绿)、`#86868b`(次级灰)</p>
+    <p><b>· 微妙分隔</b> — 1px `rgba(0,0,0,0.08)` 线,不是粗边框</p>
+    <p><b>· 胶囊按钮</b> — `border-radius:16px`,iOS 风格</p>
+    <p><b>· 拖放区</b> — 虚线框暗示"可以放东西",非按钮</p>
+    <p><b>· 进度条内嵌</b> — 不是浮在顶部,是内容区的一部分</p>
+    <p><b>· 留白</b> — 间距 12–20px,不挤</p>
+
+    <hr style="border:none;border-top:1px solid #e5e5ea;margin:12px 0">
+    <p style="font-size:11px;color:#86868b">移动端:同语言,单列、全宽按钮、设备列表在上、发送区可折叠。</p>
+    <p style="font-size:11px;color:#86868b">暗色模式:反转,`background:#1c1c1e`,`#f5f5f7`→`#2c2c2e`。</p>
+  </div>
+</div>
+
+<div class="cards" style="margin-top:16px">
+  <div class="card" data-choice="like-it" onclick="toggleSelect(this)">
+    <div class="card-body"><h3>就按这个方向</h3><p>左边这个 native 风格 + 系统色 + 设计原则</p></div>
+  </div>
+  <div class="card" data-choice="need-change" onclick="toggleSelect(this)">
+    <div class="card-body"><h3>还要改</h3><p>方向对了,但具体要调(在终端说)</p></div>
+  </div>
+</div>
