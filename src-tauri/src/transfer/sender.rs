@@ -128,10 +128,16 @@ async fn run_sender_inner(
     if verify {
         let mut hashes: Vec<(Uuid, String)> = Vec::new();
         for (id, path) in &file_map {
-            let data = std::fs::read(path)?;
-            let mut h = sha2::Sha256::new();
-            h.update(&data);
-            let hash = hex::encode(h.finalize());
+            let mut file = std::fs::File::open(path)?;
+            let mut hasher = sha2::Sha256::new();
+            let mut buf = [0u8; 64 * 1024];
+            loop {
+                use std::io::Read;
+                let n = file.read(&mut buf)?;
+                if n == 0 { break; }
+                hasher.update(&buf[..n]);
+            }
+            let hash = hex::encode(hasher.finalize());
             hashes.push((*id, hash));
         }
         let payload = postcard::to_stdvec(&VerifyInfo { hashes })?;

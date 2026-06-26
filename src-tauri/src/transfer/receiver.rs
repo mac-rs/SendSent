@@ -171,10 +171,16 @@ pub async fn run_receiver(
                     for (fid, expected) in &info.hashes {
                         let Some(fmeta) = manifest.files.iter().find(|f| f.id == *fid) else { continue; };
                         let fpath = decision.save_dir.join(&fmeta.rel_path);
-                        if let Ok(data) = std::fs::read(&fpath) {
-                            let mut h = sha2::Sha256::new();
-                            h.update(&data);
-                            let actual = hex::encode(h.finalize());
+                        if let Ok(mut file) = std::fs::File::open(&fpath) {
+                            let mut hasher = sha2::Sha256::new();
+                            let mut buf = [0u8; 64 * 1024];
+                            loop {
+                                use std::io::Read;
+                                let n = file.read(&mut buf).unwrap_or(0);
+                                if n == 0 { break; }
+                                hasher.update(&buf[..n]);
+                            }
+                            let actual = hex::encode(hasher.finalize());
                             if actual != *expected { all_ok = false; tracing::warn!("hash mismatch for {}", fmeta.name); }
                         } else { all_ok = false; }
                     }
