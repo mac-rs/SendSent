@@ -1,3 +1,4 @@
+use sha2::Digest;
 use crate::events::{TransferEvent, SessionState, FinishedState, ErrorPayload};
 use crate::proto::frame::{read_control, read_data, write_control};
 use crate::proto::messages::*;
@@ -163,6 +164,23 @@ pub async fn run_receiver(
     if outcome {
         let mut all_ok = true;
         for f in &manifest.files { if f.kind == FileKind::File && state.writer.finalize(&f.rel_path).is_err() { all_ok = false; } }
+        if hello.verify && all_ok {
+            let (vty, vbuf) = read_ctrl!();
+            if vty == MsgType::VerifyInfo {
+                if let Ok(info) = postcard::from_bytes::<VerifyInfo>(&vbuf) {
+                    for (fid, expected) in &info.hashes {
+                        let Some(fmeta) = manifest.files.iter().find(|f| f.id == *fid) else { continue; };
+                        let fpath = decision.save_dir.join(&fmeta.rel_path);
+                        if let Ok(data) = std::fs::read(&fpath) {
+                            let mut h = sha2::Sha256::new();
+                            h.update(&data);
+                            let actual = hex::encode(h.finalize());
+                            if actual != *expected { all_ok = false; tracing::warn!("hash mismatch for {}", fmeta.name); }
+                        } else { all_ok = false; }
+                    }
+                } else { all_ok = false; }
+            } else { all_ok = false; }
+        }
         state.writer.cleanup();
         write_ctrl!(MsgType::Complete, &postcard::to_stdvec(&Complete)?);
         let _ = events.send(TransferEvent::Finished { session_id, state: if all_ok { FinishedState::Completed } else { FinishedState::Failed },

@@ -3286,6 +3286,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
+ "hex",
  "libc",
  "mdns-sd",
  "postcard",
@@ -3295,6 +3296,7 @@ dependencies = [
  "rustls-pemfile",
  "serde",
  "serde_json",
+ "sha2",
  "socket2",
  "tauri",
  "tauri-build",

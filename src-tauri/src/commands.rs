@@ -23,7 +23,7 @@ pub async fn add_peer(state: State<'_, AppState>, address: String) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, files: Vec<String>, secure: bool) -> Result<Uuid, String> {
+pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, files: Vec<String>, secure: bool, verify: bool) -> Result<Uuid, String> {
     let peers = state.discovery.peers().await;
     let n = peers.len();
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
@@ -31,11 +31,11 @@ pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, file
         return Err("peer not found".into());
     };
     tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
-    state.sessions.start_send(p.addrs, files, state.transfer_config.clone(), secure).map_err(|e| e.to_string())
+    state.sessions.start_send(p.addrs, files, state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text: String, secure: bool) -> Result<Uuid, String> {
+pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text: String, secure: bool, verify: bool) -> Result<Uuid, String> {
     let dir = std::env::temp_dir().join("sendsent-text");
     let _ = std::fs::create_dir_all(&dir);
     let path = dir.join(format!("{}.txt", Uuid::new_v4()));
@@ -45,7 +45,7 @@ pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text:
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
         return Err("peer not found".into());
     };
-    state.sessions.start_send(p.addrs, vec![file], state.transfer_config.clone(), secure).map_err(|e| e.to_string())
+    state.sessions.start_send(p.addrs, vec![file], state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -24,7 +24,7 @@ pub enum ErrorCode {
 pub enum MsgType {
     Hello = 0x01, HelloAck = 0x02, Manifest = 0x03, Accept = 0x04,
     Reject = 0x05, Progress = 0x06, Complete = 0x07, Error = 0x08,
-    Cancel = 0x09, DataOpen = 0x0A, PinCode = 0x0B,
+    Cancel = 0x09, DataOpen = 0x0A, PinCode = 0x0B, VerifyInfo = 0x0C,
 }
 
 impl TryFrom<u8> for MsgType {
@@ -34,7 +34,7 @@ impl TryFrom<u8> for MsgType {
             0x01 => MsgType::Hello, 0x02 => MsgType::HelloAck, 0x03 => MsgType::Manifest,
             0x04 => MsgType::Accept, 0x05 => MsgType::Reject, 0x06 => MsgType::Progress,
             0x07 => MsgType::Complete, 0x08 => MsgType::Error, 0x09 => MsgType::Cancel,
-            0x0A => MsgType::DataOpen, 0x0B => MsgType::PinCode, _ => return Err(()),
+            0x0A => MsgType::DataOpen, 0x0B => MsgType::PinCode, 0x0C => MsgType::VerifyInfo, _ => return Err(()),
         })
     }
 }
@@ -55,7 +55,7 @@ pub struct Manifest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Hello { pub device_id: String, pub name: String, pub platform: Platform, pub session_id: Uuid, pub proto_ver: u8, pub secure: bool }
+pub struct Hello { pub device_id: String, pub name: String, pub platform: Platform, pub session_id: Uuid, pub proto_ver: u8, pub secure: bool, pub verify: bool }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HelloAck { pub device_id: String, pub name: String, pub secure_ok: bool }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -74,6 +74,8 @@ pub struct Cancel;
 pub struct DataOpen { pub session_id: Uuid }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PinCode { pub pin: String }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct VerifyInfo { pub hashes: Vec<(Uuid, String)> } // (file_id, sha256 hex)
 
 #[cfg(test)]
 mod tests {

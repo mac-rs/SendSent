@@ -7,6 +7,7 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [secure, setSecure] = useState(false);
+  const [verify, setVerify] = useState(false);
 
   async function pick() {
     if (peers.length === 0) { setStatus("请先选择至少一台设备"); return; }
@@ -16,7 +17,7 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
       const files = Array.isArray(selected) ? selected : [selected];
       setBusy(true);
       setStatus(`发送 ${files.length} 文件到 ${peers.length} 设备…`);
-      for (const p of peers) await sendFiles(p.device_id, files, secure);
+      for (const p of peers) await sendFiles(p.device_id, files, secure, verify);
       setStatus("已发起");
     } catch (e: any) { setStatus("出错: " + String(e)); }
     finally { setBusy(false); }
@@ -34,7 +35,8 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
         {busy ? "发送中…" : "选择文件"}
       </button>
       <label className="secure-row" onClick={(e) => e.stopPropagation()}>
-        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />加密传输
+        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />加密
+        <input type="checkbox" checked={verify} onChange={(e) => setVerify(e.target.checked)} style={{ marginLeft: 8 }} />sha256 校验
       </label>
       {status && <span className="status-text">{status}</span>}
     </div>

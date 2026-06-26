@@ -104,10 +104,10 @@ impl SessionManager {
         self.pending.lock().await.remove(&session_id);
     }
 
-    pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>, config: crate::store::TransferConfig, secure: bool) -> anyhow::Result<Uuid> {
+    pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>, config: crate::store::TransferConfig, secure: bool, verify: bool) -> anyhow::Result<Uuid> {
         let session_id = Uuid::new_v4();
         let our = self.our.clone(); let events = self.events_tx.clone(); let id = session_id;
-        tokio::spawn(async move { let _ = run_sender(id, peer_addrs, files, our, events, config, secure).await; });
+        tokio::spawn(async move { let _ = run_sender(id, peer_addrs, files, our, events, config, secure, verify).await; });
         Ok(session_id)
     }
 }

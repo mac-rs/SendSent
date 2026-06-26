@@ -1,3 +1,4 @@
+use sha2::Digest;
 use crate::events::{TransferEvent, SessionState, FinishedState, ErrorPayload};
 use crate::proto::frame::{read_control, write_control, write_data_header};
 use crate::proto::messages::*;
@@ -19,9 +20,9 @@ use uuid::Uuid;
 pub async fn run_sender(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
     our: Identity, events: mpsc::UnboundedSender<TransferEvent>,
-    config: TransferConfig, secure: bool,
+    config: TransferConfig, secure: bool, verify: bool,
 ) -> Result<()> {
-    let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), events.clone(), config, secure).await;
+    let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), events.clone(), config, secure, verify).await;
     if let Err(e) = &result {
         tracing::error!("sender failed: {e}");
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
@@ -33,7 +34,7 @@ pub async fn run_sender(
 async fn run_sender_inner(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
     our: Identity, events: mpsc::UnboundedSender<TransferEvent>,
-    config: TransferConfig, secure: bool,
+    config: TransferConfig, secure: bool, verify: bool,
 ) -> Result<()> {
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Connecting,
         bytes_done: 0, bytes_total: 0, files_done: 0, files_total: 0, speed_bps: 0 });
@@ -44,7 +45,7 @@ async fn run_sender_inner(
     });
     let c = control.as_mut().unwrap();
     let hello = Hello { device_id: our.device_id.clone(), name: our.name.clone(),
-        platform: Platform::Macos, session_id, proto_ver: PROTO_VER, secure };
+        platform: Platform::Macos, session_id, proto_ver: PROTO_VER, secure, verify };
     write_control(c, MsgType::Hello, &postcard::to_stdvec(&hello)?).await?;
     let (ty, buf) = read_control(c).await?;
     if ty != MsgType::HelloAck { return Err(anyhow!("expected helloack, got {ty:?}")); }
@@ -121,6 +122,23 @@ async fn run_sender_inner(
         handles.push(handle);
     }
     for h in handles { let _ = h.await; }
+
+    if verify {
+        let mut hashes: Vec<(Uuid, String)> = Vec::new();
+        for (id, path) in &file_map {
+            let data = std::fs::read(path)?;
+            let mut h = sha2::Sha256::new();
+            h.update(&data);
+            let hash = hex::encode(h.finalize());
+            hashes.push((*id, hash));
+        }
+        let payload = postcard::to_stdvec(&VerifyInfo { hashes })?;
+        if let Some(ref mut s) = control_tls {
+            write_control(s, MsgType::VerifyInfo, &payload).await?;
+        } else {
+            write_control(control.as_mut().unwrap(), MsgType::VerifyInfo, &payload).await?;
+        }
+    }
 
     let done = total_done.load(Ordering::Relaxed);
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Finalizing,
