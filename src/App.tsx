@@ -7,6 +7,7 @@ import { IncomingRequest } from "./components/IncomingRequest";
 import { TransferProgress } from "./components/TransferProgress";
 import { TransferConfigEditor } from "./components/TransferConfigEditor";
 import { addPeer, sendText, respond } from "./lib/invoke";
+import { registerSendFilenames } from "./hooks/useTransfer";
 import type { Peer } from "./lib/types";
 
 function App() {
@@ -78,7 +79,7 @@ function App() {
           onClick={async () => {
             if (selected.length === 0 || !textContent.trim()) return;
             setTextBusy(true);
-            try { for (const p of selected) await sendText(p.device_id, textContent); setTextContent(""); }
+            try { for (const p of selected) { const sid = await sendText(p.device_id, textContent); registerSendFilenames(sid, ["message.txt"]); } setTextContent(""); }
             catch (e) { alert("失败: " + String(e)); }
             finally { setTextBusy(false); }
           }}

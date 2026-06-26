@@ -8,7 +8,13 @@ export interface RequestView {
 export interface ProgressView {
   session_id: string; bytes_done: number; bytes_total: number;
   files_done: number; files_total: number; speed_bps: number; done: boolean; error?: string;
-  filenames?: string[]; started_at?: number;
+  filenames?: string[]; started_at?: number; ended_at?: number;
+}
+
+// 模块级存储:发送端文件名(发送方没有 Request 事件,通过此 Map 补名字)
+const sendFilenames = new Map<string, string[]>();
+export function registerSendFilenames(sessionId: string, names: string[]) {
+  sendFilenames.set(sessionId, names);
 }
 
 export function useTransfer() {
@@ -31,15 +37,17 @@ export function useTransfer() {
         } else if (ev.kind === "Progress") {
           setProgress((cur) => {
             const prev = cur[ev.session_id];
-            const names = manifests[ev.session_id]?.files
-              ?.filter((f: any) => f.kind === "File")
-              .map((f: any) => f.name) ?? [];
+            const fromManifest = manifests[ev.session_id]?.files
+              ?.filter((f) => f.kind === "File")
+              .map((f) => f.name) ?? [];
+            const fromSender = sendFilenames.get(ev.session_id) ?? [];
+            const names = fromManifest.length > 0 ? fromManifest : fromSender;
             return {
               ...cur,
               [ev.session_id]: {
                 session_id: ev.session_id, bytes_done: ev.bytes_done, bytes_total: ev.bytes_total,
                 files_done: ev.files_done, files_total: ev.files_total, speed_bps: ev.speed_bps, done: false,
-                filenames: names,
+                filenames: names.length > 0 ? names : prev?.filenames,
                 started_at: prev?.started_at ?? Date.now(),
               },
             };
@@ -60,6 +68,7 @@ export function useTransfer() {
                 error: ev.state !== "completed" ? ev.state : undefined,
                 filenames: prev?.filenames,
                 started_at: prev?.started_at,
+                ended_at: Date.now(),
               },
             };
           });

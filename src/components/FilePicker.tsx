@@ -1,5 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { sendFiles, pickFilesIos } from "../lib/invoke";
+import { registerSendFilenames } from "../hooks/useTransfer";
 import type { Peer } from "../lib/types";
 import { useState } from "react";
 
@@ -15,9 +16,13 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
       const selected = await open({ multiple: true, directory: false });
       if (!selected || (Array.isArray(selected) && selected.length === 0)) return;
       const files = Array.isArray(selected) ? selected : [selected];
+      const filenames = files.map((f) => f.split("/").pop() ?? f);
       setBusy(true);
       setStatus(`发送 ${files.length} 文件到 ${peers.length} 设备…`);
-      for (const p of peers) await sendFiles(p.device_id, files, secure, verify);
+      for (const p of peers) {
+        const sid = await sendFiles(p.device_id, files, secure, verify);
+        registerSendFilenames(sid, filenames);
+      }
       setStatus("已发起");
     } catch (e: any) { setStatus("出错: " + String(e)); }
     finally { setBusy(false); }
@@ -40,9 +45,13 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
           try {
             const iosFiles = await pickFilesIos();
             if (!iosFiles || iosFiles.length === 0) return;
+            const ioFilenames = iosFiles.map((f) => f.split("/").pop() ?? f);
             setBusy(true);
             setStatus(`发送 ${iosFiles.length} 文件到 ${peers.length} 设备…`);
-            for (const p of peers) await sendFiles(p.device_id, iosFiles, secure, verify);
+            for (const p of peers) {
+              const sid = await sendFiles(p.device_id, iosFiles, secure, verify);
+              registerSendFilenames(sid, ioFilenames);
+            }
             setStatus("已发起");
           } catch (err: any) { if (!String(err).includes("iOS only")) setStatus("出错: " + String(err)); }
           finally { setBusy(false); }

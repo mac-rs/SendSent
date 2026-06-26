@@ -30,6 +30,7 @@ export function TransferProgress({ items }: { items: ProgressView[] }) {
       {items.map((p) => {
         const pct = p.bytes_total ? Math.min((p.bytes_done / p.bytes_total) * 100, 100) : 0;
         const cls = p.done ? (p.error ? "failed" : "done") : "active";
+        const elapsed = p.ended_at && p.started_at ? p.ended_at - p.started_at : 0;
         return (
           <div key={p.session_id} className={`progress-item ${cls}`}>
             {/* filenames */}
@@ -39,7 +40,7 @@ export function TransferProgress({ items }: { items: ProgressView[] }) {
 
             {/* progress bar row */}
             <div className="progress-bar-row">
-              <span className="progress-pct">{p.done ? "" : `${pct.toFixed(0)}%`}</span>
+              <span className="progress-pct">{pct.toFixed(0)}%</span>
               <div className="progress-track">
                 <div className={`progress-fill ${cls}`} style={{ width: `${Math.max(pct, 2)}%` }} />
               </div>
@@ -48,7 +49,11 @@ export function TransferProgress({ items }: { items: ProgressView[] }) {
             {/* info row: speed + elapsed */}
             <div className="progress-info">
               {!p.done && p.speed_bps > 0 && <span className="progress-speed">{fmt(p.speed_bps)}</span>}
-              {p.started_at && <span className="progress-elapsed">{p.done ? "耗时 " : ""}<Elapsed start={p.started_at} /></span>}
+              {p.started_at && (
+                <span className="progress-elapsed">
+                  {p.done ? `耗时 ${fmtElapsed(elapsed)}` : <Elapsed start={p.started_at} />}
+                </span>
+              )}
             </div>
 
             {/* status */}
