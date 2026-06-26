@@ -4,19 +4,18 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
 /// 把 file 中 [offset, offset+len) 的字节推到 socket。
-/// macOS:libc::sendfile(内核直推);其它平台:pread 到缓冲 + write 回退。
+/// macOS/BSD:sendfile(2); Linux:sendfile(2); 其它:pread 到缓冲 + write 回退。
 pub async fn send_payload(socket: &mut TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
     if len == 0 { return Ok(()); }
 
     #[cfg(target_os = "macos")]
-    {
-        return sendfile_macos(socket, file, offset, len).await;
-    }
+    { return sendfile_macos(socket, file, offset, len).await; }
 
-    #[cfg(not(target_os = "macos"))]
-    {
-        return fallback_send_payload(socket, file, offset, len).await;
-    }
+    #[cfg(target_os = "linux")]
+    { return sendfile_linux(socket, file, offset, len).await; }
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    { return fallback_send_payload(socket, file, offset, len).await; }
 }
 
 #[cfg(target_os = "macos")]
@@ -44,6 +43,29 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
         }
         off += to_send;
         remaining -= to_send as usize;
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+async fn sendfile_linux(socket: &mut TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+    use std::os::unix::io::AsRawFd;
+    let out_fd = socket.as_raw_fd();
+    let in_fd = file.as_raw_fd();
+    let mut off: libc::off_t = offset as libc::off_t;
+    let mut remaining = len;
+    while remaining > 0 {
+        let n = unsafe { libc::sendfile(out_fd, in_fd, &mut off, remaining) };
+        if n < 0 {
+            let e = io::Error::last_os_error();
+            if e.kind() == io::ErrorKind::WouldBlock {
+                socket.writable().await?;
+                continue;
+            }
+            return Err(e);
+        }
+        if n == 0 { return Err(io::Error::new(io::ErrorKind::WriteZero, "sendfile made no progress")); }
+        remaining -= n as usize;
     }
     Ok(())
 }
