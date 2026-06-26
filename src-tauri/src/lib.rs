@@ -123,6 +123,7 @@ pub fn run() {
             commands::list_peers,
             commands::add_peer,
             commands::send_files,
+            commands::send_text,
             commands::respond,
             commands::cancel,
             commands::get_default_save_dir,

@@ -35,6 +35,20 @@ pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, file
 }
 
 #[tauri::command]
+pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text: String, secure: bool) -> Result<Uuid, String> {
+    let dir = std::env::temp_dir().join("sendsent-text");
+    let _ = std::fs::create_dir_all(&dir);
+    let path = dir.join(format!("{}.txt", Uuid::new_v4()));
+    std::fs::write(&path, text).map_err(|e| e.to_string())?;
+    let file = path.to_string_lossy().into_owned();
+    let peers = state.discovery.peers().await;
+    let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
+        return Err("peer not found".into());
+    };
+    state.sessions.start_send(p.addrs, vec![file], state.transfer_config.clone(), secure).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool, save_dir: Option<String>, pin: Option<String>) -> Result<(), String> {
     let dir = match save_dir {
         Some(d) => PathBuf::from(d),

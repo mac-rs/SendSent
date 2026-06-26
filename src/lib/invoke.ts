@@ -11,3 +11,5 @@ export const respond = (session_id: string, accept: boolean, save_dir?: string, 
 export const cancel = (session_id: string) => invoke<void>("cancel", { sessionId: session_id });
 export const getDefaultSaveDir = () => invoke<string>("get_default_save_dir");
 export const addPeer = (address: string) => invoke<void>("add_peer", { address });
+export const sendText = (peerDeviceId: string, text: string, secure: boolean = false) =>
+  invoke<string>("send_text", { peerDeviceId, text, secure });
