@@ -52,9 +52,9 @@ pub struct TransferConfig {
 }
 
 impl TransferConfig {
-    pub const DEFAULT_CONNS: u32 = 8;
+    pub const DEFAULT_CONNS: u32 = 16;
     pub const DEFAULT_CHUNK: u64 = 1024 * 1024;       // 1 MiB (== MAX_DATA_PAYLOAD)
-    pub const DEFAULT_SPLIT: u64 = 4 * 1024 * 1024;   // 4 MiB
+    pub const DEFAULT_SPLIT: u64 = 8 * 1024 * 1024;   // 8 MiB (<8MB 的文件不切分,≥8MB 用多连接并行)
 
     pub fn defaults() -> Self {
         Self { conns: Self::DEFAULT_CONNS, chunk_size: Self::DEFAULT_CHUNK, split_threshold: Self::DEFAULT_SPLIT }
