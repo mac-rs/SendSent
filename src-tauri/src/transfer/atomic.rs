@@ -28,10 +28,6 @@ impl AtomicWriter {
     }
 }
 
-impl Drop for AtomicWriter {
-    fn drop(&mut self) { self.cleanup(); }
-}
-
 fn split_rel(root: &Path, rel: &str) -> (PathBuf, String) {
     let p = root.join(rel);
     let dir = p.parent().unwrap_or(root).to_path_buf();

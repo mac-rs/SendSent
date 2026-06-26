@@ -168,7 +168,6 @@ pub async fn run_receiver(
         let _ = events.send(TransferEvent::Finished { session_id, state: if all_ok { FinishedState::Completed } else { FinishedState::Failed },
             error: if all_ok { None } else { Some(ErrorPayload { code: ErrorCode::WriteFailed, message: "finalize failed".into() }) } });
     } else {
-        state.writer.cleanup();
         write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ConnectionLost, message: "transfer incomplete".into() }) });

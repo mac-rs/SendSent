@@ -97,31 +97,30 @@ async fn run_sender_inner(
         bytes_done: 0, bytes_total: manifest.total_size, files_done: 0, files_total, speed_bps: 0 });
     let total_done = Arc::new(AtomicU64::new(0));
 
-    let mut join = tokio::task::JoinSet::new();
+    let mut handles = Vec::new();
     for bucket in buckets.into_iter().filter(|b| !b.is_empty()) {
         let addrs = peer_addrs.clone();
         let done = total_done.clone();
         let sid = session_id;
-        join.spawn(async move {
-            let mut data = connect_any(&addrs).await?;
-            write_control(&mut data, MsgType::DataOpen, &bincode::serialize(&DataOpen { session_id: sid })?).await?;
-            if is_secure {
-                let client_cfg = crate::transfer::tls::make_client_config();
-                let mut tls = tokio_rustls::TlsConnector::from(client_cfg)
-                    .connect("sendsent".try_into().unwrap(), data).await
-                    .map_err(|e| anyhow!("data TLS: {e}"))?;
-                for seg in &bucket { send_segment_secure(&mut tls, seg, chunk, &done).await?; }
-                let _ = tls.shutdown().await;
-            } else {
-                for seg in &bucket { send_segment(&mut data, seg, chunk, &done).await?; }
-                let _ = data.shutdown().await;
+        let handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
+            let max_retries = 5;
+            for attempt in 1..=max_retries {
+                match send_bucket(&addrs, &bucket, chunk, &done, sid, is_secure).await {
+                    Ok(()) => return,
+                    Err(e) if attempt < max_retries => {
+                        tracing::warn!("data bucket failed (attempt {attempt}): {e}, retrying...");
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    }
+                    Err(e) => {
+                        tracing::error!("data bucket failed after {attempt} attempts: {e}");
+                        return;
+                    }
+                }
             }
-            Ok::<(), anyhow::Error>(())
         });
+        handles.push(handle);
     }
-    while let Some(res) = join.join_next().await {
-        match res { Ok(Ok(())) => {}, Ok(Err(e)) => return Err(e), Err(e) => return Err(anyhow!("join: {e}")) }
-    }
+    for h in handles { let _ = h.await; }
 
     let done = total_done.load(Ordering::Relaxed);
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Finalizing,
@@ -190,6 +189,23 @@ async fn connect_any(addrs: &[SocketAddr]) -> Result<TcpStream> {
     let mut last = None;
     for a in addrs { match TcpStream::connect(a).await { Ok(s) => { tune_socket(&s); return Ok(s); } Err(e) => last = Some(e) } }
     Err(anyhow!("connect failed: {:?}", last))
+}
+
+async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, done: &AtomicU64, sid: Uuid, secure: bool) -> Result<()> {
+    let mut data = connect_any(addrs).await?;
+    write_control(&mut data, MsgType::DataOpen, &bincode::serialize(&DataOpen { session_id: sid })?).await?;
+    if secure {
+        let client_cfg = crate::transfer::tls::make_client_config();
+        let mut tls = tokio_rustls::TlsConnector::from(client_cfg)
+            .connect("sendsent".try_into().unwrap(), data).await
+            .map_err(|e| anyhow!("data TLS: {e}"))?;
+        for seg in bucket { send_segment_secure(&mut tls, seg, chunk, done).await?; }
+        let _ = tls.shutdown().await;
+    } else {
+        for seg in bucket { send_segment(&mut data, seg, chunk, done).await?; }
+        let _ = data.shutdown().await;
+    }
+    Ok(())
 }
 
 pub fn build_manifest(session_id: Uuid, files: &[String]) -> Result<(Manifest, HashMap<Uuid, PathBuf>)> {
