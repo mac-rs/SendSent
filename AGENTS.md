@@ -32,6 +32,17 @@ LAN auto-discovery + peer-to-peer transfer over a custom raw-TCP protocol. Desig
 - Modules are `pub mod` so `tests/loopback.rs` can exercise the real TCP path end-to-end (two in-process nodes, mDNS skipped via direct connection).
 - Adding a new Tauri command: define it in `commands.rs`, register in `lib.rs`'s `generate_handler!`. A new wire message: add the struct in `proto/messages.rs` + a `MsgType` variant + handle it in `sender.rs`/`receiver.rs`.
 
+### v2 speed layer
+
+- **Multi-connection** sender (default 4, configurable via `TransferConfig` / `SENDSENT_CONNS`): large files split by offset-range across connections, small files round-robin.
+- **Zero-copy** on macOS (`sendfile(2)` in `transfer/zerocopy.rs`); Linux/Windows fall back to `pread`+write. Payload bytes go kernel-direct; each chunk's 29-byte frame header (`write_data_header`) is written normally.
+- **Concurrent multi-stream receiver** (`transfer/receiver.rs`): `mpsc` data channel, `DrainState` with `Arc<File>` + `write_at` (positional, concurrency-safe), `AtomicU64` + `Notify` for completion signaling.
+- **Socket tuning** (`transfer/sock.rs`): `SO_SNDBUF`/`SO_RCVBUF` 8 MiB, `TCP_NODELAY`.
+- **Configurable** via `TransferConfig { conns, chunk_size, split_threshold }`, persisted at `<app_data_dir>/transfer.json`, env overrides `SENDSENT_CONNS` / `SENDSENT_CHUNK_KB` / `SENDSENT_SPLIT_MB`.
+- **No wire-protocol change**: same `Hello`/`DataOpen`/data frames; v2 sender → v1 receiver is incompatible (v1 only accepts one data connection per session), but everyone upgrades together.
+- New deps: `libc`, `socket2`.
+- See `docs/superpowers/specs/2026-06-26-file-transfer-v2-speed-design.md` and `docs/superpowers/plans/2026-06-26-file-transfer-v2-speed.md`.
+
 ## iOS development
 
 The iOS target lives in `src-tauri/gen/apple/` (Tauri-generated Xcode project). Hard-won gotchas:
