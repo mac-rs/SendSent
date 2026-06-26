@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 pub struct AppState {
     pub identity: Identity,
+    pub identity_dir: PathBuf,
     pub discovery: Arc<dyn Discovery>,
     pub sessions: Arc<SessionManager>,
     pub save_dir: PathBuf,

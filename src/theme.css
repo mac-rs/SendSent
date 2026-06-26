@@ -281,6 +281,35 @@ body {
 }
 .settings-row button:hover { background: var(--border); }
 
+/* ── Transfer Config ── */
+.config-section { margin-top: 10px; }
+.config-header {
+  font-size: 11px; color: var(--text-secondary); cursor: pointer;
+  display: flex; justify-content: space-between; padding: 4px 0;
+  user-select: none;
+}
+.config-arrow { font-size: 12px; }
+.config-body {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 0 4px;
+}
+.config-body label {
+  font-size: 10px; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+.config-body input {
+  width: 64px; font-size: 10px; padding: 2px 4px;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--surface); color: var(--text); outline: none;
+}
+.config-body button {
+  font-size: 10px; padding: 3px 10px; align-self: flex-start;
+  background: var(--bg-secondary); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.config-msg { font-size: 10px; color: var(--text-secondary); }
+
 /* ── Status text ── */
 .status-text {
   display: inline-block; font-size: 11px; color: var(--text-secondary);

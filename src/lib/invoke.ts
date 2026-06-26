@@ -14,3 +14,6 @@ export const addPeer = (address: string) => invoke<void>("add_peer", { address }
 export const sendText = (peerDeviceId: string, text: string, secure: boolean = false, verify: boolean = false) =>
   invoke<string>("send_text", { peerDeviceId, text, secure, verify });
 export const pickFilesIos = () => invoke<string[]>("pick_files_ios");
+export const getTransferConfig = () => invoke<{ conns: number; chunk_size: number; split_threshold: number }>("get_transfer_config");
+export const setTransferConfig = (conns: number, chunk_kb: number, split_mb: number) =>
+  invoke<void>("set_transfer_config", { conns, chunkKb: chunk_kb, splitMb: split_mb });

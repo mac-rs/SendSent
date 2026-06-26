@@ -102,6 +102,26 @@ pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool,
 pub async fn cancel(_state: State<'_, AppState>, _session_id: Uuid) -> Result<(), String> { Ok(()) }
 
 #[tauri::command]
+pub fn get_transfer_config(state: State<'_, AppState>) -> Result<crate::store::TransferConfig, String> {
+    Ok(state.transfer_config.clone())
+}
+
+#[tauri::command]
+pub fn set_transfer_config(state: State<'_, AppState>, conns: u32, chunk_kb: u64, split_mb: u64) -> Result<(), String> {
+    let mut cfg = state.transfer_config.clone();
+    cfg.conns = conns;
+    cfg.chunk_size = chunk_kb * 1024;
+    cfg.split_threshold = split_mb * 1024 * 1024;
+    let sanitized = cfg.sanitized();
+    let data_dir = state.identity_dir.clone();
+    let p = data_dir.join("transfer.json");
+    let s = serde_json::to_string_pretty(&sanitized).map_err(|e| e.to_string())?;
+    std::fs::write(&p, s).map_err(|e| format!("write transfer.json: {e}"))?;
+    tracing::info!("transfer config updated: conns={} chunk={} split={}", sanitized.conns, sanitized.chunk_size, sanitized.split_threshold);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn get_default_save_dir(state: State<'_, AppState>) -> Result<String, String> {
     Ok(state.save_dir.to_string_lossy().into_owned())
 }

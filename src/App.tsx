@@ -5,6 +5,7 @@ import { PeerList } from "./components/PeerList";
 import { FilePicker } from "./components/FilePicker";
 import { IncomingRequest } from "./components/IncomingRequest";
 import { TransferProgress } from "./components/TransferProgress";
+import { TransferConfigEditor } from "./components/TransferConfigEditor";
 import { addPeer, sendText, respond } from "./lib/invoke";
 import type { Peer } from "./lib/types";
 
@@ -94,6 +95,7 @@ function App() {
       }} />
 
       {/* Settings */}
+      <TransferConfigEditor />
       <SettingsRow />
     </main>
   );

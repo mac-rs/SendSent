@@ -134,7 +134,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, discovery, sessions, save_dir, transfer_config, tls_config });
+            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -148,6 +148,8 @@ pub fn run() {
             commands::respond,
             commands::cancel,
             commands::get_default_save_dir,
+            commands::get_transfer_config,
+            commands::set_transfer_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
