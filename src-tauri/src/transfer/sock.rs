@@ -1,7 +1,7 @@
 use socket2::SockRef;
 use tokio::net::TcpStream;
 
-const BUF: usize = 8 * 1024 * 1024; // 8 MiB
+const BUF: usize = 16 * 1024 * 1024; // 16 MiB
 
 /// 调大收发缓冲 + 关闭 Nagle。失败仅记录,不致命。
 pub fn tune_socket(stream: &TcpStream) {

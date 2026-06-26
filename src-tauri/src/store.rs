@@ -52,7 +52,7 @@ pub struct TransferConfig {
 }
 
 impl TransferConfig {
-    pub const DEFAULT_CONNS: u32 = 4;
+    pub const DEFAULT_CONNS: u32 = 8;
     pub const DEFAULT_CHUNK: u64 = 1024 * 1024;       // 1 MiB (== MAX_DATA_PAYLOAD)
     pub const DEFAULT_SPLIT: u64 = 4 * 1024 * 1024;   // 4 MiB
 
@@ -62,7 +62,7 @@ impl TransferConfig {
 
     /// clamp 到合法区间,避免恶意/手抖配置
     pub fn sanitized(mut self) -> Self {
-        self.conns = self.conns.clamp(1, 16);
+        self.conns = self.conns.clamp(1, 32);
         self.chunk_size = self.chunk_size.clamp(64 * 1024, 1024 * 1024); // ≤ MAX_DATA_PAYLOAD
         self.split_threshold = self.split_threshold.max(self.chunk_size);
         self
