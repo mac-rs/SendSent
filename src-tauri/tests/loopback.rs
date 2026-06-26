@@ -99,7 +99,7 @@ async fn control_handshake_roundtrip() {
     let mut client = conn.await.unwrap();
 
     let hello = Hello { device_id: "A".into(), name: "a".into(), platform: Platform::Macos,
-        session_id: Uuid::new_v4(), proto_ver: PROTO_VER };
+        session_id: Uuid::new_v4(), proto_ver: PROTO_VER, secure: false };
     write_control(&mut client, MsgType::Hello, &bincode::serialize(&hello).unwrap()).await.unwrap();
     let (ty, buf) = read_control(&mut server).await.unwrap();
     assert_eq!(ty, MsgType::Hello);

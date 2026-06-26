@@ -55,7 +55,7 @@ pub async fn run_receiver(
 ) -> Result<()> {
     let session_id = hello.session_id;
 
-    let ack = HelloAck { device_id: our.device_id.clone(), name: our.name.clone() };
+    let ack = HelloAck { device_id: our.device_id.clone(), name: our.name.clone(), secure_ok: hello.secure };
     write_control(&mut control, MsgType::HelloAck, &bincode::serialize(&ack)?).await?;
 
     let (ty, buf) = read_control(&mut control).await?;

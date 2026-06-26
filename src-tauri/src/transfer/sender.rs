@@ -48,7 +48,7 @@ async fn run_sender_inner(
         Err(e) => { tracing::warn!("sender connect failed for {peer_addrs:?}: {e}"); return Err(e); }
     };
     let hello = Hello { device_id: our.device_id.clone(), name: our.name.clone(),
-        platform: Platform::Macos, session_id, proto_ver: PROTO_VER };
+        platform: Platform::Macos, session_id, proto_ver: PROTO_VER, secure: false };
     write_control(&mut control, MsgType::Hello, &bincode::serialize(&hello)?).await?;
     let (ty, _) = read_control(&mut control).await?;
     if ty != MsgType::HelloAck { return Err(anyhow!("expected helloack, got {ty:?}")); }
