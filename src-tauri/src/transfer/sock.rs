@@ -1,5 +1,4 @@
 use socket2::SockRef;
-use std::io;
 use tokio::net::TcpStream;
 
 const BUF: usize = 8 * 1024 * 1024; // 8 MiB

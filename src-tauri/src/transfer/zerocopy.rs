@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io;
-use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
 /// 把 file 中 [offset, offset+len) 的字节推到 socket。
@@ -51,6 +50,7 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
 #[cfg(not(target_os = "macos"))]
 async fn fallback_pread_write(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
     use std::os::unix::fs::FileExt;
+    use tokio::io::AsyncWriteExt;
     let mut buf = vec![0u8; 64 * 1024];
     let mut off = offset;
     let mut remaining = len;
@@ -68,6 +68,7 @@ async fn fallback_pread_write(socket: &TcpStream, file: &File, offset: u64, len:
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::AsyncWriteExt;
     use tokio::net::TcpListener;
 
     #[tokio::test]

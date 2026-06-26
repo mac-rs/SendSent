@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 struct SessionChannels {
     decision_tx: Option<oneshot::Sender<Decision>>,
-    data_tx: Option<oneshot::Sender<tokio::net::TcpStream>>,
+    data_tx: mpsc::Sender<tokio::net::TcpStream>,
 }
 
 pub struct SessionManager {
@@ -57,9 +57,9 @@ impl SessionManager {
                 tracing::info!("Hello from '{}' session {}", hello.name, hello.session_id);
                 let session_id = hello.session_id;
                 let (dtx, drx) = oneshot::channel::<Decision>();
-                let (xtx, xrx) = oneshot::channel::<tokio::net::TcpStream>();
+                let (xtx, xrx) = mpsc::channel::<tokio::net::TcpStream>(16);
                 self.pending.lock().await.insert(session_id, SessionChannels {
-                    decision_tx: Some(dtx), data_tx: Some(xtx),
+                    decision_tx: Some(dtx), data_tx: xtx,
                 });
                 let events = self.events_tx.clone();
                 let our = self.our.clone();
@@ -70,11 +70,13 @@ impl SessionManager {
             }
             MsgType::DataOpen => {
                 let d: DataOpen = bincode::deserialize(&buf)?;
-                let mut guard = self.pending.lock().await;
-                if let Some(ch) = guard.get_mut(&d.session_id)
-                    && let Some(xtx) = ch.data_tx.take() {
-                        let _ = xtx.send(stream);
-                    }
+                let tx = {
+                    let guard = self.pending.lock().await;
+                    guard.get(&d.session_id).map(|c| c.data_tx.clone())
+                };
+                if let Some(tx) = tx {
+                    let _ = tx.send(stream).await;
+                }
                 Ok(())
             }
             other => Err(anyhow::anyhow!("unexpected first frame {other:?}")),
@@ -94,13 +96,13 @@ impl SessionManager {
         self.pending.lock().await.remove(&session_id);
     }
 
-    pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>) -> anyhow::Result<Uuid> {
+    pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>, config: crate::store::TransferConfig) -> anyhow::Result<Uuid> {
         let session_id = Uuid::new_v4();
         let our = self.our.clone();
         let events = self.events_tx.clone();
         let id = session_id;
         tokio::spawn(async move {
-            let _ = run_sender(id, peer_addrs, files, our, events).await;
+            let _ = run_sender(id, peer_addrs, files, our, events, config).await;
         });
         Ok(session_id)
     }

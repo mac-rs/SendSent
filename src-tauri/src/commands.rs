@@ -24,7 +24,7 @@ pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, file
         return Err("peer not found".into());
     };
     tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
-    state.sessions.start_send(p.addrs, files).map_err(|e| e.to_string())
+    state.sessions.start_send(p.addrs, files, state.transfer_config.clone()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

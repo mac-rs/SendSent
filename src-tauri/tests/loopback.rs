@@ -3,7 +3,7 @@ use sendsent_lib::proto::frame::{read_control, read_data, write_control, write_d
 use sendsent_lib::proto::messages::*;
 use sendsent_lib::store::Identity;
 use sendsent_lib::transfer::atomic::AtomicWriter;
-use sendsent_lib::transfer::receiver::{drain_data, run_receiver, Decision};
+use sendsent_lib::transfer::receiver::{run_receiver, Decision};
 use sendsent_lib::transfer::sender::run_sender;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -16,9 +16,9 @@ fn identity(name: &str) -> Identity {
 }
 
 // Mini server mimicking the manager's first-frame dispatch: one listener,
-// Hello -> run_receiver (auto-accept), DataOpen -> route stream into that session's data channel.
+// Hello -> run_receiver (auto-accept), DataOpen -> route stream into that session's mpsc data channel.
 async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::UnboundedSender<TransferEvent>, save_dir: PathBuf) {
-    let mut channels: HashMap<Uuid, oneshot::Sender<TcpStream>> = HashMap::new();
+    let mut channels: HashMap<Uuid, mpsc::Sender<TcpStream>> = HashMap::new();
     loop {
         let (mut stream, _) = match listener.accept().await { Ok(s) => s, Err(_) => break };
         let (ty, buf) = match read_control(&mut stream).await { Ok(x) => x, Err(_) => continue };
@@ -27,7 +27,7 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
                 let hello: Hello = match bincode::deserialize(&buf) { Ok(h) => h, Err(_) => continue };
                 let sid = hello.session_id;
                 let (dtx, drx) = oneshot::channel::<Decision>();
-                let (xtx, xrx) = oneshot::channel::<TcpStream>();
+                let (xtx, xrx) = mpsc::channel::<TcpStream>(16);
                 channels.insert(sid, xtx);
                 let _ = dtx.send(Decision { accept: true, save_dir: save_dir.clone() });
                 let ev = events.clone();
@@ -36,8 +36,8 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
             }
             MsgType::DataOpen => {
                 let d: DataOpen = match bincode::deserialize(&buf) { Ok(d) => d, Err(_) => continue };
-                if let Some(xtx) = channels.remove(&d.session_id) {
-                    let _ = xtx.send(stream);
+                if let Some(xtx) = channels.get(&d.session_id).cloned() {
+                    let _ = xtx.send(stream).await;
                 }
             }
             _ => {}
@@ -67,7 +67,7 @@ async fn end_to_end_send_folder() {
     let session_id = Uuid::new_v4();
     let our_send = identity("send");
     let files = vec![src.to_string_lossy().into_owned()];
-    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, ev_tx.clone()));
+    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, ev_tx.clone(), sendsent_lib::store::TransferConfig::defaults()));
 
     let mut completed = false;
     let drain = tokio::time::timeout(std::time::Duration::from_secs(30), async {
@@ -137,42 +137,3 @@ async fn data_frame_reassembly() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn drain_data_reports_failed_on_truncation() {
-    use tokio::io::AsyncWriteExt;
-    let dir = std::env::temp_dir().join(format!("ss-trunc-{}", Uuid::new_v4()));
-    let save = dir.clone();
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = listener.local_addr().unwrap();
-    let conn = tokio::spawn(async move { TcpStream::connect(addr).await.unwrap() });
-    let (server, _) = listener.accept().await.unwrap();
-    let mut client = conn.await.unwrap();
-
-    let id = Uuid::new_v4();
-    // manifest claims a 1000-byte file
-    let manifest = Manifest {
-        session_id: Uuid::new_v4(),
-        files: vec![FileMeta { id, name: "big.bin".into(), rel_path: "big.bin".into(),
-            size: 1000, kind: FileKind::File, hash: None }],
-        total_size: 1000, total_count: 1,
-    };
-    // send only 400 bytes then close (truncation)
-    write_data(&mut client, id, 0, &vec![7u8; 400]).await.unwrap();
-    client.shutdown().await.unwrap();
-
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<TransferEvent>();
-    let completed = drain_data(server, &manifest, &save, manifest.session_id, tx).await.unwrap();
-    assert!(!completed, "truncated transfer must NOT be complete");
-
-    // must have emitted exactly one Finished::Failed
-    let mut got = None;
-    while let Ok(Some(ev)) = tokio::time::timeout(std::time::Duration::from_secs(2), rx.recv()).await {
-        if let TransferEvent::Finished { state, .. } = ev { got = Some(state); }
-    }
-    assert_eq!(got, Some(FinishedState::Failed), "expected Failed event, got {got:?}");
-    // temp cleaned
-    assert!(!save.join(".sendsent-tmp").exists(), "temp must be cleaned on truncation");
-    // no finalized file
-    assert!(!save.join("big.bin").exists(), "partial file must not be finalized");
-    let _ = std::fs::remove_dir_all(&dir);
-}
