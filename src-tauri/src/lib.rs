@@ -52,6 +52,9 @@ pub fn run() {
             };
             let _ = std::fs::create_dir_all(&save_dir);
             tracing::info!("save_dir = {}", save_dir.display());
+            let transfer_config = store::load_or_create_transfer_config(&data_dir);
+            tracing::info!("transfer_config: conns={} chunk={} split={}",
+                transfer_config.conns, transfer_config.chunk_size, transfer_config.split_threshold);
 
             let (ptx, mut prx) = mpsc::unbounded_channel::<PeerEvent>();
             let discovery: Arc<dyn Discovery> = Arc::new(MdnsDiscovery::new(identity.clone(), port, ptx));
@@ -108,7 +111,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, discovery, sessions, save_dir });
+            app.manage(AppState { identity, discovery, sessions, save_dir, transfer_config });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
