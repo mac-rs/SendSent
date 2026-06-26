@@ -26,7 +26,7 @@ fn dummy_tls_config() -> TlsCfg {
     INIT_RING.call_once(|| rustls::crypto::ring::default_provider().install_default().unwrap());
     let tmp = std::env::temp_dir().join(format!("ss-dummy-tls-{}", Uuid::new_v4()));
     let cfg = sendsent_lib::transfer::tls::load_or_generate_tls_config(&tmp).unwrap();
-    let _ = std::fs::remove_dir_all(&tmp);
+    let _ = fs::remove_dir_all(&tmp);
     cfg
 }
 
@@ -57,7 +57,7 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
                     let ds = if is_secure {
                         let acceptor = tokio_rustls::TlsAcceptor::from(tls_cfg.clone());
                         let s = acceptor.accept(stream).await.expect("data TLS accept");
-                        DataStream::Tls(s)
+                        DataStream::Tls(Box::new(s))
                     } else {
                         DataStream::Plain(stream)
                     };

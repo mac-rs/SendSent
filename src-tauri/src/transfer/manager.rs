@@ -12,7 +12,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot, Mutex};
 use uuid::Uuid;
 
-pub enum DataStream { Plain(TcpStream), Tls(tokio_rustls::server::TlsStream<TcpStream>) }
+pub enum DataStream { Plain(TcpStream), Tls(Box<tokio_rustls::server::TlsStream<TcpStream>>) }
 
 struct SessionChannels {
     decision_tx: Option<oneshot::Sender<Decision>>,
@@ -79,7 +79,7 @@ impl SessionManager {
                         let acceptor = tokio_rustls::TlsAcceptor::from(self.tls_config.clone());
                         let tls_stream = acceptor.accept(stream).await
                             .map_err(|e| anyhow::anyhow!("data TLS accept: {e}"))?;
-                        DataStream::Tls(tls_stream)
+                        DataStream::Tls(Box::new(tls_stream))
                     } else {
                         DataStream::Plain(stream)
                     };
