@@ -3,17 +3,14 @@ import { sendFiles } from "../lib/invoke";
 import type { Peer } from "../lib/types";
 import { useState } from "react";
 
-export function FilePicker({ peer }: { peer: Peer | null }) {
+export function FilePicker({ peers }: { peers: Peer[] }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [secure, setSecure] = useState(false);
 
   async function pick() {
-    console.log("[FilePicker] pick clicked; peer=", peer, "secure=", secure);
-    if (!peer) {
-      setStatus("未选择 peer");
-      return;
-    }
+    if (peers.length === 0) { setStatus("未选择 peer"); return; }
+    setStatus("打开选择器…");
     setStatus("打开选择器…");
     let selected;
     try {
@@ -30,11 +27,12 @@ export function FilePicker({ peer }: { peer: Peer | null }) {
     }
     const files = Array.isArray(selected) ? selected : [selected];
     setBusy(true);
-    setStatus(`发送 ${files.length} 个文件…`);
+    setStatus(`发送 ${files.length} 个文件到 ${peers.length} 个设备…`);
     try {
-      const sid = await sendFiles(peer.device_id, files, secure);
-      console.log("[FilePicker] sendFiles ->", sid);
-      setStatus("已发起 (session " + sid + ")");
+      for (const p of peers) {
+        await sendFiles(p.device_id, files, secure);
+      }
+      setStatus("已发起");
     } catch (e) {
       console.error("[FilePicker] sendFiles 抛错", e);
       setStatus("发送错误: " + String(e));
@@ -45,8 +43,8 @@ export function FilePicker({ peer }: { peer: Peer | null }) {
 
   return (
     <div>
-      <button disabled={!peer || busy} onClick={pick}>
-        选择文件发送{peer ? ` → ${peer.name}` : ""}
+      <button disabled={peers.length === 0 || busy} onClick={pick}>
+        选择文件发送{peers.length > 0 ? ` → ${peers.map(p=>p.name).join(", ")}` : ""}
       </button>
       <label style={{ marginLeft: 12 }}>
         <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />
