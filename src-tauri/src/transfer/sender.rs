@@ -17,6 +17,7 @@ use tokio::sync::mpsc;
 use tokio_rustls::client::TlsStream;
 use uuid::Uuid;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_sender(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
     our: Identity, events: mpsc::UnboundedSender<TransferEvent>,
@@ -31,6 +32,7 @@ pub async fn run_sender(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_sender_inner(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
     our: Identity, events: mpsc::UnboundedSender<TransferEvent>,

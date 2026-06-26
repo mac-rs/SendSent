@@ -124,7 +124,7 @@ async fn control_handshake_roundtrip() {
     let mut client = conn.await.unwrap();
 
     let hello = Hello { device_id: "A".into(), name: "a".into(), platform: Platform::Macos,
-        session_id: Uuid::new_v4(), proto_ver: PROTO_VER, secure: false };
+        session_id: Uuid::new_v4(), proto_ver: PROTO_VER, secure: false, verify: false };
     write_control(&mut client, MsgType::Hello, &postcard::to_stdvec(&hello).unwrap()).await.unwrap();
     let (ty, buf) = read_control(&mut server).await.unwrap();
     assert_eq!(ty, MsgType::Hello);
@@ -232,7 +232,7 @@ async fn v3_secure_transfer() {
     let sid = Uuid::new_v4();
     let files = vec![src.to_string_lossy().into_owned()];
     let sender = tokio::spawn(async move {
-        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, true).await
+        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, true, false).await
     });
 
     let mut completed = false;

@@ -75,7 +75,7 @@ pub(crate) mod ios_picker {
 
     static PICKER_STATE: Mutex<Option<oneshot::Sender<Vec<String>>>> = Mutex::new(None);
 
-    extern "C" {
+    unsafe extern "C" {
         fn sendsent_pick_files(cb: extern "C" fn(*const c_char));
     }
 
