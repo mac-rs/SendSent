@@ -39,8 +39,22 @@ Hello/控制帧/数据帧/DataOpen 全部不变(数据帧本就带 `offset`,多�
 | `transfer/manager.rs` | 改 | 每会话数据连接改为 `mpsc::Sender<TcpStream>`(池),DataOpen 把流投入 |
 | `proto/messages.rs` | 不变 | — |
 | `lib.rs` | 微调 | 读 `SENDSENT_CONNS`(默认 4)放进 `AppState` |
+| `store.rs` | 改 | 加 `TransferConfig { conns, chunk_size, split_threshold }` + `load_or_create`(<app_data_dir>/transfer.json) |
 
-### 2.2 数据流(v2)
+### 2.2 可配置项(`TransferConfig`)
+这三个调参不硬编码,做成持久化配置,启动加载进 `AppState`,环境变量可覆盖(便于测试/压榨):
+
+| 字段 | 含义 | 默认 | 约束 | 环境变量覆盖 |
+|------|------|------|------|--------------|
+| `conns` | 每会话数据连接数 | `4` | 1–16 | `SENDSENT_CONNS` |
+| `chunk_size` | 数据块大小 | `1 MiB` | ≤ `MAX_DATA_PAYLOAD`(1 MiB) | `SENDSENT_CHUNK_KB`(KB 为单位) |
+| `split_threshold` | 大文件按区间拆的阈值;小于此则按文件轮询 | `4 MiB` | ≥ `chunk_size` | `SENDSENT_SPLIT_MB`(MB 为单位) |
+
+- 持久化:`<app_data_dir>/transfer.json`(与 `identity.json` 同目录),启动时 `load_or_create`;解析失败回退默认。
+- 加载顺序:文件默认值 ← 文件值 ← 环境变量覆盖。
+- `TransferConfig` 经 `AppState` 传入 sender;UI 设置页(可视化编辑)归入后续"体验完善"子项目,不在 v2。
+
+### 2.3 数据流(v2)
 ```
 发送端                              接收端
  建立 N 条数据连接(各自 DataOpen)  → 监听 accept,每条 DataOpen 投入该 session 的 mpsc 池
@@ -74,7 +88,7 @@ pub async fn send_payload(socket: &TcpStream, file: &std::fs::File, offset: u64,
 
 ### 3.4 帧头与块大小
 - 每个 chunk:**先 `write_data_header(socket, file_id, offset, len)`(29B 普通写),再 `send_payload(...)`**。
-- 默认块大小 **256KiB → 1MiB**(`DEFAULT_CHUNK_SIZE`),仍在 `MAX_DATA_PAYLOAD`(1MiB)内,减少每块帧头/系统调用开销。
+- 默认块大小 **256KiB → 1MiB**(取自 `TransferConfig.chunk_size`,默认 1MiB),受 `MAX_DATA_PAYLOAD`(1MiB)上限制约,减少每块帧头/系统调用开销。
 
 ---
 
@@ -82,11 +96,11 @@ pub async fn send_payload(socket: &TcpStream, file: &std::fs::File, offset: u64,
 
 ### 4.1 发送端
 - 控制连接握手、Manifest、等 Accept 不变。
-- Accept 后:**开 `conns`(默认 4)条数据连接**,每条先发 `DataOpen{session_id}`。
-- `conns` 由 `SENDSENT_CONNS` 环境变量配(默认 4),启动读入 `AppState`,经命令/会话传入 sender。
+- Accept 后:**开 `conns` 条数据连接**(`conns` 来自 `TransferConfig`,默认 4),每条先发 `DataOpen{session_id}`。
+- `conns` 由 `TransferConfig` 提供(启动从 transfer.json 读,环境变量 `SENDSENT_CONNS` 可覆盖),经 `AppState` 传入 sender。
 - 分发:
-  - **大文件**(size > 阈值,如 4MiB):按 `conns` 把 `[0,size)` 均分为区间,每个区间由一条连接顺序发(每条内部仍按 1MiB chunk)。各区间并行。
-  - **小文件**:按文件轮询(round-robin)分配到各连接。
+  - **大文件**(`size ≥ split_threshold`,默认 4MiB,可配):按 `conns` 把 `[0,size)` 均分为区间,每个区间由一条连接顺序发(每条内部仍按 `chunk_size` 分块)。各区间并行。
+  - **小文件**(`size < split_threshold`):按文件轮询(round-robin)分配到各连接。
   - 目录条目:仍只在 Manifest 里建结构,不发数据。
 - 全部发完后**所有数据连接 shutdown**,等 `Complete`(不变)。
 
