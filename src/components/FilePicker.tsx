@@ -6,9 +6,10 @@ import { useState } from "react";
 export function FilePicker({ peer }: { peer: Peer | null }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [secure, setSecure] = useState(false);
 
   async function pick() {
-    console.log("[FilePicker] pick clicked; peer=", peer);
+    console.log("[FilePicker] pick clicked; peer=", peer, "secure=", secure);
     if (!peer) {
       setStatus("未选择 peer");
       return;
@@ -31,7 +32,7 @@ export function FilePicker({ peer }: { peer: Peer | null }) {
     setBusy(true);
     setStatus(`发送 ${files.length} 个文件…`);
     try {
-      const sid = await sendFiles(peer.device_id, files);
+      const sid = await sendFiles(peer.device_id, files, secure);
       console.log("[FilePicker] sendFiles ->", sid);
       setStatus("已发起 (session " + sid + ")");
     } catch (e) {
@@ -47,6 +48,10 @@ export function FilePicker({ peer }: { peer: Peer | null }) {
       <button disabled={!peer || busy} onClick={pick}>
         选择文件发送{peer ? ` → ${peer.name}` : ""}
       </button>
+      <label style={{ marginLeft: 12 }}>
+        <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />
+        加密
+      </label>
       {status ? <span style={{ marginLeft: 12 }}>{status}</span> : null}
     </div>
   );

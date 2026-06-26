@@ -206,3 +206,47 @@ async fn v2_big_file_throughput() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn v3_secure_transfer() {
+    let dir = std::env::temp_dir().join(format!("ss-v3-{}", Uuid::new_v4()));
+    let save = dir.join("save");
+    let src = dir.join("src.bin");
+    let size: usize = 2 * 1024 * 1024;
+    let data = vec![0xEEu8; size];
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(&src, &data).unwrap();
+
+    let server_tls = dummy_tls_config();
+
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+
+    let (ev_tx, mut ev_rx) = mpsc::unbounded_channel::<TransferEvent>();
+    let our_recv = identity("recv");
+    let save_clone = save.clone();
+    let tls_clone = server_tls.clone();
+    tokio::spawn(run_test_server(listener, our_recv, ev_tx.clone(), save_clone, tls_clone));
+
+    let cfg = sendsent_lib::store::TransferConfig::defaults();
+    let our_send = identity("send");
+    let sid = Uuid::new_v4();
+    let files = vec![src.to_string_lossy().into_owned()];
+    let sender = tokio::spawn(async move {
+        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, true).await
+    });
+
+    let mut completed = false;
+    let drain = tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        while let Some(ev) = ev_rx.recv().await {
+            if let TransferEvent::Finished { state: FinishedState::Completed, .. } = ev { completed = true; break; }
+        }
+    }).await;
+    assert!(drain.is_ok(), "timed out");
+    assert!(completed, "expected Completed");
+    let _ = sender.await;
+
+    let got = std::fs::read(save.join("src.bin")).unwrap();
+    assert_eq!(got, data);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
