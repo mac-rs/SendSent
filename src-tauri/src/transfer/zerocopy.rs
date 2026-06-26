@@ -49,7 +49,7 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
 }
 
 /// 通用回退:pread + write (TLS 模式下 sendfile 不可用时走此路径)。
-pub async fn fallback_send_payload(socket: &mut TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+pub async fn fallback_send_payload<W: AsyncWriteExt + Unpin>(socket: &mut W, file: &File, offset: u64, len: usize) -> io::Result<()> {
     use std::os::unix::fs::FileExt;
     let mut buf = vec![0u8; 64 * 1024];
     let mut off = offset;

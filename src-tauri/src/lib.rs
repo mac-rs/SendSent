@@ -82,7 +82,7 @@ pub fn run() {
             }
 
             let (ttx, mut trx) = mpsc::unbounded_channel::<TransferEvent>();
-            let sessions = SessionManager::new(identity.clone(), ttx);
+            let sessions = SessionManager::new(identity.clone(), ttx, tls_config.clone());
             {
                 let s = sessions.clone();
                 tauri::async_runtime::spawn(async move { let _ = s.run_listener(port).await; });

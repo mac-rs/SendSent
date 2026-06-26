@@ -38,3 +38,8 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 tokio-rustls = "0.26"
 rcgen = "0.13"
 rustls-pemfile = "2"
+rand = "0.8"
+
+[dev-dependencies]
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+tokio-rustls = "0.26"

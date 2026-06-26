@@ -16,7 +16,7 @@ pub async fn list_peers(state: State<'_, AppState>) -> Result<Vec<Peer>, String>
 }
 
 #[tauri::command]
-pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, files: Vec<String>) -> Result<Uuid, String> {
+pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, files: Vec<String>, secure: bool) -> Result<Uuid, String> {
     let peers = state.discovery.peers().await;
     let n = peers.len();
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
@@ -24,16 +24,16 @@ pub async fn send_files(state: State<'_, AppState>, peer_device_id: String, file
         return Err("peer not found".into());
     };
     tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
-    state.sessions.start_send(p.addrs, files, state.transfer_config.clone()).map_err(|e| e.to_string())
+    state.sessions.start_send(p.addrs, files, state.transfer_config.clone(), secure).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool, save_dir: Option<String>) -> Result<(), String> {
+pub async fn respond(state: State<'_, AppState>, session_id: Uuid, accept: bool, save_dir: Option<String>, pin: Option<String>) -> Result<(), String> {
     let dir = match save_dir {
         Some(d) => PathBuf::from(d),
         None => state.save_dir.clone(),
     };
-    state.sessions.respond(session_id, accept, dir).await.map_err(|e| e.to_string())
+    state.sessions.respond(session_id, accept, dir, pin).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

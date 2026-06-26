@@ -3,10 +3,13 @@ use sendsent_lib::proto::frame::{read_control, read_data, write_control, write_d
 use sendsent_lib::proto::messages::*;
 use sendsent_lib::store::Identity;
 use sendsent_lib::transfer::atomic::AtomicWriter;
+use sendsent_lib::transfer::manager::DataStream;
 use sendsent_lib::transfer::receiver::{run_receiver, Decision};
 use sendsent_lib::transfer::sender::run_sender;
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
+use std::sync::Once;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
@@ -15,10 +18,20 @@ fn identity(name: &str) -> Identity {
     Identity { device_id: Uuid::new_v4().to_string(), name: name.into(), platform: "macos".into() }
 }
 
-// Mini server mimicking the manager's first-frame dispatch: one listener,
-// Hello -> run_receiver (auto-accept), DataOpen -> route stream into that session's mpsc data channel.
-async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::UnboundedSender<TransferEvent>, save_dir: PathBuf) {
-    let mut channels: HashMap<Uuid, mpsc::Sender<TcpStream>> = HashMap::new();
+type TlsCfg = sendsent_lib::transfer::tls::TlsConfig;
+
+static INIT_RING: Once = Once::new();
+
+fn dummy_tls_config() -> TlsCfg {
+    INIT_RING.call_once(|| rustls::crypto::ring::default_provider().install_default().unwrap());
+    let tmp = std::env::temp_dir().join(format!("ss-dummy-tls-{}", Uuid::new_v4()));
+    let cfg = sendsent_lib::transfer::tls::load_or_generate_tls_config(&tmp).unwrap();
+    let _ = std::fs::remove_dir_all(&tmp);
+    cfg
+}
+
+async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::UnboundedSender<TransferEvent>, save_dir: PathBuf, tls_cfg: TlsCfg) {
+    let mut channels: HashMap<Uuid, (mpsc::Sender<DataStream>, bool)> = HashMap::new();
     loop {
         let (mut stream, _) = match listener.accept().await { Ok(s) => s, Err(_) => break };
         let (ty, buf) = match read_control(&mut stream).await { Ok(x) => x, Err(_) => continue };
@@ -26,18 +39,29 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
             MsgType::Hello => {
                 let hello: Hello = match bincode::deserialize(&buf) { Ok(h) => h, Err(_) => continue };
                 let sid = hello.session_id;
+                let is_secure = hello.secure;
                 let (dtx, drx) = oneshot::channel::<Decision>();
-                let (xtx, xrx) = mpsc::channel::<TcpStream>(16);
-                channels.insert(sid, xtx);
-                let _ = dtx.send(Decision { accept: true, save_dir: save_dir.clone() });
+                let (xtx, xrx) = mpsc::channel::<DataStream>(16);
+                channels.insert(sid, (xtx, is_secure));
+                let _ = dtx.send(Decision { accept: true, save_dir: save_dir.clone(), pin: None });
                 let ev = events.clone();
                 let our = our.clone();
-                tokio::spawn(async move { let _ = run_receiver(stream, hello, ev, drx, xrx, our).await; });
+                let tls = tls_cfg.clone();
+                tokio::spawn(async move {
+                    let _ = run_receiver(stream, hello, ev, drx, xrx, our, tls).await;
+                });
             }
             MsgType::DataOpen => {
                 let d: DataOpen = match bincode::deserialize(&buf) { Ok(d) => d, Err(_) => continue };
-                if let Some(xtx) = channels.get(&d.session_id).cloned() {
-                    let _ = xtx.send(stream).await;
+                if let Some((xtx, is_secure)) = channels.get(&d.session_id).cloned() {
+                    let ds = if is_secure {
+                        let acceptor = tokio_rustls::TlsAcceptor::from(tls_cfg.clone());
+                        let s = acceptor.accept(stream).await.expect("data TLS accept");
+                        DataStream::Tls(s)
+                    } else {
+                        DataStream::Plain(stream)
+                    };
+                    let _ = xtx.send(ds).await;
                 }
             }
             _ => {}
@@ -61,13 +85,14 @@ async fn end_to_end_send_folder() {
 
     let (ev_tx, mut ev_rx) = mpsc::unbounded_channel::<TransferEvent>();
     let our_recv = identity("recv");
+    let tls_cfg_fake = dummy_tls_config();
     let save_clone = save.clone();
-    tokio::spawn(run_test_server(listener, our_recv, ev_tx.clone(), save_clone));
+    tokio::spawn(run_test_server(listener, our_recv, ev_tx.clone(), save_clone, tls_cfg_fake));
 
     let session_id = Uuid::new_v4();
     let our_send = identity("send");
     let files = vec![src.to_string_lossy().into_owned()];
-    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, ev_tx.clone(), sendsent_lib::store::TransferConfig::defaults()));
+    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, ev_tx.clone(), sendsent_lib::store::TransferConfig::defaults(), false));
 
     let mut completed = false;
     let drain = tokio::time::timeout(std::time::Duration::from_secs(30), async {
@@ -152,15 +177,16 @@ async fn v2_big_file_throughput() {
 
     let (ev_tx, mut ev_rx) = mpsc::unbounded_channel::<TransferEvent>();
     let our_recv = identity("recv");
+    let tls_cfg_fake = dummy_tls_config();
     let save_clone = save.clone();
-    tokio::spawn(run_test_server(listener, our_recv, ev_tx.clone(), save_clone));
+    tokio::spawn(run_test_server(listener, our_recv, ev_tx.clone(), save_clone, tls_cfg_fake));
 
     let cfg = sendsent_lib::store::TransferConfig::defaults();
     let our_send = identity("send");
     let sid = Uuid::new_v4();
     let files = vec![src.to_string_lossy().into_owned()];
     let sender = tokio::spawn(async move {
-        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg).await
+        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, false).await
     });
 
     let mut completed = false;
