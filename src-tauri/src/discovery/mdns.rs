@@ -1,7 +1,7 @@
 use crate::discovery::{Discovery, Peer, PeerEvent, PeerRegistry, Platform};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
-use mdns_sd::{ServiceDaemon, ServiceEvent, ServiceInfo};
+use mdns_sd::{ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
@@ -38,35 +38,20 @@ impl MdnsDiscovery {
 impl Discovery for MdnsDiscovery {
     async fn start(&self) -> Result<()> {
         let daemon = ServiceDaemon::new().map_err(|e| anyhow!("mdns daemon: {e}"))?;
-
         let id = self.identity.lock().await.clone();
         let host_name = format!("{}.local.", id.name.replace(' ', "-"));
         let my_ip = pick_primary_ip().ok_or_else(|| anyhow!("no usable ipv4"))?;
-
         let mut props = HashMap::<String, String>::new();
         props.insert("v".into(), "1".into());
         props.insert("id".into(), id.device_id.clone());
         props.insert("name".into(), id.name.clone());
         props.insert("plat".into(), id.platform.clone());
         props.insert("port".into(), self.port.to_string());
+        let info = ServiceInfo::new(SERVICE_TYPE, &id.name, &host_name, my_ip, self.port, props)
+            .map_err(|e| anyhow!("mdns info: {e}"))?;
+        daemon.register(info).map_err(|e| anyhow!("mdns register: {e}"))?;
 
-        let info = ServiceInfo::new(
-            SERVICE_TYPE,
-            &id.name,
-            &host_name,
-            my_ip,
-            self.port,
-            props,
-        )
-        .map_err(|e| anyhow!("mdns info: {e}"))?;
-        daemon
-            .register(info)
-            .map_err(|e| anyhow!("mdns register: {e}"))?;
-
-        let recv = daemon
-            .browse(SERVICE_TYPE)
-            .map_err(|e| anyhow!("mdns browse: {e}"))?;
-
+        let recv = daemon.browse(SERVICE_TYPE).map_err(|e| anyhow!("mdns browse: {e}"))?;
         let registry = self.registry.clone();
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -105,13 +90,9 @@ impl Discovery for MdnsDiscovery {
         Ok(())
     }
 
-    async fn peers(&self) -> Vec<Peer> {
-        self.registry.lock().await.list()
-    }
+    async fn peers(&self) -> Vec<Peer> { self.registry.lock().await.list() }
 
-    async fn set_display_name(&self, _name: &str) -> Result<()> {
-        Ok(())
-    }
+    async fn set_display_name(&self, _name: &str) -> Result<()> { Ok(()) }
 
     async fn add_manual_peer(&self, addr: std::net::SocketAddr) -> Result<()> {
         let id = format!("manual-{}", uuid::Uuid::new_v4());
@@ -120,81 +101,47 @@ impl Discovery for MdnsDiscovery {
             platform: Platform::Macos, proto_version: 1,
             addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
         };
-        if let Some(ev) = self.registry.lock().await.upsert(std::time::Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().await.upsert(Instant::now(), p) {
             let _ = self.tx.send(ev);
         }
         Ok(())
     }
 }
 
-async fn handle_resolved(
-    reg: &Arc<Mutex<PeerRegistry>>,
-    info: &ServiceInfo,
-) -> Option<PeerEvent> {
+async fn handle_resolved(reg: &Arc<Mutex<PeerRegistry>>, info: &ResolvedService) -> Option<PeerEvent> {
     let device_id = info.get_property_val_str("id")?.to_string();
-    if device_id.is_empty() {
-        return None;
-    }
+    if device_id.is_empty() { return None; }
     let name = info.get_property_val_str("name").unwrap_or("?").to_string();
     let platform = match info.get_property_val_str("plat").unwrap_or("") {
-        "windows" => Platform::Windows,
-        "linux" => Platform::Linux,
-        "ios" => Platform::Ios,
-        "android" => Platform::Android,
+        "windows" => Platform::Windows, "linux" => Platform::Linux,
+        "ios" => Platform::Ios, "android" => Platform::Android,
         _ => Platform::Macos,
     };
-    let port: u16 = info
-        .get_property_val_str("port")
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(52225);
-    let proto_version: u16 = info
-        .get_property_val_str("v")
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1);
-
-    let addrs: Vec<std::net::SocketAddr> = info
-        .get_addresses()
-        .iter()
-        .map(|ip| std::net::SocketAddr::new(*ip, port))
+    let port: u16 = info.get_property_val_str("port")
+        .and_then(|s| s.parse().ok()).unwrap_or(52225);
+    let proto_version: u16 = info.get_property_val_str("v")
+        .and_then(|s| s.parse().ok()).unwrap_or(1);
+    let addrs: Vec<std::net::SocketAddr> = info.get_addresses().iter()
+        .map(|ip| std::net::SocketAddr::new(ip.to_ip_addr(), port))
         .collect();
-
-    let peer = Peer {
-        device_id,
-        name,
-        platform,
-        proto_version,
-        addrs,
-        port,
-        last_seen_ms: 0,
-    };
+    let peer = Peer { device_id, name, platform, proto_version, addrs, port, last_seen_ms: 0 };
     reg.lock().await.upsert(Instant::now(), peer)
 }
 
 async fn handle_removed(reg: &Arc<Mutex<PeerRegistry>>, fullname: &str) -> Option<PeerEvent> {
     let instance = fullname.split('.').next().unwrap_or("");
     let mut r = reg.lock().await;
-    let hit = r
-        .list()
-        .into_iter()
-        .find(|p| p.name.replace(' ', "-") == instance);
-    if let Some(p) = hit {
-        r.remove(&p.device_id)
-    } else {
-        None
-    }
+    let hit = r.list().into_iter().find(|p| p.name.replace(' ', "-") == instance);
+    if let Some(p) = hit { r.remove(&p.device_id) } else { None }
 }
 
-fn pick_primary_ip() -> Option<IpAddr> {
-    local_ip_iter().into_iter().next()
-}
+fn pick_primary_ip() -> Option<IpAddr> { local_ip_iter().into_iter().next() }
 
 fn local_ip_iter() -> Vec<IpAddr> {
     use std::net::UdpSocket;
     let mut out = Vec::new();
     if let Ok(s) = UdpSocket::bind("0.0.0.0:0")
         && s.connect("8.8.8.8:80").is_ok()
-            && let Ok(addr) = s.local_addr() {
-                out.push(addr.ip());
-            }
+        && let Ok(addr) = s.local_addr() { out.push(addr.ip()); }
     out
 }
