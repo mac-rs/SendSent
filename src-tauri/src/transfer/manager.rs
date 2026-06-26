@@ -50,7 +50,7 @@ impl SessionManager {
         tracing::info!("incoming connection from {peer:?}: first frame {ty:?}");
         match ty {
             MsgType::Hello => {
-                let hello: Hello = bincode::deserialize(&buf)?;
+                let hello: Hello = postcard::from_bytes(&buf)?;
                 tracing::info!("Hello from '{}' session {}", hello.name, hello.session_id);
                 let session_id = hello.session_id;
                 let is_secure = hello.secure;
@@ -68,7 +68,7 @@ impl SessionManager {
                 Ok(())
             }
             MsgType::DataOpen => {
-                let d: DataOpen = bincode::deserialize(&buf)?;
+                let d: DataOpen = postcard::from_bytes(&buf)?;
                 let (tx, is_secure) = {
                     let guard = self.pending.lock().await;
                     let ch = guard.get(&d.session_id);

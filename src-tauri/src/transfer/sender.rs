@@ -45,10 +45,10 @@ async fn run_sender_inner(
     let c = control.as_mut().unwrap();
     let hello = Hello { device_id: our.device_id.clone(), name: our.name.clone(),
         platform: Platform::Macos, session_id, proto_ver: PROTO_VER, secure };
-    write_control(c, MsgType::Hello, &bincode::serialize(&hello)?).await?;
+    write_control(c, MsgType::Hello, &postcard::to_stdvec(&hello)?).await?;
     let (ty, buf) = read_control(c).await?;
     if ty != MsgType::HelloAck { return Err(anyhow!("expected helloack, got {ty:?}")); }
-    let ack: HelloAck = bincode::deserialize(&buf)?;
+    let ack: HelloAck = postcard::from_bytes(&buf)?;
 
     let (manifest, file_map) = build_manifest(session_id, &files)?;
     let files_total = manifest.files.iter().filter(|f| f.kind == FileKind::File).count() as u64;
@@ -62,12 +62,12 @@ async fn run_sender_inner(
             .connect("sendsent".try_into().unwrap(), plain).await
             .map_err(|e| anyhow!("TLS connect: {e}"))?;
         let pin = format!("{:06}", rand::random::<u32>() % 1_000_000);
-        write_control(&mut stream, MsgType::PinCode, &bincode::serialize(&PinCode { pin: pin.clone() })?).await?;
+        write_control(&mut stream, MsgType::PinCode, &postcard::to_stdvec(&PinCode { pin: pin.clone() })?).await?;
         let (ty_pin, buf_pin) = read_control(&mut stream).await?;
         if ty_pin != MsgType::PinCode { return Err(anyhow!("expected PinCode response, got {ty_pin:?}")); }
-        let resp: PinCode = bincode::deserialize(&buf_pin)?;
+        let resp: PinCode = postcard::from_bytes(&buf_pin)?;
         if resp.pin != pin { return Err(anyhow!("PIN mismatch")); }
-        write_control(&mut stream, MsgType::Manifest, &bincode::serialize(&manifest)?).await?;
+        write_control(&mut stream, MsgType::Manifest, &postcard::to_stdvec(&manifest)?).await?;
         let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::AwaitingAccept,
             bytes_done: 0, bytes_total: manifest.total_size, files_done: 0, files_total, speed_bps: 0 });
         let (ty2, _) = read_control(&mut stream).await?;
@@ -79,7 +79,7 @@ async fn run_sender_inner(
         control_tls = Some(stream);
     } else {
         let c = control.as_mut().unwrap();
-        write_control(c, MsgType::Manifest, &bincode::serialize(&manifest)?).await?;
+        write_control(c, MsgType::Manifest, &postcard::to_stdvec(&manifest)?).await?;
         let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::AwaitingAccept,
             bytes_done: 0, bytes_total: manifest.total_size, files_done: 0, files_total, speed_bps: 0 });
         let (ty2, _) = read_control(c).await?;
@@ -193,7 +193,7 @@ async fn connect_any(addrs: &[SocketAddr]) -> Result<TcpStream> {
 
 async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, done: &AtomicU64, sid: Uuid, secure: bool) -> Result<()> {
     let mut data = connect_any(addrs).await?;
-    write_control(&mut data, MsgType::DataOpen, &bincode::serialize(&DataOpen { session_id: sid })?).await?;
+    write_control(&mut data, MsgType::DataOpen, &postcard::to_stdvec(&DataOpen { session_id: sid })?).await?;
     if secure {
         let client_cfg = crate::transfer::tls::make_client_config();
         let mut tls = tokio_rustls::TlsConnector::from(client_cfg)

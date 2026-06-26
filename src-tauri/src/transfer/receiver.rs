@@ -54,7 +54,7 @@ pub async fn run_receiver(
     {
         let c = control_plain.as_mut().unwrap();
         let ack = HelloAck { device_id: our.device_id.clone(), name: our.name.clone(), secure_ok: hello.secure };
-        write_control(c, MsgType::HelloAck, &bincode::serialize(&ack)?).await?;
+        write_control(c, MsgType::HelloAck, &postcard::to_stdvec(&ack)?).await?;
     }
 
     let is_secure = hello.secure;
@@ -74,26 +74,26 @@ pub async fn run_receiver(
         // PIN: read sender's pin, echo back (test-mode auto-accept; production adds user-input via Decision)
         let (pty, pbuf) = read_ctrl!();
         if pty != MsgType::PinCode {
-            write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected PinCode".into() })?);
+            write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected PinCode".into() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: "expected PinCode".into() }) });
             return Ok(());
         }
-        let sender_pin: PinCode = bincode::deserialize(&pbuf)?;
+        let sender_pin: PinCode = postcard::from_bytes(&pbuf)?;
         // For now echo the same pin (production: wait user input via Decision)
-        write_ctrl!(MsgType::PinCode, &bincode::serialize(&sender_pin)?);
+        write_ctrl!(MsgType::PinCode, &postcard::to_stdvec(&sender_pin)?);
     }
 
     let (ty, buf) = read_ctrl!();
     if ty != MsgType::Manifest {
-        write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected manifest".into() })?);
+        write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected manifest".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: "expected manifest".into() }) });
         return Ok(());
     }
-    let manifest: Manifest = match bincode::deserialize(&buf) {
+    let manifest: Manifest = match postcard::from_bytes(&buf) {
         Ok(m) => m, Err(e) => {
-            write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::ProtocolError, message: e.to_string() })?);
+            write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: e.to_string() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: e.to_string() }) });
             return Ok(());
@@ -106,17 +106,17 @@ pub async fn run_receiver(
 
     let decision = match decision_rx.await { Ok(d) => d, Err(_) => return Ok(()) };
     if !decision.accept {
-        write_ctrl!(MsgType::Reject, &bincode::serialize(&Reject { reason: "declined".into() })?);
+        write_ctrl!(MsgType::Reject, &postcard::to_stdvec(&Reject { reason: "declined".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Rejected, error: None });
         return Ok(());
     }
-    write_ctrl!(MsgType::Accept, &bincode::serialize(&Accept { save_dir: decision.save_dir.to_string_lossy().into() })?);
+    write_ctrl!(MsgType::Accept, &postcard::to_stdvec(&Accept { save_dir: decision.save_dir.to_string_lossy().into() })?);
 
     tracing::info!("receiver: awaiting data connections");
 
     let state = match build_drain_state(&manifest, &decision.save_dir, session_id) {
         Ok(s) => Arc::new(s), Err(e) => {
-            write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::WriteFailed, message: e.to_string() })?);
+            write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::WriteFailed, message: e.to_string() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::WriteFailed, message: e.to_string() }) });
             return Ok(());
@@ -164,11 +164,11 @@ pub async fn run_receiver(
         let mut all_ok = true;
         for f in &manifest.files { if f.kind == FileKind::File && state.writer.finalize(&f.rel_path).is_err() { all_ok = false; } }
         state.writer.cleanup();
-        write_ctrl!(MsgType::Complete, &bincode::serialize(&Complete)?);
+        write_ctrl!(MsgType::Complete, &postcard::to_stdvec(&Complete)?);
         let _ = events.send(TransferEvent::Finished { session_id, state: if all_ok { FinishedState::Completed } else { FinishedState::Failed },
             error: if all_ok { None } else { Some(ErrorPayload { code: ErrorCode::WriteFailed, message: "finalize failed".into() }) } });
     } else {
-        write_ctrl!(MsgType::Error, &bincode::serialize(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?);
+        write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ConnectionLost, message: "transfer incomplete".into() }) });
     }

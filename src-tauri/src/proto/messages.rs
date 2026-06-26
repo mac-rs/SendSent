@@ -94,8 +94,8 @@ mod tests {
                 size: 10, kind: FileKind::File, hash: None,
             }], total_size: 10, total_count: 1,
         };
-        let bytes = bincode::serialize(&m).unwrap();
-        let back: Manifest = bincode::deserialize(&bytes).unwrap();
+        let bytes = postcard::to_stdvec(&m).unwrap();
+        let back: Manifest = postcard::from_bytes(&bytes).unwrap();
         assert_eq!(m, back);
     }
 }

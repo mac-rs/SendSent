@@ -37,7 +37,7 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
         let (ty, buf) = match read_control(&mut stream).await { Ok(x) => x, Err(_) => continue };
         match ty {
             MsgType::Hello => {
-                let hello: Hello = match bincode::deserialize(&buf) { Ok(h) => h, Err(_) => continue };
+                let hello: Hello = match postcard::from_bytes(&buf) { Ok(h) => h, Err(_) => continue };
                 let sid = hello.session_id;
                 let is_secure = hello.secure;
                 let (dtx, drx) = oneshot::channel::<Decision>();
@@ -52,7 +52,7 @@ async fn run_test_server(listener: TcpListener, our: Identity, events: mpsc::Unb
                 });
             }
             MsgType::DataOpen => {
-                let d: DataOpen = match bincode::deserialize(&buf) { Ok(d) => d, Err(_) => continue };
+                let d: DataOpen = match postcard::from_bytes(&buf) { Ok(d) => d, Err(_) => continue };
                 if let Some((xtx, is_secure)) = channels.get(&d.session_id).cloned() {
                     let ds = if is_secure {
                         let acceptor = tokio_rustls::TlsAcceptor::from(tls_cfg.clone());
@@ -125,10 +125,10 @@ async fn control_handshake_roundtrip() {
 
     let hello = Hello { device_id: "A".into(), name: "a".into(), platform: Platform::Macos,
         session_id: Uuid::new_v4(), proto_ver: PROTO_VER, secure: false };
-    write_control(&mut client, MsgType::Hello, &bincode::serialize(&hello).unwrap()).await.unwrap();
+    write_control(&mut client, MsgType::Hello, &postcard::to_stdvec(&hello).unwrap()).await.unwrap();
     let (ty, buf) = read_control(&mut server).await.unwrap();
     assert_eq!(ty, MsgType::Hello);
-    let back: Hello = bincode::deserialize(&buf).unwrap();
+    let back: Hello = postcard::from_bytes(&buf).unwrap();
     assert_eq!(back.device_id, "A");
 }
 
