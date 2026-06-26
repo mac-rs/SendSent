@@ -72,6 +72,12 @@ impl SessionManager {
                 let (tx, is_secure) = {
                     let guard = self.pending.lock().await;
                     let ch = guard.get(&d.session_id);
+                    if ch.is_some() {
+                        tracing::info!("DataOpen session {} found in pending", d.session_id);
+                    } else {
+                        tracing::warn!("DataOpen session {} NOT found in pending (known: {:?})",
+                            d.session_id, guard.keys().collect::<Vec<_>>());
+                    }
                     (ch.map(|c| c.data_tx.clone()), ch.map(|c| c.secure).unwrap_or(false))
                 };
                 if let Some(tx) = tx {

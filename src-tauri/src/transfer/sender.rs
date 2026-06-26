@@ -218,8 +218,14 @@ async fn connect_any(addrs: &[SocketAddr]) -> Result<TcpStream> {
 }
 
 async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, done: &AtomicU64, sid: Uuid, secure: bool) -> Result<()> {
-    let mut data = connect_any(addrs).await?;
-    write_control(&mut data, MsgType::DataOpen, &postcard::to_stdvec(&DataOpen { session_id: sid })?).await?;
+    let mut data = match connect_any(addrs).await {
+        Ok(s) => { tracing::debug!("send_bucket {sid}: connected"); s }
+        Err(e) => { tracing::warn!("send_bucket {sid}: connect failed: {e}"); return Err(e); }
+    };
+    if let Err(e) = write_control(&mut data, MsgType::DataOpen, &postcard::to_stdvec(&DataOpen { session_id: sid })?).await {
+        tracing::warn!("send_bucket {sid}: DataOpen write failed: {e}");
+        return Err(e.into());
+    }
     if secure {
         let client_cfg = crate::transfer::tls::make_client_config();
         let mut tls = tokio_rustls::TlsConnector::from(client_cfg)

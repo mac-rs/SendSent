@@ -56,5 +56,5 @@ export function useTransfer() {
     return () => { un?.(); };
   }, []);
 
-  return { request, progress };
+  return { request, progress, clearRequest: () => setRequest(null) };
 }

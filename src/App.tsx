@@ -5,12 +5,12 @@ import { PeerList } from "./components/PeerList";
 import { FilePicker } from "./components/FilePicker";
 import { IncomingRequest } from "./components/IncomingRequest";
 import { TransferProgress } from "./components/TransferProgress";
-import { addPeer, sendText } from "./lib/invoke";
+import { addPeer, sendText, respond } from "./lib/invoke";
 import type { Peer } from "./lib/types";
 
 function App() {
   const peers = usePeers();
-  const { request, progress } = useTransfer();
+  const { request, progress, clearRequest } = useTransfer();
   const [selected, setSelected] = useState<Peer[]>([]);
   const [dark, setDark] = useState(false);
   const [manualAddr, setManualAddr] = useState("");
@@ -88,7 +88,10 @@ function App() {
       <TransferProgress items={Object.values(progress)} />
 
       {/* Incoming request */}
-      <IncomingRequest req={request} />
+      <IncomingRequest req={request} onRespond={(accept) => {
+        if (request) respond(request.session_id, accept);
+        clearRequest();
+      }} />
 
       {/* Settings */}
       <SettingsRow />

@@ -5,6 +5,8 @@ pub mod store;
 pub mod events;
 pub mod state;
 pub mod commands;
+#[cfg(target_os = "android")]
+pub mod content_plugin;
 
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
@@ -18,11 +20,29 @@ use transfer::manager::SessionManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tracing_subscriber::fmt::init();
+    // Android 上 stdout/stderr 不可见:用 android_logger 把日志输出到 logcat。
+    // 启用 tracing 的 "log" feature 后,所有 tracing 事件会转发到 log crate → android_logger → logcat。
+    // 桌面端仍用 fmt subscriber(终端彩色输出)。
+    #[cfg(target_os = "android")]
+    {
+        android_logger::init_once(
+            android_logger::Config::default()
+                .with_max_level(log::LevelFilter::Info)
+                .with_tag("sendsent"),
+        );
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = tracing_subscriber::fmt::try_init();
+    }
     rustls::crypto::ring::default_provider().install_default().expect("ring provider");
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init());
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(content_plugin::plugin());
+    builder
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("app_data_dir");
             let platform = if cfg!(target_os = "macos") { "macos" }
@@ -42,9 +62,9 @@ pub fn run() {
 
             let handle = app.handle().clone();
 
-            // Resolve a writable save directory. On iOS the sandbox $HOME is read-only, so use the
+            // Resolve a writable save directory. iOS/Android are sandboxed, so use the
             // app's Documents container (writable + visible in the Files app). Desktop uses ~/Downloads.
-            let save_dir = if cfg!(target_os = "ios") {
+            let save_dir = if cfg!(target_os = "ios") || cfg!(target_os = "android") {
                 app.path().document_dir()
                     .map(|d| d.join("sendsent"))
                     .unwrap_or_else(|_| default_save_dir().unwrap_or_default())
