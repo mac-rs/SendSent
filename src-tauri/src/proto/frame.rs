@@ -39,6 +39,19 @@ pub async fn write_data<W: AsyncWriteExt + Unpin>(w: &mut W, file_id: Uuid, offs
     w.write_all(&hdr).await?; w.write_all(data).await?; Ok(())
 }
 
+/// 只写数据帧的 29 字节头(载荷随后由 zerocopy::send_payload 另发,实现零拷贝)。
+pub async fn write_data_header<W: AsyncWriteExt + Unpin>(w: &mut W, file_id: Uuid, offset: u64, len: u32) -> io::Result<()> {
+    if len > MAX_DATA_PAYLOAD {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "data payload too large"));
+    }
+    let mut hdr = [0u8; 29];
+    hdr[0] = DATA_TAG;
+    hdr[1..17].copy_from_slice(file_id.as_bytes());
+    hdr[17..25].copy_from_slice(&offset.to_be_bytes());
+    hdr[25..29].copy_from_slice(&len.to_be_bytes());
+    w.write_all(&hdr).await
+}
+
 pub async fn read_data<R: AsyncReadExt + Unpin>(r: &mut R) -> io::Result<DataChunk> {
     let mut hdr = [0u8; 29];
     r.read_exact(&mut hdr).await?;

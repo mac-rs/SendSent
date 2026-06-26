@@ -1,0 +1,124 @@
+use std::fs::File;
+use std::io;
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpStream;
+
+/// 把 file 中 [offset, offset+len) 的字节推到 socket。
+/// macOS:libc::sendfile(内核直推);其它平台:pread 到缓冲 + write 回退。
+pub async fn send_payload(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+    if len == 0 { return Ok(()); }
+
+    #[cfg(target_os = "macos")]
+    {
+        return sendfile_macos(socket, file, offset, len).await;
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        return fallback_pread_write(socket, file, offset, len).await;
+    }
+}
+
+#[cfg(target_os = "macos")]
+async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+    use std::os::unix::io::AsRawFd;
+    let out_fd = socket.as_raw_fd();
+    let in_fd = file.as_raw_fd();
+    let mut off = offset as i64;
+    let mut remaining = len;
+    while remaining > 0 {
+        let mut to_send: libc::off_t = remaining as libc::off_t;
+        let rc = unsafe {
+            libc::sendfile(in_fd, out_fd, off, &mut to_send, std::ptr::null_mut(), 0)
+        };
+        if rc < 0 {
+            let e = io::Error::last_os_error();
+            if e.kind() == io::ErrorKind::WouldBlock {
+                socket.writable().await?;
+                continue;
+            }
+            return Err(e);
+        }
+        if to_send == 0 {
+            return Err(io::Error::new(io::ErrorKind::WriteZero, "sendfile made no progress"));
+        }
+        off += to_send;
+        remaining -= to_send as usize;
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+async fn fallback_pread_write(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+    use std::os::unix::fs::FileExt;
+    let mut buf = vec![0u8; 64 * 1024];
+    let mut off = offset;
+    let mut remaining = len;
+    while remaining > 0 {
+        let n = buf.len().min(remaining);
+        let read = file.read_at(&mut buf[..n], off)?;
+        if read == 0 { return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "file short")); }
+        socket.write_all(&buf[..read]).await?;
+        off += read as u64;
+        remaining -= read;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::net::TcpListener;
+
+    #[tokio::test]
+    async fn send_payload_roundtrip() {
+        let dir = std::env::temp_dir().join(format!("ss-zc-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("f.bin");
+        let payload: Vec<u8> = (0..100_000u32).map(|i| (i % 251) as u8).collect();
+        std::fs::write(&path, &payload).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let conn = tokio::spawn(async move { TcpStream::connect(addr).await.unwrap() });
+        let (mut server, _) = listener.accept().await.unwrap();
+        let mut client = conn.await.unwrap();
+
+        send_payload(&client, &file, 0, payload.len()).await.unwrap();
+        client.shutdown().await.unwrap();
+
+        use tokio::io::AsyncReadExt;
+        let mut got = Vec::new();
+        server.read_to_end(&mut got).await.unwrap();
+        assert_eq!(got, payload);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn send_payload_offset_range() {
+        let dir = std::env::temp_dir().join(format!("ss-zc2-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("f2.bin");
+        let payload: Vec<u8> = (0..5000u32).map(|i| (i % 251) as u8).collect();
+        std::fs::write(&path, &payload).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let conn = tokio::spawn(async move { TcpStream::connect(addr).await.unwrap() });
+        let (mut server, _) = listener.accept().await.unwrap();
+        let mut client = conn.await.unwrap();
+
+        send_payload(&client, &file, 1000, 2000).await.unwrap();
+        client.shutdown().await.unwrap();
+
+        use tokio::io::AsyncReadExt;
+        let mut got = Vec::new();
+        server.read_to_end(&mut got).await.unwrap();
+        assert_eq!(got, &payload[1000..3000]);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
