@@ -1,34 +1,72 @@
 import type { Peer } from "../lib/types";
+import { CheckIcon, WifiIcon } from "./Icons";
 
-export function PeerList({ peers, selected, onToggle }: { peers: Peer[]; selected: Peer[]; onToggle: (p: Peer) => void }) {
+function initials(name: string): string {
+  const t = name.trim();
+  if (!t) return "?";
+  // 取第一个非空白字符
+  return t[0].toUpperCase();
+}
+
+function platformLabel(p: Peer["platform"]): string {
+  switch (p) {
+    case "macos": return "macOS";
+    case "ios": return "iOS";
+    case "android": return "Android";
+    case "windows": return "Windows";
+    case "linux": return "Linux";
+    default: return "Unknown";
+  }
+}
+
+export function PeerList({
+  peers,
+  selected,
+  onToggle,
+}: {
+  peers: Peer[];
+  selected: Peer[];
+  onToggle: (p: Peer) => void;
+}) {
   const ids = new Set(selected.map((p) => p.device_id));
+  const isManual = (p: Peer) => p.device_id.startsWith("manual-");
+
+  if (peers.length === 0) {
+    return (
+      <div className="peer-empty">
+        <div className="pulse"><WifiIcon size={22} /></div>
+        <div className="title">正在发现附近设备…</div>
+        <div className="hint">确保设备在同一局域网</div>
+      </div>
+    );
+  }
+
   return (
-    <section>
-      <div className="peer-count">
-        附近设备 · {peers.length} 台
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {peers.map((p, i) => (
-          <div
-            key={p.device_id}
-            className={`peer-item fade-in${selected.length > 0 ? "" : ` fade-in-${(i % 3) + 1}`}`}
-            style={i > 0 ? { animationDelay: `${0.1 + i * 0.05}s` } : undefined}
-            onClick={() => onToggle(p)}
-          >
-            <span className={`peer-dot ${p.device_id.startsWith("manual-") ? "manual" : "online"}`} />
-            <div className="peer-info">
-              <div className="peer-name">{p.name}</div>
-              <div className="peer-meta">{p.platform} · {p.addrs[0] || `:${p.port}`}</div>
+    <div className="peer-list">
+      {peers.map((p, i) => (
+        <div
+          key={p.device_id}
+          className={`peer-item${ids.has(p.device_id) ? " selected" : ""} fade-in`}
+          style={{ animationDelay: `${i * 30}ms` }}
+          onClick={() => onToggle(p)}
+        >
+          <div className={`peer-avatar ${p.platform}`}>
+            {initials(p.name)}
+            <span className={`peer-presence${isManual(p) ? " manual" : ""}`} />
+          </div>
+          <div className="peer-info">
+            <div className="peer-name">{p.name}</div>
+            <div className="peer-meta">
+              <span>{platformLabel(p.platform)}</span>
+              <span>·</span>
+              <span className="mono">{p.addrs[0] || `:${p.port}`}</span>
             </div>
-            <input type="checkbox" className="peer-check" checked={ids.has(p.device_id)} readOnly />
           </div>
-        ))}
-        {peers.length === 0 && (
-          <div style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center", padding: 20 }}>
-            正在发现附近设备…
+          <div className="peer-check" aria-hidden>
+            <CheckIcon size={14} />
           </div>
-        )}
-      </div>
-    </section>
+        </div>
+      ))}
+    </div>
   );
 }
