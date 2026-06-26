@@ -121,6 +121,7 @@ pub fn run() {
             commands::get_identity,
             commands::set_display_name,
             commands::list_peers,
+            commands::add_peer,
             commands::send_files,
             commands::respond,
             commands::cancel,

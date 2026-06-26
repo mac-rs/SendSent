@@ -1,5 +1,6 @@
 use crate::discovery::Peer;
 use crate::state::AppState;
+use std::net::SocketAddr;
 use std::path::PathBuf;
 use tauri::State;
 use uuid::Uuid;
@@ -13,6 +14,12 @@ pub async fn set_display_name(_state: State<'_, AppState>, _name: String) -> Res
 #[tauri::command]
 pub async fn list_peers(state: State<'_, AppState>) -> Result<Vec<Peer>, String> {
     Ok(state.discovery.peers().await)
+}
+
+#[tauri::command]
+pub async fn add_peer(state: State<'_, AppState>, address: String) -> Result<(), String> {
+    let addr: SocketAddr = address.parse().map_err(|e| format!("invalid address: {e}"))?;
+    state.discovery.add_manual_peer(addr).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

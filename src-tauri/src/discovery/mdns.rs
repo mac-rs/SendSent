@@ -112,6 +112,19 @@ impl Discovery for MdnsDiscovery {
     async fn set_display_name(&self, _name: &str) -> Result<()> {
         Ok(())
     }
+
+    async fn add_manual_peer(&self, addr: std::net::SocketAddr) -> Result<()> {
+        let id = format!("manual-{}", uuid::Uuid::new_v4());
+        let p = Peer {
+            device_id: id, name: format!("{}:{}", addr.ip(), addr.port()),
+            platform: Platform::Macos, proto_version: 1,
+            addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
+        };
+        if let Some(ev) = self.registry.lock().await.upsert(std::time::Instant::now(), p) {
+            let _ = self.tx.send(ev);
+        }
+        Ok(())
+    }
 }
 
 async fn handle_resolved(
