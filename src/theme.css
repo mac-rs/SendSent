@@ -225,21 +225,29 @@ body {
 .request-card .btn-reject:hover { background: var(--border); }
 
 /* ── Progress bar ── */
-.progress-section { margin-top: 14px; }
+.progress-section { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .progress-item {
   padding: 10px 14px; background: var(--surface);
   border-radius: var(--radius); border: 1px solid var(--border);
-  font-size: 12px; display: flex; align-items: center; gap: 10px;
+  font-size: 12px; display: flex; flex-direction: column; gap: 6px;
   animation: fadeInUp 0.3s ease both;
 }
 .progress-item.done { border-color: var(--online); }
 .progress-item.failed { border-color: var(--error); }
+.progress-files {
+  font-size: 11px; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.progress-bar-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.progress-pct { font-size: 11px; min-width: 36px; flex-shrink: 0; color: var(--text-secondary); }
 .progress-track {
-  flex: 1; height: 4px; background: var(--border); border-radius: 2px;
+  flex: 1; height: 5px; background: var(--border); border-radius: 3px;
   overflow: hidden;
 }
 .progress-fill {
-  height: 100%; border-radius: 2px; transition: width 0.3s ease;
+  height: 100%; border-radius: 3px; transition: width 0.3s ease;
 }
 .progress-fill.active {
   background: linear-gradient(90deg, var(--accent) 40%, rgba(255,255,255,0.3) 50%, var(--accent) 60%);
@@ -247,7 +255,12 @@ body {
 }
 .progress-fill.done { background: var(--online); }
 .progress-fill.failed { background: var(--error); width: 100% !important; }
-.progress-speed { font-size: 10px; color: var(--text-secondary); white-space: nowrap; }
+.progress-info {
+  display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary);
+}
+.progress-speed { color: var(--accent); white-space: nowrap; }
+.progress-elapsed { white-space: nowrap; }
+.progress-status { font-size: 11px; color: var(--text-secondary); }
 
 /* ── Settings ── */
 .settings-row {

@@ -99,6 +99,27 @@ async fn run_sender_inner(
         bytes_done: 0, bytes_total: manifest.total_size, files_done: 0, files_total, speed_bps: 0 });
     let total_done = Arc::new(AtomicU64::new(0));
 
+    // 发送端网速统计(周期性 emit Progress 事件,保持前端速度显示)
+    let sm_done = total_done.clone();
+    let sm_events = events.clone();
+    let sm_sid = session_id;
+    let sm_total = manifest.total_size;
+    let sm_ftotal = files_total;
+    let sm_task = tokio::spawn(async move {
+        let mut meter = crate::transfer::meter::SpeedMeter::new(std::time::Duration::from_secs(1));
+        loop {
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            let done = sm_done.load(Ordering::Relaxed);
+            meter.record(std::time::Instant::now(), done);
+            let _ = sm_events.send(TransferEvent::Progress {
+                session_id: sm_sid, state: SessionState::Transferring,
+                bytes_done: done, bytes_total: sm_total,
+                files_done: 0, files_total: sm_ftotal, speed_bps: meter.bps(),
+            });
+            if done >= sm_total { break; }
+        }
+    });
+
     let mut handles = Vec::new();
     for bucket in buckets.into_iter().filter(|b| !b.is_empty()) {
         let addrs = peer_addrs.clone();
@@ -114,6 +135,7 @@ async fn run_sender_inner(
         handles.push(handle);
     }
     for h in handles { let _ = h.await; }
+    sm_task.abort();
 
     if verify {
         let mut hashes: Vec<(Uuid, String)> = Vec::new();
