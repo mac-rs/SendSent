@@ -1,10 +1,11 @@
 use std::fs::File;
 use std::io;
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
 /// 把 file 中 [offset, offset+len) 的字节推到 socket。
 /// macOS:libc::sendfile(内核直推);其它平台:pread 到缓冲 + write 回退。
-pub async fn send_payload(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+pub async fn send_payload(socket: &mut TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
     if len == 0 { return Ok(()); }
 
     #[cfg(target_os = "macos")]
@@ -14,7 +15,7 @@ pub async fn send_payload(socket: &TcpStream, file: &File, offset: u64, len: usi
 
     #[cfg(not(target_os = "macos"))]
     {
-        return fallback_pread_write(socket, file, offset, len).await;
+        return fallback_send_payload(socket, file, offset, len).await;
     }
 }
 
@@ -47,10 +48,9 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
     Ok(())
 }
 
-#[cfg(not(target_os = "macos"))]
-async fn fallback_pread_write(socket: &TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
+/// 通用回退:pread + write (TLS 模式下 sendfile 不可用时走此路径)。
+pub async fn fallback_send_payload(socket: &mut TcpStream, file: &File, offset: u64, len: usize) -> io::Result<()> {
     use std::os::unix::fs::FileExt;
-    use tokio::io::AsyncWriteExt;
     let mut buf = vec![0u8; 64 * 1024];
     let mut off = offset;
     let mut remaining = len;
@@ -86,7 +86,7 @@ mod tests {
         let (mut server, _) = listener.accept().await.unwrap();
         let mut client = conn.await.unwrap();
 
-        send_payload(&client, &file, 0, payload.len()).await.unwrap();
+        send_payload(&mut client, &file, 0, payload.len()).await.unwrap();
         client.shutdown().await.unwrap();
 
         use tokio::io::AsyncReadExt;
@@ -112,13 +112,39 @@ mod tests {
         let (mut server, _) = listener.accept().await.unwrap();
         let mut client = conn.await.unwrap();
 
-        send_payload(&client, &file, 1000, 2000).await.unwrap();
+        send_payload(&mut client, &file, 1000, 2000).await.unwrap();
         client.shutdown().await.unwrap();
 
         use tokio::io::AsyncReadExt;
         let mut got = Vec::new();
         server.read_to_end(&mut got).await.unwrap();
         assert_eq!(got, &payload[1000..3000]);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn fallback_roundtrip() {
+        let dir = std::env::temp_dir().join(format!("ss-zc3-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("f3.bin");
+        let payload: Vec<u8> = (0..5000u32).map(|i| (i % 253) as u8).collect();
+        std::fs::write(&path, &payload).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let conn = tokio::spawn(async move { TcpStream::connect(addr).await.unwrap() });
+        let (mut server, _) = listener.accept().await.unwrap();
+        let mut client = conn.await.unwrap();
+
+        fallback_send_payload(&mut client, &file, 0, payload.len()).await.unwrap();
+        client.shutdown().await.unwrap();
+
+        use tokio::io::AsyncReadExt;
+        let mut got = Vec::new();
+        server.read_to_end(&mut got).await.unwrap();
+        assert_eq!(got, payload);
 
         let _ = std::fs::remove_dir_all(&dir);
     }
