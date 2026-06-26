@@ -9,7 +9,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::AsyncReadExt;
@@ -38,6 +38,7 @@ struct DrainState {
     parts: HashMap<Uuid, (FileMeta, Arc<File>, AtomicU64)>,
     total_done: AtomicU64, total: u64, notify: Notify,
     writer: Arc<AtomicWriter>, failed: AtomicBool,
+    active_drains: AtomicUsize,
 }
 
 pub async fn run_receiver(
@@ -142,13 +143,28 @@ pub async fn run_receiver(
 
     let acc_state = state.clone(); let mut drain_handles: Vec<tokio::task::JoinHandle<()>> = Vec::new();
     loop {
-        tokio::select! {
-            biased;
-            _ = acc_state.notify.notified() => { if acc_state.total_done.load(Ordering::Relaxed) >= acc_state.total { break; } }
-            stream = data_rx.recv() => {
-                match stream {
-                    Some(s) => { let st = acc_state.clone(); drain_handles.push(tokio::spawn(async move { drain_stream(s, &st).await; })); }
-                    None => break,
+        if all_files_complete(&acc_state) { break; }
+        // 所有 drain 结束 + 短暂无新连接 = 传输结束(可能未完成,交给后续 complete 判定)
+        if acc_state.active_drains.load(Ordering::Relaxed) == 0 {
+            tokio::select! {
+                biased;
+                stream = data_rx.recv() => {
+                    match stream {
+                        Some(s) => { let st = acc_state.clone(); drain_handles.push(tokio::spawn(async move { drain_stream(s, &st).await; })); }
+                        None => break,
+                    }
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(2)) => { break; }
+            }
+        } else {
+            tokio::select! {
+                biased;
+                _ = acc_state.notify.notified() => { continue; }
+                stream = data_rx.recv() => {
+                    match stream {
+                        Some(s) => { let st = acc_state.clone(); drain_handles.push(tokio::spawn(async move { drain_stream(s, &st).await; })); }
+                        None => break,
+                    }
                 }
             }
         }
@@ -156,9 +172,9 @@ pub async fn run_receiver(
     for h in drain_handles { let _ = h.await; }
     prog.abort();
 
+    let complete = !state.failed.load(Ordering::Relaxed) && all_files_complete(&state);
     let done = state.total_done.load(Ordering::Relaxed);
-    let complete = done == state.total && state.parts.values().all(|(m, _, r)| r.load(Ordering::Relaxed) == m.size);
-    tracing::info!("drain ended: done={done} total={} complete={complete}", state.total);
+    tracing::info!("drain ended: done={done} total={} complete={complete} active={}", state.total, state.active_drains.load(Ordering::Relaxed));
 
     let outcome = if state.failed.load(Ordering::Relaxed) { false } else { complete };
     if outcome {
@@ -209,14 +225,17 @@ fn build_drain_state(manifest: &Manifest, save_dir: &std::path::Path, session_id
             parts.insert(f.id, (f.clone(), Arc::new(fl), AtomicU64::new(0)));
         } else { let _ = std::fs::create_dir_all(save_dir.join(&f.rel_path)); }
     }
-    Ok(DrainState { parts, total_done: AtomicU64::new(0), total: manifest.total_size, notify: Notify::new(), writer, failed: AtomicBool::new(false) })
+    Ok(DrainState { parts, total_done: AtomicU64::new(0), total: manifest.total_size, notify: Notify::new(), writer, failed: AtomicBool::new(false), active_drains: AtomicUsize::new(0) })
 }
 
 async fn drain_stream(data: DataStream, state: &DrainState) {
+    state.active_drains.fetch_add(1, Ordering::Relaxed);
     match data {
         DataStream::Plain(s) => drain_inner(s, state).await,
         DataStream::Tls(s) => drain_inner(s, state).await,
     }
+    state.active_drains.fetch_sub(1, Ordering::Relaxed);
+    state.notify.notify_one(); // drain 结束,通知 select 重新评估完成状态
 }
 
 async fn drain_inner<R: AsyncReadExt + Unpin>(mut reader: R, state: &DrainState) {
@@ -227,8 +246,13 @@ async fn drain_inner<R: AsyncReadExt + Unpin>(mut reader: R, state: &DrainState)
                 tracing::error!("write_at failed: {e}"); state.failed.store(true, Ordering::Relaxed); state.notify.notify_waiters(); break;
             }
             recvd.fetch_add(chunk.data.len() as u64, Ordering::Relaxed);
-            let prev = state.total_done.fetch_add(chunk.data.len() as u64, Ordering::Relaxed);
-            if prev + chunk.data.len() as u64 >= state.total { state.notify.notify_one(); }
+            state.total_done.fetch_add(chunk.data.len() as u64, Ordering::Relaxed);
+            // 完成判定:所有文件的 per-file recvd 达到 size(精确,不依赖全局 total_done)
+            if all_files_complete(state) { state.notify.notify_one(); }
         }
     }
+}
+
+fn all_files_complete(state: &DrainState) -> bool {
+    state.parts.values().all(|(m, _, r)| r.load(Ordering::Relaxed) >= m.size)
 }

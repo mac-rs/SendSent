@@ -1,10 +1,9 @@
 use sha2::Digest;
 use crate::events::{TransferEvent, SessionState, FinishedState, ErrorPayload};
-use crate::proto::frame::{read_control, write_control, write_data_header};
+use crate::proto::frame::{read_control, write_control, write_data};
 use crate::proto::messages::*;
 use crate::store::{Identity, TransferConfig};
 use crate::transfer::sock::tune_socket;
-use crate::transfer::zerocopy::{fallback_send_payload, send_payload};
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -106,19 +105,10 @@ async fn run_sender_inner(
         let done = total_done.clone();
         let sid = session_id;
         let handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
-            let max_retries = 5;
-            for attempt in 1..=max_retries {
-                match send_bucket(&addrs, &bucket, chunk, &done, sid, is_secure).await {
-                    Ok(()) => return,
-                    Err(e) if attempt < max_retries => {
-                        tracing::warn!("data bucket failed (attempt {attempt}): {e}, retrying...");
-                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                    }
-                    Err(e) => {
-                        tracing::error!("data bucket failed after {attempt} attempts: {e}");
-                        return;
-                    }
-                }
+            // 不自动重试:重试会重发整个 bucket,receiver 会重复累加进度导致完成判定错乱。
+            // 失败即止——局域网稳定,单连接失败概率低;失败由用户决定是否重发整个文件。
+            if let Err(e) = send_bucket(&addrs, &bucket, chunk, &done, sid, is_secure).await {
+                tracing::error!("data bucket failed: {e}");
             }
         });
         handles.push(handle);
@@ -188,25 +178,32 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
 }
 
 async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
+    use std::os::unix::fs::FileExt;
     let file = std::fs::File::open(&seg.path)?;
+    let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
-        let n = chunk.min((end - off) as usize) as u32;
-        write_data_header(data, seg.file_id, off, n).await?;
-        send_payload(data, &file, off, n as usize).await?;
-        off += n as u64; done.fetch_add(n as u64, Ordering::Relaxed);
+        let n = chunk.min((end - off) as usize);
+        let read = file.read_at(&mut buf[..n], off)?;
+        if read == 0 { return Err(anyhow!("file short at {}", off)); }
+        // 合并帧:header + payload 一次 write_all,避免 sendfile 分离写入的跨平台/顺序问题
+        write_data(data, seg.file_id, off, &buf[..read]).await?;
+        off += read as u64; done.fetch_add(read as u64, Ordering::Relaxed);
     }
     Ok(())
 }
 
 async fn send_segment_secure(data: &mut TlsStream<TcpStream>, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
+    use std::os::unix::fs::FileExt;
     let file = std::fs::File::open(&seg.path)?;
+    let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
-        let n = chunk.min((end - off) as usize) as u32;
-        write_data_header(data, seg.file_id, off, n).await?;
-        fallback_send_payload(data, &file, off, n as usize).await?;
-        off += n as u64; done.fetch_add(n as u64, Ordering::Relaxed);
+        let n = chunk.min((end - off) as usize);
+        let read = file.read_at(&mut buf[..n], off)?;
+        if read == 0 { return Err(anyhow!("file short at {}", off)); }
+        write_data(data, seg.file_id, off, &buf[..read]).await?;
+        off += read as u64; done.fetch_add(read as u64, Ordering::Relaxed);
     }
     Ok(())
 }

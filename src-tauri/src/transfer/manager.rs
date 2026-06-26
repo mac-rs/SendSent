@@ -46,7 +46,11 @@ impl SessionManager {
 
     async fn handle_incoming(self: Arc<Self>, mut stream: TcpStream) -> anyhow::Result<()> {
         let peer = stream.peer_addr().ok();
-        let (ty, buf) = read_control(&mut stream).await?;
+        tracing::info!("incoming TCP accepted from {peer:?} (waiting first frame)");
+        let (ty, buf) = match read_control(&mut stream).await {
+            Ok(v) => v,
+            Err(e) => { tracing::warn!("read first frame from {peer:?} failed: {e}"); return Err(e.into()); }
+        };
         tracing::info!("incoming connection from {peer:?}: first frame {ty:?}");
         match ty {
             MsgType::Hello => {
