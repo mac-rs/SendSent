@@ -124,6 +124,7 @@ pub fn run() {
             commands::add_peer,
             commands::send_files,
             commands::send_text,
+            commands::ios_picker::pick_files_ios,
             commands::respond,
             commands::cancel,
             commands::get_default_save_dir,

@@ -13,3 +13,4 @@ export const getDefaultSaveDir = () => invoke<string>("get_default_save_dir");
 export const addPeer = (address: string) => invoke<void>("add_peer", { address });
 export const sendText = (peerDeviceId: string, text: string, secure: boolean = false, verify: boolean = false) =>
   invoke<string>("send_text", { peerDeviceId, text, secure, verify });
+export const pickFilesIos = () => invoke<string[]>("pick_files_ios");

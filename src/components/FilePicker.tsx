@@ -1,5 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog";
-import { sendFiles } from "../lib/invoke";
+import { sendFiles, pickFilesIos } from "../lib/invoke";
 import type { Peer } from "../lib/types";
 import { useState } from "react";
 
@@ -34,6 +34,20 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
       <button className="drop-zone-btn" disabled={peers.length === 0 || busy} onClick={(e) => { e.stopPropagation(); pick(); }}>
         {busy ? "发送中…" : "选择文件"}
       </button>
+      <button className="drop-zone-btn" style={{ marginLeft: 8, background: "var(--bg-secondary)", color: "var(--text)", border: "1px solid var(--border)" }} disabled={peers.length === 0 || busy}
+        onClick={async (e) => {
+          e.stopPropagation();
+          try {
+            const iosFiles = await pickFilesIos();
+            if (!iosFiles || iosFiles.length === 0) return;
+            setBusy(true);
+            setStatus(`发送 ${iosFiles.length} 文件到 ${peers.length} 设备…`);
+            for (const p of peers) await sendFiles(p.device_id, iosFiles, secure, verify);
+            setStatus("已发起");
+          } catch (err: any) { if (!String(err).includes("iOS only")) setStatus("出错: " + String(err)); }
+          finally { setBusy(false); }
+        }}
+      >📱 从手机选择</button>
       <label className="secure-row" onClick={(e) => e.stopPropagation()}>
         <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />加密
         <input type="checkbox" checked={verify} onChange={(e) => setVerify(e.target.checked)} style={{ marginLeft: 8 }} />sha256 校验

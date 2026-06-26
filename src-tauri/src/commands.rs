@@ -64,3 +64,48 @@ pub async fn cancel(_state: State<'_, AppState>, _session_id: Uuid) -> Result<()
 pub fn get_default_save_dir(state: State<'_, AppState>) -> Result<String, String> {
     Ok(state.save_dir.to_string_lossy().into_owned())
 }
+
+// ── iOS 原生文档选择器 ──
+
+#[cfg(target_os = "ios")]
+pub(crate) mod ios_picker {
+    use std::os::raw::c_char;
+    use std::sync::Mutex;
+    use tokio::sync::oneshot;
+
+    static PICKER_STATE: Mutex<Option<oneshot::Sender<Vec<String>>>> = Mutex::new(None);
+
+    extern "C" {
+        fn sendsent_pick_files(cb: extern "C" fn(*const c_char));
+    }
+
+    extern "C" fn picker_result(ptr: *const c_char) {
+        let mut guard = PICKER_STATE.lock().unwrap();
+        if let Some(tx) = guard.take() {
+            let files = if ptr.is_null() {
+                vec![]
+            } else {
+                let c_str = unsafe { std::ffi::CStr::from_ptr(ptr) };
+                let s = c_str.to_string_lossy();
+                serde_json::from_str(&s).unwrap_or_default()
+            };
+            let _ = tx.send(files);
+        }
+    }
+
+    #[tauri::command]
+    pub async fn pick_files_ios() -> Result<Vec<String>, String> {
+        let (tx, rx) = oneshot::channel::<Vec<String>>();
+        *PICKER_STATE.lock().unwrap() = Some(tx);
+        unsafe { sendsent_pick_files(picker_result); }
+        rx.await.map_err(|e| e.to_string())
+    }
+}
+
+#[cfg(not(target_os = "ios"))]
+pub(crate) mod ios_picker {
+    #[tauri::command]
+    pub async fn pick_files_ios() -> Result<Vec<String>, String> {
+        Err("iOS only".into())
+    }
+}
