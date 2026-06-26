@@ -1,6 +1,6 @@
 use sha2::Digest;
 use crate::events::{TransferEvent, SessionState, FinishedState, ErrorPayload};
-use crate::proto::frame::{read_control, write_control, write_data, write_data_header};
+use crate::proto::frame::{read_control, write_control, write_data};
 use crate::proto::messages::*;
 use crate::store::{Identity, TransferConfig};
 use crate::transfer::sock::tune_socket;
@@ -200,15 +200,16 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
 }
 
 async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
+    use std::os::unix::fs::FileExt;
     let file = std::fs::File::open(&seg.path)?;
+    let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
-        let n = chunk.min((end - off) as usize) as u32;
-        write_data_header(data, seg.file_id, off, n).await?;
-        // flush 确保 29 字节 header 在 sendfile 之前到达对端,避免数据帧错位
-        data.flush().await?;
-        crate::transfer::zerocopy::send_payload(data, &file, off, n as usize).await?;
-        off += n as u64; done.fetch_add(n as u64, Ordering::Relaxed);
+        let n = chunk.min((end - off) as usize);
+        let read = file.read_at(&mut buf[..n], off)?;
+        if read == 0 { return Err(anyhow!("file short at {}", off)); }
+        write_data(data, seg.file_id, off, &buf[..read]).await?;
+        off += read as u64; done.fetch_add(read as u64, Ordering::Relaxed);
     }
     Ok(())
 }
