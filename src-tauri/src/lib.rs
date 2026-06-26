@@ -19,6 +19,7 @@ use transfer::manager::SessionManager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt::init();
+    rustls::crypto::ring::default_provider().install_default().expect("ring provider");
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -55,6 +56,8 @@ pub fn run() {
             let transfer_config = store::load_or_create_transfer_config(&data_dir);
             tracing::info!("transfer_config: conns={} chunk={} split={}",
                 transfer_config.conns, transfer_config.chunk_size, transfer_config.split_threshold);
+            let tls_config = crate::transfer::tls::load_or_generate_tls_config(&data_dir)
+                .expect("tls config");
 
             let (ptx, mut prx) = mpsc::unbounded_channel::<PeerEvent>();
             let discovery: Arc<dyn Discovery> = Arc::new(MdnsDiscovery::new(identity.clone(), port, ptx));
@@ -111,7 +114,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, discovery, sessions, save_dir, transfer_config });
+            app.manage(AppState { identity, discovery, sessions, save_dir, transfer_config, tls_config });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
