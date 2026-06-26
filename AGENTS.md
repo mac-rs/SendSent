@@ -57,3 +57,11 @@ The iOS target lives in `src-tauri/gen/apple/` (Tauri-generated Xcode project). 
 - **iOS sandbox `$HOME` is read-only** (`EROFS`). The save directory is resolved from `app.path().document_dir()` at startup and threaded through `AppState.save_dir` (not from an env var). Desktop still uses `~/Downloads/sendsent`.
 - **Signing:** `DEVELOPMENT_TEAM` is baked into `gen/apple/project.yml` (re-init preserves it). Set the team / bundle id there, not just in Xcode UI (which gets wiped on re-init).
 - **iPhone→Mac sending is not wired** in v1: `@tauri-apps/plugin-dialog`'s file `open()` is unsupported on iOS. iOS can only receive. Sending needs a native iOS document picker (deferred).
+
+## Android development
+
+- **Init:** `pnpm tauri android init` (generates `gen/android/`). Prerequisites: Android SDK (API 34+), NDK 27, Java 21, Rust Android targets (`rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`).
+- **Env:** `ANDROID_HOME` and `NDK_HOME` must be set. The NDK clang must be in `PATH` and `CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER` set to the NDK's `aarch64-linux-android21-clang` for `cargo build` to work standalone. The real build goes through `pnpm tauri android build` (Gradle), which handles the linker internally.
+- **Build lib only:** `cargo build --lib --target aarch64-linux-android` (the binary crate `main.rs` won't compile for Android — that's expected; only the lib is used).
+- **Permissions:** `INTERNET` for networking, `ACCESS_NETWORK_STATE`/`ACCESS_WIFI_STATE` for mDNS. The NDK ships with `mdns-sd` (pure Rust) so no special multicast permissions needed.
+- **File picker:** `@tauri-apps/plugin-dialog` `open()` works on Android (unlike iOS), so Android can both send and receive files natively. No custom picker needed.
