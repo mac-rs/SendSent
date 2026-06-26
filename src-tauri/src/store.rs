@@ -74,7 +74,7 @@ pub fn load_or_create_transfer_config(data_dir: &Path) -> TransferConfig {
     let mut cfg = match (|| -> anyhow::Result<TransferConfig> {
         if p.exists() {
             let s = std::fs::read_to_string(&p).context("read transfer config")?;
-            return Ok(serde_json::from_str(&s).context("parse transfer config")?);
+            return serde_json::from_str(&s).context("parse transfer config");
         }
         Ok(TransferConfig::defaults())
     })() {
@@ -82,9 +82,9 @@ pub fn load_or_create_transfer_config(data_dir: &Path) -> TransferConfig {
         Err(_) => TransferConfig::defaults(),
     };
     // 环境变量覆盖(便于压测/测试)
-    if let Ok(v) = std::env::var("SENDSENT_CONNS") { if let Ok(n) = v.parse::<u32>() { cfg.conns = n; } }
-    if let Ok(v) = std::env::var("SENDSENT_CHUNK_KB") { if let Ok(n) = v.parse::<u64>() { cfg.chunk_size = n * 1024; } }
-    if let Ok(v) = std::env::var("SENDSENT_SPLIT_MB") { if let Ok(n) = v.parse::<u64>() { cfg.split_threshold = n * 1024 * 1024; } }
+    if let Ok(v) = std::env::var("SENDSENT_CONNS") && let Ok(n) = v.parse::<u32>() { cfg.conns = n; }
+    if let Ok(v) = std::env::var("SENDSENT_CHUNK_KB") && let Ok(n) = v.parse::<u64>() { cfg.chunk_size = n * 1024; }
+    if let Ok(v) = std::env::var("SENDSENT_SPLIT_MB") && let Ok(n) = v.parse::<u64>() { cfg.split_threshold = n * 1024 * 1024; }
     cfg.sanitized()
 }
 
