@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated mobile bundle assets
+src-tauri/gen/apple/assets
+src-tauri/gen/android/app/src/main/assets
