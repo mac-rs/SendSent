@@ -2,7 +2,7 @@ name: sendsent
 options:
   bundleIdPrefix: com.mankong.sendsent
   deploymentTarget:
-    iOS: 14.0
+    iOS: 15.0
 fileGroups: [../../src]
 configs:
   debug: debug
@@ -12,7 +12,7 @@ settingGroups:
     base:
       PRODUCT_NAME: sendsent
       PRODUCT_BUNDLE_IDENTIFIER: com.mankong.sendsent
-      DEVELOPMENT_TEAM: FXD98A98Q5
+      DEVELOPMENT_TEAM: F8JZTX6J52
       CODE_SIGN_STYLE: Automatic
 targetTemplates:
   app:
