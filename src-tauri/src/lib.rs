@@ -178,6 +178,7 @@ pub fn run() {
             commands::get_default_save_dir,
             commands::list_transfer_history,
             commands::clear_transfer_history,
+            commands::noop,
             commands::get_transfer_config,
             commands::set_transfer_config,
             commands::get_my_qr,

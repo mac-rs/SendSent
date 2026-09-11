@@ -12,6 +12,15 @@ use std::time::{Duration, Instant};
 
 pub const STALE_AFTER: Duration = Duration::from_secs(90);
 
+/// Best-effort primary IPv4 via a UDP "connect" (no packets are sent). Works on
+/// Android too, where `getifaddrs()` is blocked by SELinux.
+pub fn primary_ipv4() -> Option<std::net::IpAddr> {
+    use std::net::UdpSocket;
+    let s = UdpSocket::bind("0.0.0.0:0").ok()?;
+    s.connect("8.8.8.8:80").ok()?;
+    s.local_addr().ok().map(|a| a.ip())
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Platform { Macos, Windows, Linux, Ios, Android, Unknown }

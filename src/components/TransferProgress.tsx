@@ -3,7 +3,7 @@ import { revealItemInDir, openPath } from "@tauri-apps/plugin-opener";
 import type { ProgressView } from "../hooks/useTransfer";
 import type { HistoryRecord } from "../lib/types";
 import { usePlatform } from "../lib/platform";
-import { CheckIcon, XIcon, SendIcon, TrashIcon } from "./Icons";
+import { CheckIcon, XIcon, SendIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from "./Icons";
 
 function fmtSize(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
@@ -33,6 +33,17 @@ function Elapsed({ start }: { start: number }) {
     return () => clearInterval(t);
   }, []);
   return <>{fmtElapsed(now - start)}</>;
+}
+
+function DirBadge({ dir }: { dir?: "send" | "recv" }) {
+  if (!dir) return null;
+  const send = dir === "send";
+  return (
+    <span className={`dir-badge ${send ? "send" : "recv"}`}>
+      {send ? <ArrowUpIcon size={12} /> : <ArrowDownIcon size={12} />}
+      {send ? "发送" : "接收"}
+    </span>
+  );
 }
 
 function ItemNames({ p }: { p: ProgressView }) {
@@ -72,11 +83,12 @@ function TransferRow({ p, compact }: { p: ProgressView; compact?: boolean }) {
         <div className="transfer-icon">
           {p.done
             ? (p.error ? <XIcon size={16} /> : <CheckIcon size={16} />)
-            : <SendIcon size={16} />}
+            : (p.direction === "recv" ? <ArrowDownIcon size={16} /> : <SendIcon size={16} />)}
         </div>
         <div className="transfer-info">
           <ItemNames p={p} />
           <div className="transfer-sub">
+            <DirBadge dir={p.direction} />
             {p.files_total > 1 && `${p.files_done}/${p.files_total} · `}
             {fmtSize(p.bytes_done)} / {fmtSize(p.bytes_total)}
           </div>
@@ -154,7 +166,6 @@ function HistoryRow({ r }: { r: HistoryRecord }) {
       : r.status === "rejected" ? "已拒绝"
       : r.status === "cancelled" ? "已取消"
       : "失败";
-  const dirText = r.direction === "send" ? "发送" : "接收";
   return (
     <div className={`transfer ${r.status === "completed" ? "done" : "failed"} fade-in`}>
       <div className="transfer-head">
@@ -166,7 +177,8 @@ function HistoryRow({ r }: { r: HistoryRecord }) {
             {names.length <= 1 ? names[0] : `${names[0]} 等 ${names.length} 个文件`}
           </span>
           <div className="transfer-sub">
-            {dirText} · {r.peer_name} · {fmtSize(r.bytes_done)} / {fmtSize(r.total_size)}
+            <DirBadge dir={r.direction} />
+            {r.peer_name} · {fmtSize(r.bytes_done)} / {fmtSize(r.total_size)}
           </div>
         </div>
         <div className="transfer-pct">{statusText}</div>

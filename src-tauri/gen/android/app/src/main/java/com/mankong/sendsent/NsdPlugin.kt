@@ -44,6 +44,7 @@ class NsdPlugin(private val activity: Activity) : Plugin(activity) {
             val id = args.optString("id", "")
             val plat = args.optString("plat", "android")
             val port = args.optInt("port", 52225)
+            val ip = args.optString("ip", "")
 
             val info = NsdServiceInfo().apply {
                 serviceName = name
@@ -54,6 +55,7 @@ class NsdPlugin(private val activity: Activity) : Plugin(activity) {
                 setAttribute("plat", plat)
                 setAttribute("v", "1")
                 setAttribute("port", port.toString())
+                if (ip.isNotEmpty()) setAttribute("ip", ip)
             }
 
             registrationListener?.let { runCatching { nsdManager.unregisterService(it) } }

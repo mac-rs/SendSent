@@ -44,7 +44,8 @@ impl NsdDiscovery {
 impl Discovery for NsdDiscovery {
     async fn start(&self) -> Result<()> {
         let id = self.identity.clone();
-        if let Err(e) = self.nsd.register(&id.name, &id.device_id, &id.platform, self.port).await {
+        let ip = crate::discovery::primary_ipv4().map(|i| i.to_string()).unwrap_or_default();
+        if let Err(e) = self.nsd.register(&id.name, &id.device_id, &id.platform, self.port, &ip).await {
             tracing::error!("nsd register failed: {e}");
         }
         if let Err(e) = self.nsd.browse().await {
@@ -112,7 +113,11 @@ fn peer_from_service(svc: &NsdService) -> Option<Peer> {
         .get("port")
         .and_then(|p| p.parse().ok())
         .unwrap_or(svc.port);
-    let ip: std::net::IpAddr = svc.host.parse().ok()?;
+    let ip: std::net::IpAddr = svc
+        .txt
+        .get("ip")
+        .and_then(|s| s.parse().ok())
+        .or_else(|| svc.host.parse().ok())?;
     Some(Peer {
         device_id,
         name,

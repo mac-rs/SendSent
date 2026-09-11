@@ -19,6 +19,19 @@ export const setTransferConfig = (conns: number, chunk_kb: number, split_mb: num
   invoke<void>("set_transfer_config", { conns, chunkKb: chunk_kb, splitMb: split_mb });
 export const listTransferHistory = () => invoke<HistoryRecord[]>("list_transfer_history");
 export const clearTransferHistory = () => invoke<void>("clear_transfer_history");
+
+// Android: `dialog.open()` does not resolve on the first call unless the
+// backend keeps receiving IPC (tauri plugins-workspace #3366). Ping a no-op
+// command while a native dialog is open.
+export const noop = () => invoke<void>("noop");
+export async function withBackendKeepAlive<T>(fn: () => Promise<T>): Promise<T> {
+  const id = window.setInterval(() => { noop().catch(() => {}); }, 200);
+  try {
+    return await fn();
+  } finally {
+    window.clearInterval(id);
+  }
+}
 export const getMyQr = (size?: number, ip?: string) =>
   invoke<string>("get_my_qr", { size, ip });
 export const getMyAddresses = () =>

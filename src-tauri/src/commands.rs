@@ -23,46 +23,45 @@ pub async fn add_peer(state: State<'_, AppState>, address: String) -> Result<(),
 }
 
 #[tauri::command]
+#[allow(unused_variables)]
 pub async fn send_files(app: tauri::AppHandle, state: State<'_, AppState>, peer_device_id: String, files: Vec<String>, secure: bool, verify: bool) -> Result<Uuid, String> {
-    // Android: 文件选择器返回 content:// URI,Rust std::fs 无法直接打开。
-    // 用 tauri-plugin-fs 的 FsExt(内部走 Kotlin ContentResolver.getFileDescriptor)
-    // 把文件流式复制到临时目录,再用临时路径走原传输流程。
-    let files = if files.iter().any(|f| f.starts_with("content://")) {
-        tauri::async_runtime::spawn_blocking(move || -> Result<Vec<String>, String> {
-            use tauri_plugin_fs::{FsExt, FilePath, OpenOptions};
-            #[cfg(target_os = "android")]
-            use tauri::Manager;
+    // iOS' file picker hands back `file://` URLs; normalize to plain paths.
+    let files: Vec<String> = files.into_iter().map(normalize_input_path).collect();
+    // Android: content:// URIs can't be opened with std::fs. Open the underlying
+    // file descriptor via the ContentPlugin and expose it as `/proc/self/fd/<fd>`
+    // through a per-file symlink that preserves the original file name. This
+    // avoids copying (large videos stay in place).
+    #[cfg(target_os = "android")]
+    let files = {
+        use tauri::Manager;
+        if files.iter().any(|f| f.starts_with("content://")) {
+            let base = std::env::temp_dir().join("sendsent-fds");
+            let _ = std::fs::create_dir_all(&base);
             let mut out = Vec::with_capacity(files.len());
             for f in files {
                 if f.starts_with("content://") {
-                    let fp: FilePath = f.parse().map_err(|_: std::convert::Infallible| "parse uri".to_string())?;
-                    let mut opts = OpenOptions::new();
-                    opts.read(true);
-                    let mut src = app.fs().open(fp, opts).map_err(|e| format!("open {f}: {e}"))?;
-                    // 查询原始文件名(Android),用它命名临时文件,保证接收端文件名正确
-                    #[cfg(target_os = "android")]
-                    let display_name = app
-                        .try_state::<crate::content_plugin::Content<tauri::Wry>>()
-                        .map(|c| c.display_name(&f).unwrap_or_else(|_| "file".to_string()))
-                        .unwrap_or_else(|| "file".to_string());
-                    #[cfg(not(target_os = "android"))]
-                    let display_name = "file".to_string();
-                    let safe = display_name.chars().map(|c| if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' }).collect::<String>();
-                    let dir = std::env::temp_dir().join(format!("sendsent-{}", Uuid::new_v4()));
+                    let content = app.state::<crate::content_plugin::Content<tauri::Wry>>();
+                    let display_name = content.display_name(&f).unwrap_or_else(|_| "file".to_string());
+                    let fd = content.open_fd(&f)?;
+                    let safe: String = display_name
+                        .chars()
+                        .map(|c| if c.is_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
+                        .collect();
+                    let safe = if safe.is_empty() { "file".to_string() } else { safe };
+                    let dir = base.join(Uuid::new_v4().to_string());
                     std::fs::create_dir_all(&dir).map_err(|e| format!("mkdir: {e}"))?;
-                    let cache = dir.join(if safe.is_empty() { "file".to_string() } else { safe });
-                    let mut dst = std::fs::File::create(&cache).map_err(|e| format!("create temp: {e}"))?;
-                    std::io::copy(&mut src, &mut dst).map_err(|e| format!("copy: {e}"))?;
-                    tracing::info!("cached content uri {f} -> {}", cache.display());
-                    out.push(cache.to_string_lossy().into_owned());
+                    let link = dir.join(&safe);
+                    std::os::unix::fs::symlink(format!("/proc/self/fd/{fd}"), &link)
+                        .map_err(|e| format!("symlink: {e}"))?;
+                    out.push(link.to_string_lossy().into_owned());
                 } else {
                     out.push(f);
                 }
             }
-            Ok(out)
-        }).await.map_err(|e| e.to_string())??
-    } else {
-        files
+            out
+        } else {
+            files
+        }
     };
     let peers = state.discovery.peers().await;
     let n = peers.len();
@@ -136,6 +135,11 @@ pub async fn clear_transfer_history(state: State<'_, AppState>) -> Result<(), St
     state.history.lock().await.clear();
     Ok(())
 }
+
+// Android 上 dialog.open() 首次不 resolve 的已知问题(tauri plugins-workspace
+// #3366):打开系统选择器期间需要周期性调用一个命令,保持前后端 IPC 通道活跃。
+#[tauri::command]
+pub fn noop() {}
 
 // ── 我的设备信息 · QR / IP 列表 ─────────────────────
 
@@ -285,5 +289,41 @@ pub(crate) mod ios_picker {
     #[tauri::command]
     pub async fn pick_files_ios() -> Result<Vec<String>, String> {
         Err("iOS only".into())
+    }
+}
+
+/// Convert a `file://` URL (as returned by iOS' document picker) into a plain
+/// filesystem path, percent-decoding as needed. Non-URL inputs pass through.
+fn normalize_input_path(p: String) -> String {
+    let rest = match p.strip_prefix("file://") {
+        Some(r) => r,
+        None => return p,
+    };
+    // file:///path -> /path ; file://localhost/path -> /path
+    let rest = rest.strip_prefix("localhost").unwrap_or(rest);
+    let bytes = rest.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && let (Some(h), Some(l)) = (hex_val(bytes[i + 1]), hex_val(bytes[i + 2]))
+        {
+            out.push((h << 4) | l);
+            i += 3;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn hex_val(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(b - b'a' + 10),
+        b'A'..=b'F' => Some(b - b'A' + 10),
+        _ => None,
     }
 }

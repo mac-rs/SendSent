@@ -98,6 +98,10 @@ fn run_service(id: Identity, port: u16) -> Result<()> {
     txt.insert("plat", &id.platform).map_err(|e| anyhow!("txt plat: {e}"))?;
     let port_s = port.to_string();
     txt.insert("port", &port_s).map_err(|e| anyhow!("txt port: {e}"))?;
+    if let Some(ip) = crate::discovery::primary_ipv4() {
+        let ip_s = ip.to_string();
+        txt.insert("ip", &ip_s).map_err(|e| anyhow!("txt ip: {e}"))?;
+    }
     service.set_txt_record(txt);
 
     service.set_registered_callback(Box::new(
@@ -154,10 +158,43 @@ fn peer_from_discovery(sd: &ServiceDiscovery) -> Option<Peer> {
     let name = txt.get("name").unwrap_or_else(|| sd.name().clone());
     let platform = platform_from_str(&txt.get("plat").unwrap_or_default());
     let port = txt.get("port").and_then(|p| p.parse().ok()).unwrap_or(*sd.port());
-    let ip: std::net::IpAddr = sd.address().parse().ok()?;
     let proto_version = txt.get("v").and_then(|v| v.parse().ok()).unwrap_or(1);
+
+    // Prefer the IPv4 the peer published in its TXT record. `sd.address()`
+    // comes from zeroconf's Bonjour resolver, which parses the callback as
+    // `sockaddr_in` unconditionally, so peers that also publish IPv6 (Android
+    // via NsdManager) make it return a bogus IPv4.
+    let addr = txt
+        .get("ip")
+        .and_then(|s| s.parse::<std::net::IpAddr>().ok())
+        .map(|ip| SocketAddr::new(ip, port))
+        .or_else(|| resolve_prefer_ipv4(sd.host_name(), port))
+        .or_else(|| sd.address().parse::<std::net::IpAddr>().ok().map(|ip| SocketAddr::new(ip, port)))?;
+
     Some(Peer {
         device_id, name, platform, proto_version,
-        addrs: vec![SocketAddr::new(ip, port)], port, last_seen_ms: 0,
+        addrs: vec![addr], port, last_seen_ms: 0,
     })
+}
+
+/// Resolve a Bonjour host name (e.g. `Android_x.local.`) to a socket address,
+/// preferring IPv4 so we never hand the TCP sender an IPv6-only target.
+fn resolve_prefer_ipv4(host_name: &str, port: u16) -> Option<SocketAddr> {
+    use std::net::ToSocketAddrs;
+    let host = host_name.trim_end_matches('.');
+    if host.is_empty() {
+        return None;
+    }
+    let mut fallback = None;
+    for addr in (host, port).to_socket_addrs().ok()? {
+        match addr {
+            SocketAddr::V4(_) => return Some(addr),
+            SocketAddr::V6(_) => {
+                if fallback.is_none() {
+                    fallback = Some(addr);
+                }
+            }
+        }
+    }
+    fallback
 }

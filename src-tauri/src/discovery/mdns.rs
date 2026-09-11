@@ -47,6 +47,7 @@ impl Discovery for MdnsDiscovery {
         props.insert("name".into(), id.name.clone());
         props.insert("plat".into(), id.platform.clone());
         props.insert("port".into(), self.port.to_string());
+        props.insert("ip".into(), my_ip.to_string());
         let info = ServiceInfo::new(SERVICE_TYPE, &id.name, &host_name, my_ip, self.port, props)
             .map_err(|e| anyhow!("mdns info: {e}"))?;
         daemon.register(info).map_err(|e| anyhow!("mdns register: {e}"))?;

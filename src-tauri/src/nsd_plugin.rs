@@ -16,6 +16,7 @@ struct RegisterPayload<'a> {
     id: &'a str,
     plat: &'a str,
     port: u16,
+    ip: &'a str,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -41,11 +42,11 @@ impl<R: Runtime> Clone for Nsd<R> {
 }
 
 impl<R: Runtime> Nsd<R> {
-    pub async fn register(&self, name: &str, id: &str, plat: &str, port: u16) -> Result<(), String> {
+    pub async fn register(&self, name: &str, id: &str, plat: &str, port: u16, ip: &str) -> Result<(), String> {
         self.0
             .run_mobile_plugin_async::<serde_json::Value>(
                 "register",
-                RegisterPayload { name, id, plat, port },
+                RegisterPayload { name, id, plat, port, ip },
             )
             .await
             .map(|_| ())

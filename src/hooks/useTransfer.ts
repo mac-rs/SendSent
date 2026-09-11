@@ -10,12 +10,16 @@ export interface ProgressView {
   session_id: string; bytes_done: number; bytes_total: number;
   files_done: number; files_total: number; speed_bps: number; done: boolean; error?: string;
   filenames?: string[]; started_at?: number; ended_at?: number;
+  direction?: "send" | "recv";
 }
 
 // 模块级存储:发送端文件名(发送方没有 Request 事件,通过此 Map 补名字)
 const sendFilenames = new Map<string, string[]>();
+// 方向:收到 Request 的是接收,调用 registerSendFilenames 的是发送
+const directions = new Map<string, "send" | "recv">();
 export function registerSendFilenames(sessionId: string, names: string[]) {
   sendFilenames.set(sessionId, names);
+  directions.set(sessionId, "send");
 }
 
 export function useTransfer() {
@@ -41,6 +45,7 @@ export function useTransfer() {
       un = await onTransferEvent((ev) => {
         if (ev.kind === "Request") {
           manifests[ev.session_id] = ev.manifest;
+          directions.set(ev.session_id, "recv");
           setRequest({
             session_id: ev.session_id,
             sender_name: ev.sender.name,
@@ -62,6 +67,7 @@ export function useTransfer() {
                 files_done: ev.files_done, files_total: ev.files_total, speed_bps: ev.speed_bps, done: false,
                 filenames: names.length > 0 ? names : prev?.filenames,
                 started_at: prev?.started_at ?? Date.now(),
+                direction: directions.get(ev.session_id) ?? prev?.direction,
               },
             };
           });
@@ -82,6 +88,7 @@ export function useTransfer() {
                 filenames: prev?.filenames,
                 started_at: prev?.started_at,
                 ended_at: Date.now(),
+                direction: prev?.direction ?? directions.get(ev.session_id),
               },
             };
           });

@@ -204,6 +204,20 @@ export const ChevronDownIcon = (p: IconProps) => (
   </svg>
 );
 
+export const ArrowUpIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 19V5" />
+    <path d="M6 11l6-6 6 6" />
+  </svg>
+);
+
+export const ArrowDownIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 5v14" />
+    <path d="M6 13l6 6 6-6" />
+  </svg>
+);
+
 export const CameraIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h2l1.5-2h6L16.5 5h2A2.5 2.5 0 0 1 21 7.5v10A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z" />
