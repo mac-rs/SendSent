@@ -6,6 +6,7 @@
 
 /* ── Design tokens · light ────────────────────────────── */
 :root {
+  color-scheme: light;
   /* Surfaces */
   --bg: #f6f6f8;
   --bg-elevated: #ffffff;
@@ -90,6 +91,7 @@
 
 /* ── Design tokens · dark ─────────────────────────────── */
 :root.dark {
+  color-scheme: dark;
   --bg: #0c0c0e;
   --bg-elevated: #161618;
   --surface: #1c1c1e;
@@ -126,6 +128,7 @@
 /* 系统暗色:用户没有显式选择时跟随系统 */
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
+    color-scheme: dark;
     --bg: #0c0c0e;
     --bg-elevated: #161618;
     --surface: #1c1c1e;
@@ -1043,3 +1046,101 @@ a:hover { color: var(--accent-hover); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-in { animation: fadeInUp 0.3s var(--ease) both; }
+
+/* ============================================================
+ * Cross-platform foundation
+ * ============================================================ */
+
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Text stays selectable where it matters; chrome does not. */
+.app {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+.transfer-name,
+.peer-name,
+.page-subtitle {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* iOS momentum scrolling in scrollable panes. */
+.main,
+.peer-list,
+.transfers {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: keep inputs at 16px so iOS does not zoom on focus. */
+.app.mobile input,
+.app.mobile textarea,
+.app.mobile select {
+  font-size: 16px;
+}
+
+/* Touch targets on mobile. */
+.app.mobile .nav-item,
+.app.mobile .tabbar-item,
+.app.mobile .peer-item,
+.app.mobile button,
+.app.mobile .btn {
+  min-height: 44px;
+}
+
+/* Safe areas: grow the fixed grid rows to include the insets. */
+.topbar {
+  padding-top: env(safe-area-inset-top, 0);
+}
+.app.mobile {
+  grid-template-rows:
+    calc(var(--topbar-h) + env(safe-area-inset-top, 0))
+    1fr
+    calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0));
+}
+.app.mobile .main {
+  padding-left: max(var(--s-4), env(safe-area-inset-left, 0));
+  padding-right: max(var(--s-4), env(safe-area-inset-right, 0));
+  padding-bottom: calc(var(--s-6) + var(--tabbar-h) + env(safe-area-inset-bottom, 0));
+}
+.app.mobile .tabbar {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Only apply hover affordances on real pointers. */
+@media (hover: none) {
+  .peer-item:hover,
+  .nav-item:hover,
+  .icon-btn:hover,
+  .btn:hover {
+    background: inherit;
+  }
+}
+
+/* Respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* macOS overlay title bar: leave room for the traffic lights. */
+.app.macos .topbar {
+  padding-left: 78px;
+}
+.app.macos .topbar .icon-btn,
+.app.macos .topbar input,
+.app.macos .topbar button {
+  -webkit-app-region: no-drag;
+}

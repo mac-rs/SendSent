@@ -22,7 +22,7 @@ type ThemePref = "auto" | "light" | "dark";
 function App() {
   const peers = usePeers();
   const { request, progress, clearRequest } = useTransfer();
-  const { layout } = usePlatform();
+  const { layout, platform } = usePlatform();
   const [selected, setSelected] = useState<Peer[]>([]);
   const [tab, setTab] = useState<Tab>("devices");
   const [theme, setTheme] = useState<ThemePref>("auto");
@@ -72,9 +72,9 @@ function App() {
   const isMobile = layout === "mobile";
 
   return (
-    <div className={`app${isMobile ? " mobile" : ""}`}>
+    <div className={`app ${platform}${isMobile ? " mobile" : ""}`}>
       {/* ── Top bar ──────────────────────────────────── */}
-      <header className="topbar">
+      <header className="topbar" data-tauri-drag-region>
         <div className="brand">
           <div className="brand-mark"><LogoIcon size={18} /></div>
           <span className="brand-text">SendSent</span>

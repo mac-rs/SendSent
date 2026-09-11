@@ -12,9 +12,14 @@
   "app": {
     "windows": [
       {
-        "title": "sendsent",
+        "title": "SendSent",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "minWidth": 480,
+        "minHeight": 560,
+        "backgroundColor": "#f6f6f8",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ],
     "security": {
