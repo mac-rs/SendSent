@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		020188B276C2E88B822A1D28 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = C995177DD39488AB0F0CD9D7 /* libapp.a */; };
-		2E48CAFB3B9D80A81FFA55D0 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = 5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */; };
+		5A1B2C3D4E5F60718293A4B5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5A1B2C3D4E5F60718293A4B6 /* PrivacyInfo.xcprivacy */; };
 		2FB7724DC932C071EF745CB8 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20BC257BB5DBE566AA9A2D81 /* MetalKit.framework */; };
 		43D805E4D72356B0D6DC9074 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBE460BE249E2A044EF92F4A /* CoreGraphics.framework */; };
 		69C3490F35E4E6174AC0B597 /* Picker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35DD7F064A254630322BBC16 /* Picker.swift */; };
@@ -17,7 +17,6 @@
 		6D40E87B3CCA0AF741A55B0E /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E0A22040321247735DB2562 /* Metal.framework */; };
 		74E78B729ABA0949368F2545 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F075A55C5F7D4DA87955EA2 /* WebKit.framework */; };
 		7C3635FCD63A606676BC0DC3 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CA0E559FEFE091A08C4A1992 /* libapp.a */; };
-		9DFA41D3D219485B9D108EE4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */; };
 		A1EBA88933EE3F61133C2449 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = D7BF76FB360CC259A1176633 /* assets */; };
 		D557DC6EF6FF1BCC20D07D0D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */; };
 		DA9AEDD8872001FB37C2800B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 265C19806FF3532C8675691E /* UIKit.framework */; };
@@ -26,49 +25,45 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		026CA925026A4579542DEB51 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
-		0AECF19F8D969246F50DBA91 /* commands.rs */ = {isa = PBXFileReference; path = commands.rs; sourceTree = "<group>"; };
-		19C04582A1DC60AFD273C517 /* ios_bonjour.rs */ = {isa = PBXFileReference; path = ios_bonjour.rs; sourceTree = "<group>"; };
-		1B91AD453E36BF4C34FA5842 /* messages.rs */ = {isa = PBXFileReference; path = messages.rs; sourceTree = "<group>"; };
+		026CA925026A4579542DEB51 /* mod.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mod.rs; sourceTree = "<group>"; };
+		0AECF19F8D969246F50DBA91 /* commands.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = commands.rs; sourceTree = "<group>"; };
+		1B91AD453E36BF4C34FA5842 /* messages.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = messages.rs; sourceTree = "<group>"; };
 		1E0A22040321247735DB2562 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		1F075A55C5F7D4DA87955EA2 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		20BC257BB5DBE566AA9A2D81 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		260C85D16C549550E9873ED8 /* sendsent_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = sendsent_iOS.entitlements; sourceTree = "<group>"; };
 		265C19806FF3532C8675691E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
-		284A3474A3B6EF6D1BBD01FB /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		284A3474A3B6EF6D1BBD01FB /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = lib.rs; sourceTree = "<group>"; };
 		2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5A1B2C3D4E5F60718293A4B6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		35DD7F064A254630322BBC16 /* Picker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Picker.swift; sourceTree = "<group>"; };
-		3A6B303F2CF4887B73709D0F /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
+		3A6B303F2CF4887B73709D0F /* mod.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mod.rs; sourceTree = "<group>"; };
 		3B867F86F2182F07B9609E50 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		412B1DABBFF788BC85FB390E /* sock.rs */ = {isa = PBXFileReference; path = sock.rs; sourceTree = "<group>"; };
-		4AC1A16F2418E5D9DBA9A6CC /* receiver.rs */ = {isa = PBXFileReference; path = receiver.rs; sourceTree = "<group>"; };
+		412B1DABBFF788BC85FB390E /* sock.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = sock.rs; sourceTree = "<group>"; };
+		4AC1A16F2418E5D9DBA9A6CC /* receiver.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = receiver.rs; sourceTree = "<group>"; };
 		5B061BBB7D24B25725981213 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
-		5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
-		6788B35519196DCE9021FED5 /* manager.rs */ = {isa = PBXFileReference; path = manager.rs; sourceTree = "<group>"; };
-		6CD78E3F0466A9A12D20B8BF /* meter.rs */ = {isa = PBXFileReference; path = meter.rs; sourceTree = "<group>"; };
-		6F4CF2C28B5262EFFC768311 /* sendsent_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = sendsent_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7343C2FC1BFDD7A2A2BB4877 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
-		766E3244BC252E98F1C1AC18 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		6788B35519196DCE9021FED5 /* manager.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = manager.rs; sourceTree = "<group>"; };
+		6CD78E3F0466A9A12D20B8BF /* meter.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = meter.rs; sourceTree = "<group>"; };
+		6F4CF2C28B5262EFFC768311 /* sendsent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sendsent.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7343C2FC1BFDD7A2A2BB4877 /* mod.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mod.rs; sourceTree = "<group>"; };
+		766E3244BC252E98F1C1AC18 /* main.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.rs; sourceTree = "<group>"; };
 		83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
-		873307874EB32A52E3F17C52 /* tls.rs */ = {isa = PBXFileReference; path = tls.rs; sourceTree = "<group>"; };
+		873307874EB32A52E3F17C52 /* tls.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = tls.rs; sourceTree = "<group>"; };
 		927D46CEE756FCB04F6E631E /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
-		A2E07440CCD630B040403E6C /* history.rs */ = {isa = PBXFileReference; path = history.rs; sourceTree = "<group>"; };
-		AE185840CB01CF575A210FCB /* content_plugin.rs */ = {isa = PBXFileReference; path = content_plugin.rs; sourceTree = "<group>"; };
-		B2F6900C0A8029D29D5DBD43 /* atomic.rs */ = {isa = PBXFileReference; path = atomic.rs; sourceTree = "<group>"; };
+		B2F6900C0A8029D29D5DBD43 /* atomic.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = atomic.rs; sourceTree = "<group>"; };
 		C702FFBF0ECDFBCB6D8F5B69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		C936BC218229D7EC1613B25C /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
+		C936BC218229D7EC1613B25C /* state.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = state.rs; sourceTree = "<group>"; };
 		C995177DD39488AB0F0CD9D7 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		CA0E559FEFE091A08C4A1992 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
-		D3ACBB9B2AFF155E983AA74C /* frame.rs */ = {isa = PBXFileReference; path = frame.rs; sourceTree = "<group>"; };
+		D3ACBB9B2AFF155E983AA74C /* frame.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = frame.rs; sourceTree = "<group>"; };
 		D4B2853F5F50226745AC0279 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		D6A2760527F6C0671C2FD570 /* events.rs */ = {isa = PBXFileReference; path = events.rs; sourceTree = "<group>"; };
+		D6A2760527F6C0671C2FD570 /* events.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = events.rs; sourceTree = "<group>"; };
 		D7BF76FB360CC259A1176633 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
-		DA6174F7B78939CDE9F5D32A /* mdns.rs */ = {isa = PBXFileReference; path = mdns.rs; sourceTree = "<group>"; };
-		E9676AE7832822080820C040 /* sender.rs */ = {isa = PBXFileReference; path = sender.rs; sourceTree = "<group>"; };
+		DA6174F7B78939CDE9F5D32A /* mdns.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = mdns.rs; sourceTree = "<group>"; };
+		E9676AE7832822080820C040 /* sender.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = sender.rs; sourceTree = "<group>"; };
 		EBE460BE249E2A044EF92F4A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		FCC0C935D41C720C0ADEE3EF /* store.rs */ = {isa = PBXFileReference; path = store.rs; sourceTree = "<group>"; };
-		FDC4836F74665EB37EEB28A8 /* zerocopy.rs */ = {isa = PBXFileReference; path = zerocopy.rs; sourceTree = "<group>"; };
+		FCC0C935D41C720C0ADEE3EF /* store.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = store.rs; sourceTree = "<group>"; };
+		FDC4836F74665EB37EEB28A8 /* zerocopy.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = zerocopy.rs; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,9 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				0AECF19F8D969246F50DBA91 /* commands.rs */,
-				AE185840CB01CF575A210FCB /* content_plugin.rs */,
 				D6A2760527F6C0671C2FD570 /* events.rs */,
-				A2E07440CCD630B040403E6C /* history.rs */,
 				284A3474A3B6EF6D1BBD01FB /* lib.rs */,
 				766E3244BC252E98F1C1AC18 /* main.rs */,
 				C936BC218229D7EC1613B25C /* state.rs */,
@@ -179,7 +172,7 @@
 		80A778018C9544F5FFE74CEB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6F4CF2C28B5262EFFC768311 /* sendsent_iOS.app */,
+				6F4CF2C28B5262EFFC768311 /* sendsent.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -188,7 +181,6 @@
 			isa = PBXGroup;
 			children = (
 				5DB36D490A5451C079078A64 /* debug */,
-				CFD1B19E03EC3C4E91F5BD5C /* release */,
 			);
 			path = arm64;
 			sourceTree = "<group>";
@@ -207,7 +199,7 @@
 				D7BF76FB360CC259A1176633 /* assets */,
 				2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */,
 				83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */,
-				F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */,
+				5A1B2C3D4E5F60718293A4B6 /* PrivacyInfo.xcprivacy */,
 				56D133D526FF614428813884 /* Externals */,
 				EB5500B0C5F6BFFE3F20BAA1 /* sendsent_iOS */,
 				A81BA0FAD3F8799460697C69 /* Sources */,
@@ -217,18 +209,9 @@
 			);
 			sourceTree = "<group>";
 		};
-		CFD1B19E03EC3C4E91F5BD5C /* release */ = {
-			isa = PBXGroup;
-			children = (
-				5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */,
-			);
-			path = release;
-			sourceTree = "<group>";
-		};
 		E1958243974920C3FFEA59FB /* discovery */ = {
 			isa = PBXGroup;
 			children = (
-				19C04582A1DC60AFD273C517 /* ios_bonjour.rs */,
 				DA6174F7B78939CDE9F5D32A /* mdns.rs */,
 				7343C2FC1BFDD7A2A2BB4877 /* mod.rs */,
 			);
@@ -252,13 +235,6 @@
 			path = sendsent_iOS;
 			sourceTree = "<group>";
 		};
-		"TEMP_B88848ED-317A-4ECB-B953-914881216CCD" /* x86_64 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = x86_64;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -279,7 +255,7 @@
 			packageProductDependencies = (
 			);
 			productName = sendsent_iOS;
-			productReference = 6F4CF2C28B5262EFFC768311 /* sendsent_iOS.app */;
+			productReference = 6F4CF2C28B5262EFFC768311 /* sendsent.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -292,7 +268,6 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					BFCAB85D43560EDB277A484A = {
-						DevelopmentTeam = F8JZTX6J52;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -323,9 +298,8 @@
 			files = (
 				D557DC6EF6FF1BCC20D07D0D /* Assets.xcassets in Resources */,
 				6D09CD92509535C224878B1A /* LaunchScreen.storyboard in Resources */,
-				9DFA41D3D219485B9D108EE4 /* PrivacyInfo.xcprivacy in Resources */,
 				A1EBA88933EE3F61133C2449 /* assets in Resources */,
-				2E48CAFB3B9D80A81FFA55D0 /* libapp.a in Resources */,
+				5A1B2C3D4E5F60718293A4B5 /* PrivacyInfo.xcprivacy in Resources */,
 				020188B276C2E88B822A1D28 /* libapp.a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -373,9 +347,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ARCHS = (
-					arm64,
-				);
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sendsent_iOS/sendsent_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -392,10 +364,22 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mankong.sendsent;
-				PRODUCT_NAME = sendsent;
+				PRODUCT_NAME = "sendsent";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -469,9 +453,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ARCHS = (
-					arm64,
-				);
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sendsent_iOS/sendsent_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -488,10 +470,22 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION)",
+					"$(SDKROOT)/usr/lib/swift",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME)",
+					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mankong.sendsent;
-				PRODUCT_NAME = sendsent;
+				PRODUCT_NAME = "sendsent";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
