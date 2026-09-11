@@ -137,6 +137,112 @@ pub async fn clear_transfer_history(state: State<'_, AppState>) -> Result<(), St
     Ok(())
 }
 
+// ── 我的设备信息 · QR / IP 列表 ─────────────────────
+
+/// 返回本机的内网 IP 列表(自动枚举所有非 loopback、非 link-local 的 IPv4 接口)
+#[tauri::command]
+pub fn get_my_addresses() -> Result<Vec<MyAddress>, String> {
+    let mut addrs: Vec<MyAddress> = Vec::new();
+    let ifaces = get_if_addrs::get_if_addrs().map_err(|e| format!("enum ifaces: {e}"))?;
+    for iface in ifaces {
+        if iface.is_loopback() {
+            continue;
+        }
+        if let get_if_addrs::IfAddr::V4(v4) = iface.addr {
+            let ip = v4.ip;
+            // 跳过 link-local (169.254.x.x) 和 0.0.0.0
+            if ip.is_link_local() || ip.is_unspecified() {
+                continue;
+            }
+            addrs.push(MyAddress {
+                interface: iface.name.clone(),
+                ip: ip.to_string(),
+            });
+        }
+    }
+    addrs.sort_by(|a, b| a.ip.cmp(&b.ip));
+    Ok(addrs)
+}
+
+#[derive(serde::Serialize)]
+pub struct MyAddress {
+    pub interface: String,
+    pub ip: String,
+}
+
+/// 返回本机 QR PNG(base64 字符串),payload 为 sendsent:// 协议
+/// - `size`: PNG 边长像素 (128..=1024)
+/// - `ip`: 可选 — 显式指定要写入 payload 的 IP;默认取枚举出来的第一个
+#[tauri::command]
+pub fn get_my_qr(state: State<'_, AppState>, size: Option<u32>, ip: Option<String>) -> Result<String, String> {
+    use base64::Engine;
+    use qrcode::QrCode;
+    let sz = size.unwrap_or(300).clamp(128, 1024);
+    // 选 IP:显式 > 第一个枚举到的 > 空
+    let addrs = get_my_addresses().unwrap_or_default();
+    let chosen_ip = ip
+        .filter(|s| addrs.iter().any(|a| a.ip == *s))
+        .or_else(|| addrs.first().map(|a| a.ip.clone()))
+        .unwrap_or_default();
+    let payload = format!(
+        "sendsent://{}?addr={}:{}&dir={}",
+        urlencoding(&state.identity.name),
+        chosen_ip,
+        state.port,
+        urlencoding(&state.save_dir.to_string_lossy()),
+    );
+    let code = QrCode::new(payload.as_bytes()).map_err(|e| format!("qr: {e}"))?;
+    let png_bytes = render_qr_png(&code, sz).map_err(|e| format!("render: {e}"))?;
+    Ok(base64::engine::general_purpose::STANDARD.encode(&png_bytes))
+}
+
+fn urlencoding(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' || c == '~' {
+                c.to_string()
+            } else {
+                format!("%{:02X}", c as u32)
+            }
+        })
+        .collect()
+}
+
+fn render_qr_png(code: &qrcode::QrCode, size: u32) -> Result<Vec<u8>, String> {
+    use image::{ImageBuffer, Luma};
+    let modules = code.width() as u32;
+    let quiet = 4u32; // 4 模块的静默区
+    let total = (modules + quiet * 2) * 10; // 10 px per module
+    let _ = size; // 我们用固定比例 10px/module,size 只用于限制最大边
+    let scale = (size as f32 / total as f32).clamp(0.5, 4.0) as u32;
+    let scale = scale.max(1);
+    let img_size = (modules + quiet * 2) * scale;
+    let mut img = ImageBuffer::<Luma<u8>, Vec<u8>>::from_pixel(img_size, img_size, Luma([255u8]));
+    let colors = code.to_colors();
+    for y in 0..modules {
+        for x in 0..modules {
+            let dark = colors[(y * modules + x) as usize] == qrcode::Color::Dark;
+            if dark {
+                for dy in 0..scale {
+                    for dx in 0..scale {
+                        let px = (x + quiet) * scale + dx;
+                        let py = (y + quiet) * scale + dy;
+                        if px < img_size && py < img_size {
+                            img.put_pixel(px, py, Luma([0u8]));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
+    let dyn_img = image::DynamicImage::ImageLuma8(img);
+    dyn_img
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .map_err(|e| format!("png encode: {e}"))?;
+    Ok(out)
+}
+
 // ── iOS 原生文档选择器 ──
 
 #[cfg(target_os = "ios")]

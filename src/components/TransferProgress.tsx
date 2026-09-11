@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { revealItemInDir, openPath } from "@tauri-apps/plugin-opener";
 import type { ProgressView } from "../hooks/useTransfer";
 import type { HistoryRecord } from "../lib/types";
 import { usePlatform } from "../lib/platform";
-import { CheckIcon, XIcon, SendIcon } from "./Icons";
+import { CheckIcon, XIcon, SendIcon, TrashIcon } from "./Icons";
 
 function fmtSize(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
@@ -56,7 +56,9 @@ function ItemNames({ p }: { p: ProgressView }) {
 
 function TransferRow({ p, compact }: { p: ProgressView; compact?: boolean }) {
   const pct = p.bytes_total ? Math.min((p.bytes_done / p.bytes_total) * 100, 100) : 0;
-  const stateClass = p.done ? (p.error ? "failed" : "done") : "";
+  const stateClass = p.done
+    ? (p.error ? "failed" : "done")
+    : "in-progress";
   const statusText = p.error
     ? (p.error === "rejected" ? "已拒绝" : p.error === "cancelled" ? "已取消" : `失败:${p.error}`)
     : p.done
@@ -178,7 +180,69 @@ function HistoryRow({ r }: { r: HistoryRecord }) {
   );
 }
 
-export function TransferHistory({ items, onClear }: { items: HistoryRecord[]; onClear: () => void }) {
+// 长按阈值 (ms) - 接近 iOS 标准 (0.5s)
+const LONG_PRESS_MS = 520;
+
+export function TransferHistory({
+  items,
+  onClear,
+}: {
+  items: HistoryRecord[];
+  onClear: () => void;
+}) {
+  const { platform } = usePlatform();
+  const isMobile = platform === "ios" || platform === "android";
+  const [pressed, setPressed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const timerRef = useRef<number | null>(null);
+  const startPos = useRef<{ x: number; y: number } | null>(null);
+
+  const clearTimer = () => {
+    if (timerRef.current != null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const onPressStart = (e: React.PointerEvent<HTMLElement>) => {
+    if (!isMobile) return;
+    startPos.current = { x: e.clientX, y: e.clientY };
+    setPressed(true);
+    setConfirming(false);
+    clearTimer();
+    timerRef.current = window.setTimeout(() => {
+      // 触发"长按清空"反馈
+      setPressed(false);
+      setConfirming(true);
+      // 触觉反馈(iOS Taptic / Android Vibrate)
+      try { navigator.vibrate?.(12); } catch { /* ignore */ }
+    }, LONG_PRESS_MS);
+  };
+
+  const onPressMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (!isMobile || !startPos.current) return;
+    const dx = Math.abs(e.clientX - startPos.current.x);
+    const dy = Math.abs(e.clientY - startPos.current.y);
+    // 拖动超过 10px 视为滚动,取消长按
+    if (dx > 10 || dy > 10) {
+      clearTimer();
+      setPressed(false);
+    }
+  };
+
+  const onPressEnd = () => {
+    clearTimer();
+    setPressed(false);
+    if (!isMobile) return;
+    // 短按不触发任何动作
+  };
+
+  // 触发真正清空
+  const commitClear = () => {
+    setConfirming(false);
+    onClear();
+  };
+
   if (items.length === 0) {
     return (
       <div className="card">
@@ -186,12 +250,51 @@ export function TransferHistory({ items, onClear }: { items: HistoryRecord[]; on
       </div>
     );
   }
+
   return (
-    <div className="transfers">
+    <div
+      className={`transfers history${pressed ? " longpressing" : ""}`}
+      onPointerDown={onPressStart}
+      onPointerMove={onPressMove}
+      onPointerUp={onPressEnd}
+      onPointerCancel={onPressEnd}
+      onPointerLeave={onPressEnd}
+    >
       <div className="history-actions">
-        <button className="btn btn-ghost" onClick={onClear}>清空记录</button>
+        {isMobile ? (
+          <span className="history-hint">长按列表可清空记录</span>
+        ) : (
+          <button className="btn btn-ghost" onClick={onClear}>清空记录</button>
+        )}
       </div>
       {items.map((r) => <HistoryRow key={r.session_id} r={r} />)}
+
+      {confirming && (
+        <div className="history-confirm-backdrop" onClick={() => setConfirming(false)}>
+          <div className="history-confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="history-confirm-icon">
+              <TrashIcon size={28} />
+            </div>
+            <div className="history-confirm-title">清空全部历史记录?</div>
+            <div className="history-confirm-sub">共 {items.length} 条,清空后无法恢复</div>
+            <div className="history-confirm-actions">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setConfirming(false)}
+              >
+                取消
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={commitClear}
+                autoFocus
+              >
+                清空
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

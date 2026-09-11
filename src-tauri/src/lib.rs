@@ -8,15 +8,19 @@ pub mod state;
 pub mod commands;
 #[cfg(target_os = "android")]
 pub mod content_plugin;
+#[cfg(target_os = "android")]
+pub mod nsd_plugin;
 
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tokio::sync::mpsc;
 
-#[cfg(not(target_os = "ios"))]
+#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
 use discovery::mdns::MdnsDiscovery;
 #[cfg(target_os = "ios")]
 use discovery::ios_bonjour::BonjourDiscovery;
+#[cfg(target_os = "android")]
+use discovery::nsd::NsdDiscovery;
 use discovery::{Discovery, PeerEvent};
 use events::{name, TransferEvent};
 use state::AppState;
@@ -46,7 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init());
     #[cfg(target_os = "android")]
-    let builder = builder.plugin(content_plugin::plugin());
+    let builder = builder.plugin(content_plugin::plugin()).plugin(nsd_plugin::plugin());
     builder
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("app_data_dir");
@@ -86,11 +90,20 @@ pub fn run() {
             // uses the system Bonjour responder (`zeroconf`); other platforms keep mdns-sd.
             #[cfg(target_os = "ios")]
             let discovery: Arc<dyn Discovery> = Arc::new(BonjourDiscovery::new(identity.clone(), port, ptx));
-            #[cfg(not(target_os = "ios"))]
+            #[cfg(target_os = "android")]
+            let discovery: Arc<dyn Discovery> = {
+                let nsd = app.state::<crate::nsd_plugin::Nsd<tauri::Wry>>().inner().clone();
+                Arc::new(NsdDiscovery::new(nsd, identity.clone(), port, ptx))
+            };
+            #[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
             let discovery: Arc<dyn Discovery> = Arc::new(MdnsDiscovery::new(identity.clone(), port, ptx));
             {
                 let d = discovery.clone();
-                tauri::async_runtime::spawn(async move { let _ = d.start().await; });
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = d.start().await {
+                        tracing::error!("discovery start failed: {e}");
+                    }
+                });
             }
             {
                 let h = handle.clone();
@@ -149,7 +162,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history });
+            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history, port });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -167,6 +180,8 @@ pub fn run() {
             commands::clear_transfer_history,
             commands::get_transfer_config,
             commands::set_transfer_config,
+            commands::get_my_qr,
+            commands::get_my_addresses,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

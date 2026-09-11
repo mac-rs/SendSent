@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { RequestView } from "../hooks/useTransfer";
-import { CheckIcon, XIcon, FileIcon } from "./Icons";
+import { CheckIcon, XIcon, FileIcon, ShieldIcon } from "./Icons";
 
 function initials(name: string): string {
   const t = name.trim();
@@ -45,11 +45,17 @@ export function IncomingRequest({
     <div
       className="modal-backdrop"
       onClick={(e) => { if (e.target === e.currentTarget) onRespond(false); }}
+      role="presentation"
     >
-      <div className="modal" role="dialog" aria-modal>
+      <div
+        className="modal"
+        role="alertdialog"
+        aria-modal
+        aria-labelledby="incoming-title"
+      >
         <div className="modal-header">
           <div className="modal-avatar">{initials(req.sender_name)}</div>
-          <div className="modal-title">{req.sender_name}</div>
+          <div id="incoming-title" className="modal-title">{req.sender_name}</div>
           <div className="modal-sub">想要发送文件给你</div>
         </div>
 
@@ -63,13 +69,26 @@ export function IncomingRequest({
             <div className="v">{size.value}</div>
             <div className="l">{size.unit}</div>
           </div>
+          <div className="modal-stat">
+            <ShieldIcon size={18} />
+            <div className="v" style={{ fontSize: "var(--fs-body)" }}>安全</div>
+            <div className="l">局域网 P2P</div>
+          </div>
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={() => onRespond(false)}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => onRespond(false)}
+            autoFocus={false}
+          >
             <XIcon size={14} />拒绝
           </button>
-          <button className="btn btn-primary" onClick={() => onRespond(true)} autoFocus>
+          <button
+            className="btn btn-primary"
+            onClick={() => onRespond(true)}
+            autoFocus
+          >
             <CheckIcon size={14} />接受
           </button>
         </div>

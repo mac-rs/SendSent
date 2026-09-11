@@ -34,9 +34,9 @@ export function PeerList({
   if (peers.length === 0) {
     return (
       <div className="peer-empty">
-        <div className="pulse"><WifiIcon size={22} /></div>
+        <div className="pulse"><WifiIcon size={26} /></div>
         <div className="title">正在发现附近设备…</div>
-        <div className="hint">确保设备在同一局域网</div>
+        <div className="hint">确保设备在同一局域网,或在上方手动添加 IP</div>
       </div>
     );
   }
@@ -47,8 +47,17 @@ export function PeerList({
         <div
           key={p.device_id}
           className={`peer-item${ids.has(p.device_id) ? " selected" : ""} fade-in`}
-          style={{ animationDelay: `${i * 30}ms` }}
+          style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}
           onClick={() => onToggle(p)}
+          role="button"
+          aria-pressed={ids.has(p.device_id)}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onToggle(p);
+            }
+          }}
         >
           <div className={`peer-avatar ${p.platform}`}>
             {initials(p.name)}
@@ -58,7 +67,7 @@ export function PeerList({
             <div className="peer-name">{p.name}</div>
             <div className="peer-meta">
               <span>{platformLabel(p.platform)}</span>
-              <span>·</span>
+              <span aria-hidden>·</span>
               <span className="mono">{p.addrs[0] || `:${p.port}`}</span>
             </div>
           </div>

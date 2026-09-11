@@ -63,8 +63,9 @@ export function FilePicker({ peers }: { peers: Peer[] }) {
         className="dropzone"
         onClick={busy ? undefined : pickDesktop}
         role="button"
+        aria-disabled={busy}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") pickDesktop(); }}
+        onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !busy) pickDesktop(); }}
       >
         <div className="dropzone-icon"><FileIcon size={28} /></div>
         <div className="dropzone-title">

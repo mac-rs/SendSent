@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePeers } from "./hooks/usePeers";
 import { useTransfer } from "./hooks/useTransfer";
 import { PeerList } from "./components/PeerList";
@@ -10,8 +10,15 @@ import { Settings } from "./components/Settings";
 import {
   DevicesIcon, TransferIcon, SettingsIcon,
   PlusIcon, LogoIcon, SendIcon, WifiIcon,
+  SunIcon, MoonIcon, AutoIcon, RefreshIcon,
 } from "./components/Icons";
+import { AddDeviceSheet } from "./components/AddDeviceSheet";
+import { PrefsPanel } from "./components/PrefsPanel";
+import { PullToRefresh } from "./components/PullToRefresh";
+import { SwipeIndicator } from "./components/SwipeIndicator";
+import { CommandPalette, type CommandItem } from "./components/CommandPalette";
 import { usePlatform } from "./lib/platform";
+import { useSwipeTabs } from "./lib/useSwipeTabs";
 import { addPeer, sendText, respond } from "./lib/invoke";
 import { registerSendFilenames } from "./hooks/useTransfer";
 import type { Peer } from "./lib/types";
@@ -19,10 +26,20 @@ import type { Peer } from "./lib/types";
 type Tab = "devices" | "transfers" | "settings";
 type ThemePref = "auto" | "light" | "dark";
 
+const PAGE_TITLE: Record<Tab, string> = {
+  devices: "设备",
+  transfers: "传输",
+  settings: "设置",
+};
+
+function pageTitle(t: Tab): string {
+  return PAGE_TITLE[t];
+}
+
 function App() {
-  const peers = usePeers();
   const { request, progress, history, clearHistory, clearRequest } = useTransfer();
   const { layout, platform } = usePlatform();
+  const { peers, refreshing, refresh: refreshPeers } = usePeers();
   const [selected, setSelected] = useState<Peer[]>([]);
   const [tab, setTab] = useState<Tab>("devices");
   const [theme, setTheme] = useState<ThemePref>("auto");
@@ -30,6 +47,11 @@ function App() {
   const [addMsg, setAddMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [textContent, setTextContent] = useState("");
   const [textBusy, setTextBusy] = useState(false);
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [atTop, setAtTop] = useState(true);
+  const [toast, setToast] = useState<{ text: string; tone?: "ok" | "err" } | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -38,13 +60,181 @@ function App() {
     else if (theme === "dark") root.classList.add("dark");
   }, [theme]);
 
+  const isMobile = layout === "mobile";
+  const isPhone = platform === "ios" || platform === "android";
+  const isIos = platform === "ios";
+  const isAndroid = platform === "android";
+  const showThemeToggle = !isPhone; // 手机端跟随系统,不展示主题切换
+  const charCountWarn = textContent.length > 3500;
+  const charCountMax = 4096;
+  const peerNames = selected.map((p) => p.name).join("、");
+  const selectionCount = selected.length;
+  const showLargeTitle = isIos && isMobile && atTop;
+
+  const TAB_ORDER: Tab[] = ["devices", "transfers", "settings"];
+
+  // 触发一个简短的全局 toast 反馈(2.4s 自动消失)
+  const showToast = (text: string, tone: "ok" | "err" = "ok") => {
+    setToast({ text, tone });
+    window.setTimeout(() => setToast((cur) => (cur?.text === text ? null : cur)), 2400);
+  };
+  const onRefreshWithToast = async () => {
+    const n = await refreshPeers();
+    showToast(n === 0 ? "未发现其他设备" : `发现 ${n} 台设备`);
+  };
+
+  // 桌面端快捷键套件
+  useEffect(() => {
+    if (isMobile) return;
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      // ⌘⇧P 命令面板
+      if (key === "p" && e.shiftKey) {
+        e.preventDefault();
+        setCmdOpen((p) => !p);
+        return;
+      }
+      // ⌘, 偏好设置
+      if (key === ",") {
+        e.preventDefault();
+        setPrefsOpen((p) => !p);
+        return;
+      }
+      // ⌘W 关闭任意模态/面板
+      if (key === "w") {
+        e.preventDefault();
+        if (prefsOpen) setPrefsOpen(false);
+        else if (addSheetOpen) setAddSheetOpen(false);
+        else if (request) {
+          respond(request.session_id, false);
+          clearRequest();
+        }
+        return;
+      }
+      // ⌘1/⌘2/⌘3 切 tab
+      if (key === "1") { e.preventDefault(); setTab("devices"); return; }
+      if (key === "2") { e.preventDefault(); setTab("transfers"); return; }
+      if (key === "3") { e.preventDefault(); setTab("settings"); return; }
+      // ⌘[ / ⌘] 切 tab(浏览器风格)
+      if (key === "[") { e.preventDefault();
+        setTab((t) => TAB_ORDER[Math.max(TAB_ORDER.indexOf(t) - 1, 0)]); return; }
+      if (key === "]") { e.preventDefault();
+        setTab((t) => TAB_ORDER[Math.min(TAB_ORDER.indexOf(t) + 1, TAB_ORDER.length - 1)]); return; }
+      // ⌘R 刷新设备列表
+      if (key === "r") {
+        e.preventDefault();
+        onRefreshWithToast();
+        return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMobile, prefsOpen, addSheetOpen, request, onRefreshWithToast]);
+
+  // 命令列表
+  const commands: CommandItem[] = useMemo(() => [
+    {
+      id: "tab.devices",
+      group: "导航",
+      label: "切换到「设备」",
+      hint: "查看局域网发现的设备",
+      keywords: ["device", "设备", "tab"],
+      shortcut: "⌘1",
+      action: () => setTab("devices"),
+      icon: <DevicesIcon size={14} />,
+    },
+    {
+      id: "tab.transfers",
+      group: "导航",
+      label: "切换到「传输」",
+      hint: "查看进行中 / 已完成的传输",
+      keywords: ["transfer", "传输", "tab"],
+      shortcut: "⌘2",
+      action: () => setTab("transfers"),
+      icon: <TransferIcon size={14} />,
+    },
+    {
+      id: "tab.settings",
+      group: "导航",
+      label: "切换到「设置」",
+      hint: "配置应用偏好",
+      keywords: ["settings", "prefs", "设置", "tab"],
+      shortcut: "⌘3",
+      action: () => setTab("settings"),
+      icon: <SettingsIcon size={14} />,
+    },
+    {
+      id: "refresh",
+      group: "设备",
+      label: "刷新设备列表",
+      hint: "重新 mDNS 扫描",
+      keywords: ["refresh", "scan", "刷新", "扫描"],
+      shortcut: "⌘R",
+      action: () => { onRefreshWithToast(); },
+      icon: <RefreshIcon size={14} />,
+    },
+    {
+      id: "add-device",
+      group: "设备",
+      label: "添加设备",
+      hint: "手动输入 IP:port 或扫码",
+      keywords: ["add", "device", "ip", "添加", "扫码"],
+      action: () => setAddSheetOpen(true),
+      icon: <PlusIcon size={14} />,
+    },
+    {
+      id: "prefs",
+      group: "应用",
+      label: "偏好设置",
+      hint: "打开偏好面板",
+      keywords: ["prefs", "settings", "设置", "偏好"],
+      shortcut: "⌘,",
+      action: () => setPrefsOpen(true),
+      icon: <SettingsIcon size={14} />,
+    },
+    {
+      id: "theme.light",
+      group: "主题",
+      label: "切换为浅色",
+      keywords: ["theme", "light", "主题", "浅色"],
+      action: () => setTheme("light"),
+      icon: <SunIcon size={14} />,
+    },
+    {
+      id: "theme.dark",
+      group: "主题",
+      label: "切换为深色",
+      keywords: ["theme", "dark", "主题", "深色"],
+      action: () => setTheme("dark"),
+      icon: <MoonIcon size={14} />,
+    },
+    {
+      id: "theme.auto",
+      group: "主题",
+      label: "跟随系统",
+      keywords: ["theme", "auto", "system", "主题", "自动", "系统"],
+      action: () => setTheme("auto"),
+      icon: <AutoIcon size={14} />,
+    },
+  ], [onRefreshWithToast]);
+
+  // iOS mobile:tab 之间左右滑动切换
+  const { progress: swipeProgress } = useSwipeTabs({
+    enabled: isIos && isMobile,
+    onLeft: () =>
+      setTab((t) => TAB_ORDER[Math.min(TAB_ORDER.indexOf(t) + 1, TAB_ORDER.length - 1)]),
+    onRight: () =>
+      setTab((t) => TAB_ORDER[Math.max(TAB_ORDER.indexOf(t) - 1, 0)]),
+  });
+
   const togglePeer = (p: Peer) =>
     setSelected((c) =>
       c.some((x) => x.device_id === p.device_id)
         ? c.filter((x) => x.device_id !== p.device_id)
         : [...c, p]
     );
-
   const transfers = Object.values(progress);
   const activeCount = transfers.filter((t) => !t.done).length;
 
@@ -65,34 +255,78 @@ function App() {
         registerSendFilenames(sid, ["message.txt"]);
       }
       setTextContent("");
-    } catch (e) { alert("发送失败: " + String(e)); }
+    } catch (e) { setAddMsg({ type: "err", text: "发送失败: " + String(e) }); }
     finally { setTextBusy(false); }
   };
 
-  const isMobile = layout === "mobile";
+  const cycleTheme = () => {
+    setTheme((t) => (t === "auto" ? "light" : t === "light" ? "dark" : "auto"));
+  };
+  const ThemeIcon = theme === "light" ? SunIcon : theme === "dark" ? MoonIcon : AutoIcon;
+  const themeTitle =
+    theme === "auto" ? "跟随系统 (点击切换为浅色)"
+    : theme === "light" ? "浅色 (点击切换为深色)"
+    : "深色 (点击切换为跟随系统)";
 
   return (
     <div className={`app ${platform}${isMobile ? " mobile" : ""}`}>
       {/* ── Top bar ──────────────────────────────────── */}
       <header className="topbar" data-tauri-drag-region>
-        <div className="brand" data-tauri-drag-region>
-          <div className="brand-mark"><LogoIcon size={18} /></div>
-          <span className="brand-text">SendSent</span>
-        </div>
-        <div className="topbar-spacer" data-tauri-drag-region />
-        <div className="topbar-actions">
-          <div className="segmented" role="group" aria-label="主题">
-            {(["auto", "light", "dark"] as ThemePref[]).map((t) => (
-              <button
-                key={t}
-                className={`segmented-item${theme === t ? " active" : ""}`}
-                onClick={() => setTheme(t)}
-                aria-pressed={theme === t}
-              >
-                {t === "auto" ? "系统" : t === "light" ? "浅色" : "深色"}
-              </button>
-            ))}
+        {/* iOS / Android: 极简大标题风格,无品牌 logo(节省空间) */}
+        {isPhone ? (
+          isMobile ? (
+            <div className="brand brand-mobile" data-tauri-drag-region>
+              <span className="brand-text">{pageTitle(tab)}</span>
+            </div>
+          ) : (
+            <div className="brand" data-tauri-drag-region>
+              <div className="brand-mark"><LogoIcon size={18} /></div>
+              <span className="brand-text">SendSent</span>
+            </div>
+          )
+        ) : (
+          <div className="brand" data-tauri-drag-region>
+            <div className="brand-mark"><LogoIcon size={18} /></div>
+            <span className="brand-text">SendSent</span>
           </div>
+        )}
+
+        <div className="topbar-spacer" data-tauri-drag-region />
+
+        <div className="topbar-actions">
+          {/* 桌面端 · 偏好设置(等同 Cmd+,) */}
+          {!isPhone && (
+            <button
+              className="icon-btn"
+              onClick={() => setPrefsOpen(true)}
+              title="偏好设置 (⌘,)"
+              aria-label="偏好设置"
+            >
+              <SettingsIcon size={16} />
+            </button>
+          )}
+          {/* Android mobile · 设备 tab:右侧 + 按钮(快速添加) */}
+          {isAndroid && isMobile && tab === "devices" && (
+            <button
+              className="icon-btn"
+              onClick={() => setAddSheetOpen(true)}
+              title="添加设备"
+              aria-label="添加设备"
+            >
+              <PlusIcon size={18} />
+            </button>
+          )}
+          {/* 桌面端:主题切换按钮(手机跟随系统) */}
+          {showThemeToggle && (
+            <button
+              className="icon-btn theme-cycle"
+              onClick={cycleTheme}
+              title={themeTitle}
+              aria-label={themeTitle}
+            >
+              <ThemeIcon size={16} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -105,15 +339,18 @@ function App() {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div
+                  <button
                     key={item.id}
+                    type="button"
                     className={`nav-item${tab === item.id ? " active" : ""}`}
                     onClick={() => setTab(item.id)}
+                    role="tab"
+                    aria-selected={tab === item.id}
                   >
                     <Icon />
                     <span>{item.label}</span>
                     {item.badge !== undefined && <span className="badge">{item.badge}</span>}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -123,15 +360,59 @@ function App() {
                 <span>端口 52225 · mDNS 发现中</span>
               </div>
               <div className="id-name">
-                {selected.length === 0
+                {selectionCount === 0
                   ? "未选择设备"
-                  : `已选 ${selected.length} 台设备`}
+                  : `已选 ${selectionCount} 台设备`}
+              </div>
+              {!isPhone && (
+                <button
+                  className={`refresh-btn${refreshing ? " refreshing" : ""}`}
+                  onClick={onRefreshWithToast}
+                  title="刷新设备列表 (⌘R)"
+                  aria-label="刷新设备列表"
+                >
+                  <RefreshIcon size={12} />
+                  <span>刷新设备</span>
+                </button>
+              )}
+              <div className="shortcut-hints">
+                <kbd className="kbd">⌘ ,</kbd>
+                <span>偏好</span>
+                <kbd className="kbd">⌘R</kbd>
+                <span>刷新</span>
+                <kbd className="kbd">⌘ 1/2/3</kbd>
+                <span>切换</span>
               </div>
             </div>
           </aside>
         )}
 
-        <main className="main">
+        {/* iOS mobile · pull-to-refresh(只在设备 tab 生效) */}
+        {isIos && isMobile && tab === "devices" && (
+          <PullToRefresh
+            onRefresh={async () => {
+              try { await onRefreshWithToast(); } catch { /* ignore */ }
+            }}
+          />
+        )}
+
+        {/* iOS mobile · swipe-back 拖影指示器 */}
+        {isIos && isMobile && Math.abs(swipeProgress) > 0.01 && (
+          <SwipeIndicator progress={swipeProgress} />
+        )}
+
+        <main
+          className="main"
+          onScroll={(e) => {
+            // Only re-render when the large-title threshold is crossed, so
+            // scrolling does not trigger a React render on every frame.
+            const top = (e.target as HTMLElement).scrollTop < 60;
+            if (top !== atTop) setAtTop(top);
+          }}
+        >
+          {isIos && isMobile && (
+            <div className={`large-title${showLargeTitle ? "" : " collapsed"}`}>{pageTitle(tab)}</div>
+          )}
           <div className="main-inner">
             {tab === "devices" && (
               <>
@@ -190,29 +471,31 @@ function App() {
                 <section className="section">
                   <div className="section-title">
                     <span>发送</span>
-                    {selected.length > 0 && <span className="count">{selected.length}</span>}
+                    {selectionCount > 0 && <span className="count">{selectionCount}</span>}
                   </div>
                   <FilePicker peers={selected} />
                 </section>
 
                 <section className="section">
+                  <div className="section-title"><span>文字消息</span></div>
                   <div className="text-send">
                     <textarea
                       rows={2}
-                      placeholder={selected.length === 0
+                      placeholder={selectionCount === 0
                         ? "先选择设备,再输入文字发送…"
-                        : `发送一段文字到 ${selected.length} 台设备`}
+                        : `发送一段文字到 ${peerNames}`}
                       value={textContent}
-                      onChange={(e) => setTextContent(e.target.value)}
-                      disabled={selected.length === 0 || textBusy}
+                      onChange={(e) => setTextContent(e.target.value.slice(0, charCountMax))}
+                      maxLength={charCountMax}
+                      disabled={selectionCount === 0 || textBusy}
                     />
                     <div className="text-send-footer">
-                      <span className="text-send-hint">
-                        {textContent.length} / 4096
+                      <span className={`text-send-hint${charCountWarn ? " warn" : ""}`}>
+                        {textContent.length} / {charCountMax}
                       </span>
                       <button
                         className="btn btn-primary"
-                        disabled={selected.length === 0 || !textContent.trim() || textBusy}
+                        disabled={selectionCount === 0 || !textContent.trim() || textBusy}
                         onClick={sendTextNow}
                       >
                         <SendIcon size={14} />
@@ -290,20 +573,22 @@ function App() {
 
       {/* ── Mobile tab bar ───────────────────────────── */}
       {isMobile && (
-        <nav className="tabbar">
+        <nav className="tabbar" role="tablist">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
                 className={`tabbar-item${tab === item.id ? " active" : ""}`}
                 onClick={() => setTab(item.id)}
-                style={{ position: "relative" }}
+                role="tab"
+                aria-selected={tab === item.id}
               >
-                <Icon size={22} />
+                <Icon size={24} />
                 <span>{item.label}</span>
-                {item.badge !== undefined && <span className="dot" />}
-              </div>
+                {item.badge !== undefined && <span className="dot" aria-hidden />}
+              </button>
             );
           })}
         </nav>
@@ -317,6 +602,32 @@ function App() {
           clearRequest();
         }}
       />
+
+      {/* ── Add device sheet (Android + 触发) ────────── */}
+      <AddDeviceSheet
+        open={addSheetOpen}
+        onClose={() => setAddSheetOpen(false)}
+      />
+
+      {/* ── Prefs panel (桌面端 ⌘, 触发) ────────────── */}
+      <PrefsPanel
+        open={prefsOpen}
+        onClose={() => setPrefsOpen(false)}
+      />
+
+      {/* ── Command palette (桌面端 ⌘⇧P 触发) ─────── */}
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        commands={commands}
+      />
+
+      {/* ── Global toast (e.g. ⌘R 反馈) ──────────── */}
+      {toast && (
+        <div className={`app-toast${toast.tone === "err" ? " err" : ""}`} role="status" aria-live="polite">
+          {toast.text}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,57 @@ import { getTransferConfig, setTransferConfig } from "../lib/invoke";
 
 type Msg = { type: "ok" | "err"; text: string };
 
+function Stepper({
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (v: number) => void;
+}) {
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(Math.min(max, value + step));
+  return (
+    <div className="stepper">
+      <button
+        type="button"
+        className="stepper-btn"
+        onClick={dec}
+        disabled={value <= min}
+        aria-label="减少"
+      >
+        −
+      </button>
+      <input
+        type="number"
+        className="stepper-input"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
+        }}
+      />
+      <button
+        type="button"
+        className="stepper-btn"
+        onClick={inc}
+        disabled={value >= max}
+        aria-label="增加"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 export function TransferConfigEditor() {
   const [conns, setConns] = useState(8);
   const [chunkKb, setChunkKb] = useState(1024);
@@ -41,13 +92,7 @@ export function TransferConfigEditor() {
           并发连接数
           <small>多连接传输可显著提高大文件速度</small>
         </div>
-        <input
-          type="number"
-          min={1}
-          max={32}
-          value={conns}
-          onChange={(e) => setConns(Number(e.target.value) || 1)}
-        />
+        <Stepper value={conns} min={1} max={32} onChange={setConns} />
       </div>
 
       <div className="config-row">
@@ -55,14 +100,7 @@ export function TransferConfigEditor() {
           数据块大小 (KB)
           <small>每个连接每次读写的块大小</small>
         </div>
-        <input
-          type="number"
-          min={64}
-          max={1024}
-          step={64}
-          value={chunkKb}
-          onChange={(e) => setChunkKb(Number(e.target.value) || 64)}
-        />
+        <Stepper value={chunkKb} min={64} max={1024} step={64} onChange={setChunkKb} />
       </div>
 
       <div className="config-row">
@@ -70,12 +108,7 @@ export function TransferConfigEditor() {
           分片阈值 (MB)
           <small>超过此大小的文件会被拆成多连接并行</small>
         </div>
-        <input
-          type="number"
-          min={1}
-          value={splitMb}
-          onChange={(e) => setSplitMb(Number(e.target.value) || 1)}
-        />
+        <Stepper value={splitMb} min={1} max={1024} onChange={setSplitMb} />
       </div>
 
       <div className="row" style={{ justifyContent: "flex-end" }}>

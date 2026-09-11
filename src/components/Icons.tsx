@@ -64,13 +64,88 @@ export const XIcon = (p: IconProps) => (
 export const SunIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l-1.4-1.4" />
   </svg>
 );
 
 export const MoonIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+  </svg>
+);
+
+export const AutoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 3v18M3 12h18" />
+  </svg>
+);
+
+export const MoreIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const InfoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6" />
+    <circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const RefreshIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 12a9 9 0 0 1 15.5-6.4M21 12a9 9 0 0 1-15.5 6.4" />
+    <path d="M19 3v4h-4" />
+    <path d="M5 21v-4h4" />
+  </svg>
+);
+
+export const ChevronLeftIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
+
+export const QrCodeIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3z" />
+  </svg>
+);
+
+export const KeyboardIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="2" y="6" width="20" height="13" rx="2" />
+    <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M7 18h10" />
+  </svg>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-3.5-3.5" />
+  </svg>
+);
+
+export const HistoryIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 12a9 9 0 1 0 3-6.7" />
+    <path d="M3 4v5h5" />
+    <path d="M12 7v5l3 2" />
+  </svg>
+);
+
+export const TrashIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6" />
+    <path d="M10 11v6M14 11v6" />
   </svg>
 );
 
@@ -126,6 +201,13 @@ export const ChevronRightIcon = (p: IconProps) => (
 export const ChevronDownIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+export const CameraIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h2l1.5-2h6L16.5 5h2A2.5 2.5 0 0 1 21 7.5v10A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z" />
+    <circle cx="12" cy="13" r="3.5" />
   </svg>
 );
 

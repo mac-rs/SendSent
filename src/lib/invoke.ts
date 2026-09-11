@@ -19,3 +19,7 @@ export const setTransferConfig = (conns: number, chunk_kb: number, split_mb: num
   invoke<void>("set_transfer_config", { conns, chunkKb: chunk_kb, splitMb: split_mb });
 export const listTransferHistory = () => invoke<HistoryRecord[]>("list_transfer_history");
 export const clearTransferHistory = () => invoke<void>("clear_transfer_history");
+export const getMyQr = (size?: number, ip?: string) =>
+  invoke<string>("get_my_qr", { size, ip });
+export const getMyAddresses = () =>
+  invoke<Array<{ interface: string; ip: string }>>("get_my_addresses");

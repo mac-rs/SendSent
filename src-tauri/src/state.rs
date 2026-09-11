@@ -16,4 +16,5 @@ pub struct AppState {
     pub transfer_config: TransferConfig,
     pub tls_config: TlsConfig,
     pub history: Arc<Mutex<HistoryStore>>,
+    pub port: u16,
 }
