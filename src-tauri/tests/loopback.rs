@@ -92,7 +92,7 @@ async fn end_to_end_send_folder() {
     let session_id = Uuid::new_v4();
     let our_send = identity("send");
     let files = vec![src.to_string_lossy().into_owned()];
-    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, ev_tx.clone(), sendsent_lib::store::TransferConfig::defaults(), false, false));
+    let sender = tokio::spawn(run_sender(session_id, vec![addr], files, our_send, "peer".to_string(), sendsent_lib::discovery::Platform::Macos, ev_tx.clone(), sendsent_lib::store::TransferConfig::defaults(), false, false));
 
     let mut completed = false;
     let drain = tokio::time::timeout(std::time::Duration::from_secs(30), async {
@@ -186,7 +186,7 @@ async fn v2_big_file_throughput() {
     let sid = Uuid::new_v4();
     let files = vec![src.to_string_lossy().into_owned()];
     let sender = tokio::spawn(async move {
-        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, false, false).await
+        run_sender(sid, vec![addr], files, our_send, "peer".to_string(), sendsent_lib::discovery::Platform::Macos, ev_tx.clone(), cfg, false, false).await
     });
 
     let mut completed = false;
@@ -232,7 +232,7 @@ async fn v3_secure_transfer() {
     let sid = Uuid::new_v4();
     let files = vec![src.to_string_lossy().into_owned()];
     let sender = tokio::spawn(async move {
-        run_sender(sid, vec![addr], files, our_send, ev_tx.clone(), cfg, true, false).await
+        run_sender(sid, vec![addr], files, our_send, "peer".to_string(), sendsent_lib::discovery::Platform::Macos, ev_tx.clone(), cfg, true, false).await
     });
 
     let mut completed = false;

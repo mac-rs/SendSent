@@ -1,9 +1,11 @@
 use crate::discovery::Discovery;
+use crate::history::HistoryStore;
 use crate::store::{Identity, TransferConfig};
 use crate::transfer::manager::SessionManager;
 use crate::transfer::tls::TlsConfig;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub struct AppState {
     pub identity: Identity,
@@ -13,4 +15,5 @@ pub struct AppState {
     pub save_dir: PathBuf,
     pub transfer_config: TransferConfig,
     pub tls_config: TlsConfig,
+    pub history: Arc<Mutex<HistoryStore>>,
 }

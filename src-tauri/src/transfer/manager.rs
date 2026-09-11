@@ -5,7 +5,6 @@ use crate::store::Identity;
 use crate::transfer::receiver::{Decision, run_receiver};
 use crate::transfer::sender::run_sender;
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::{TcpListener, TcpStream};
@@ -114,10 +113,24 @@ impl SessionManager {
         self.pending.lock().await.remove(&session_id);
     }
 
-    pub fn start_send(&self, peer_addrs: Vec<SocketAddr>, files: Vec<String>, config: crate::store::TransferConfig, secure: bool, verify: bool) -> anyhow::Result<Uuid> {
+    pub fn start_send(
+        &self,
+        peer: crate::discovery::Peer,
+        files: Vec<String>,
+        config: crate::store::TransferConfig,
+        secure: bool,
+        verify: bool,
+    ) -> anyhow::Result<Uuid> {
         let session_id = Uuid::new_v4();
-        let our = self.our.clone(); let events = self.events_tx.clone(); let id = session_id;
-        tokio::spawn(async move { let _ = run_sender(id, peer_addrs, files, our, events, config, secure, verify).await; });
+        let our = self.our.clone();
+        let events = self.events_tx.clone();
+        let id = session_id;
+        let addrs = peer.addrs.clone();
+        let peer_name = peer.name.clone();
+        let peer_platform = peer.platform;
+        tokio::spawn(async move {
+            let _ = run_sender(id, addrs, files, our, peer_name, peer_platform, events, config, secure, verify).await;
+        });
         Ok(session_id)
     }
 }

@@ -72,7 +72,7 @@ pub async fn send_files(app: tauri::AppHandle, state: State<'_, AppState>, peer_
     };
     tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
     tracing::debug!("send_files paths: {:?}", files);
-    state.sessions.start_send(p.addrs, files, state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
+    state.sessions.start_send(p, files, state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -86,7 +86,7 @@ pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text:
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
         return Err("peer not found".into());
     };
-    state.sessions.start_send(p.addrs, vec![file], state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
+    state.sessions.start_send(p, vec![file], state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -124,6 +124,17 @@ pub fn set_transfer_config(state: State<'_, AppState>, conns: u32, chunk_kb: u64
 #[tauri::command]
 pub fn get_default_save_dir(state: State<'_, AppState>) -> Result<String, String> {
     Ok(state.save_dir.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn list_transfer_history(state: State<'_, AppState>) -> Result<Vec<crate::history::HistoryRecord>, String> {
+    Ok(state.history.lock().await.list())
+}
+
+#[tauri::command]
+pub async fn clear_transfer_history(state: State<'_, AppState>) -> Result<(), String> {
+    state.history.lock().await.clear();
+    Ok(())
 }
 
 // ── iOS 原生文档选择器 ──

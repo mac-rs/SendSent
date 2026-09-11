@@ -108,6 +108,7 @@ pub fn run() {
                 });
             }
 
+            let history = Arc::new(tokio::sync::Mutex::new(crate::history::HistoryStore::load(&data_dir)));
             let (ttx, mut trx) = mpsc::unbounded_channel::<TransferEvent>();
             let sessions = SessionManager::new(identity.clone(), ttx, tls_config.clone());
             {
@@ -117,8 +118,14 @@ pub fn run() {
             {
                 let h = handle.clone();
                 let sessions = sessions.clone();
+                let history = history.clone();
                 tauri::async_runtime::spawn(async move {
                     while let Some(ev) = trx.recv().await {
+                        if let TransferEvent::Recorded(record) = &ev {
+                            history.lock().await.append(record.clone());
+                            let _ = h.emit(name::TRANSFER_HISTORY, serde_json::to_value(record).unwrap());
+                            continue;
+                        }
                         let (n, val) = match &ev {
                             TransferEvent::Request { .. } => {
                                 (name::TRANSFER_REQUEST, serde_json::to_value(&ev).unwrap())
@@ -129,6 +136,7 @@ pub fn run() {
                             TransferEvent::Finished { .. } => {
                                 (name::TRANSFER_FINISHED, serde_json::to_value(&ev).unwrap())
                             }
+                            TransferEvent::Recorded(_) => unreachable!(),
                         };
                         let _ = h.emit(n, val);
                         if let TransferEvent::Finished { session_id, .. } = &ev {
@@ -141,7 +149,7 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
-            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config });
+            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -155,6 +163,8 @@ pub fn run() {
             commands::respond,
             commands::cancel,
             commands::get_default_save_dir,
+            commands::list_transfer_history,
+            commands::clear_transfer_history,
             commands::get_transfer_config,
             commands::set_transfer_config,
         ])

@@ -19,10 +19,11 @@ use uuid::Uuid;
 #[allow(clippy::too_many_arguments)]
 pub async fn run_sender(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
-    our: Identity, events: mpsc::UnboundedSender<TransferEvent>,
+    our: Identity, peer_name: String, peer_platform: crate::discovery::Platform,
+    events: mpsc::UnboundedSender<TransferEvent>,
     config: TransferConfig, secure: bool, verify: bool,
 ) -> Result<()> {
-    let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), events.clone(), config, secure, verify).await;
+    let result = run_sender_inner(session_id, peer_addrs, files, our.clone(), peer_name, peer_platform, events.clone(), config, secure, verify).await;
     if let Err(e) = &result {
         tracing::error!("sender failed: {e}");
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
@@ -34,7 +35,8 @@ pub async fn run_sender(
 #[allow(clippy::too_many_arguments)]
 async fn run_sender_inner(
     session_id: Uuid, peer_addrs: Vec<SocketAddr>, files: Vec<String>,
-    our: Identity, events: mpsc::UnboundedSender<TransferEvent>,
+    our: Identity, peer_name: String, peer_platform: crate::discovery::Platform,
+    events: mpsc::UnboundedSender<TransferEvent>,
     config: TransferConfig, secure: bool, verify: bool,
 ) -> Result<()> {
     let _ = events.send(TransferEvent::Progress { session_id, state: SessionState::Connecting,
@@ -54,6 +56,11 @@ async fn run_sender_inner(
 
     let (manifest, file_map) = build_manifest(session_id, &files)?;
     let files_total = manifest.files.iter().filter(|f| f.kind == FileKind::File).count() as u64;
+    let started_at_ms = crate::history::now_ms();
+    let hist_files: Vec<crate::history::HistoryFile> = manifest.files.iter()
+        .filter(|f| f.kind == FileKind::File)
+        .map(|f| crate::history::HistoryFile { name: f.name.clone(), size: f.size, rel_path: f.name.clone() })
+        .collect();
     let is_secure = secure && ack.secure_ok;
     let mut control_tls: Option<TlsStream<TcpStream>> = None;
 
@@ -75,6 +82,11 @@ async fn run_sender_inner(
         let (ty2, _) = read_control(&mut stream).await?;
         if ty2 == MsgType::Reject {
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Rejected, error: None });
+            let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+                crate::history::Direction::Send, &session_id.to_string(), &peer_name, peer_platform,
+                hist_files.clone(), manifest.total_size, 0, crate::history::HistoryStatus::Rejected,
+                started_at_ms, None, None,
+            )));
             return Ok(());
         }
         if ty2 != MsgType::Accept { return Err(anyhow!("expected accept, got {ty2:?}")); }
@@ -87,6 +99,11 @@ async fn run_sender_inner(
         let (ty2, _) = read_control(c).await?;
         if ty2 == MsgType::Reject {
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Rejected, error: None });
+            let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+                crate::history::Direction::Send, &session_id.to_string(), &peer_name, peer_platform,
+                hist_files.clone(), manifest.total_size, 0, crate::history::HistoryStatus::Rejected,
+                started_at_ms, None, None,
+            )));
             return Ok(());
         }
         if ty2 != MsgType::Accept { return Err(anyhow!("expected accept, got {ty2:?}")); }
@@ -171,6 +188,13 @@ async fn run_sender_inner(
         let (ty, _) = read_control(control.as_mut().unwrap()).await?;
         if ty == MsgType::Complete { FinishedState::Completed } else { FinishedState::Failed }
     };
+    let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+        crate::history::Direction::Send, &session_id.to_string(), &peer_name, peer_platform,
+        hist_files.clone(), manifest.total_size, done,
+        if final_state == FinishedState::Completed { crate::history::HistoryStatus::Completed } else { crate::history::HistoryStatus::Failed },
+        started_at_ms, None,
+        if final_state == FinishedState::Failed { Some("no complete".into()) } else { None },
+    )));
     let _ = events.send(TransferEvent::Finished { session_id, state: final_state,
         error: if final_state == FinishedState::Failed { Some(ErrorPayload { code: ErrorCode::Internal, message: "no complete".into() }) } else { None } });
     Ok(())
