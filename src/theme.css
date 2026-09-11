@@ -1144,3 +1144,34 @@ textarea,
 .app.macos .topbar button {
   -webkit-app-region: no-drag;
 }
+
+/* Theme segmented control */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+}
+.segmented-item {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.segmented-item.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
+}
+
+/* History actions row */
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--s-2);
+}

@@ -4,12 +4,12 @@ import { useTransfer } from "./hooks/useTransfer";
 import { PeerList } from "./components/PeerList";
 import { FilePicker } from "./components/FilePicker";
 import { IncomingRequest } from "./components/IncomingRequest";
-import { TransferProgress } from "./components/TransferProgress";
+import { TransferProgress, TransferHistory } from "./components/TransferProgress";
 import { TransferConfigEditor } from "./components/TransferConfigEditor";
 import { Settings } from "./components/Settings";
 import {
   DevicesIcon, TransferIcon, SettingsIcon,
-  PlusIcon, SunIcon, MoonIcon, LogoIcon, SendIcon, WifiIcon,
+  PlusIcon, LogoIcon, SendIcon, WifiIcon,
 } from "./components/Icons";
 import { usePlatform } from "./lib/platform";
 import { addPeer, sendText, respond } from "./lib/invoke";
@@ -21,7 +21,7 @@ type ThemePref = "auto" | "light" | "dark";
 
 function App() {
   const peers = usePeers();
-  const { request, progress, clearRequest } = useTransfer();
+  const { request, progress, history, clearHistory, clearRequest } = useTransfer();
   const { layout, platform } = usePlatform();
   const [selected, setSelected] = useState<Peer[]>([]);
   const [tab, setTab] = useState<Tab>("devices");
@@ -81,16 +81,18 @@ function App() {
         </div>
         <div className="topbar-spacer" />
         <div className="topbar-actions">
-          <button
-            className="icon-btn"
-            title={`主题:${theme === "auto" ? "跟随系统" : theme === "dark" ? "深色" : "浅色"}`}
-            onClick={() => {
-              const next: ThemePref = theme === "auto" ? "light" : theme === "light" ? "dark" : "auto";
-              setTheme(next);
-            }}
-          >
-            {theme === "dark" ? <MoonIcon /> : <SunIcon />}
-          </button>
+          <div className="segmented" role="group" aria-label="主题">
+            {(["auto", "light", "dark"] as ThemePref[]).map((t) => (
+              <button
+                key={t}
+                className={`segmented-item${theme === t ? " active" : ""}`}
+                onClick={() => setTheme(t)}
+                aria-pressed={theme === t}
+              >
+                {t === "auto" ? "系统" : t === "light" ? "浅色" : "深色"}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -247,6 +249,13 @@ function App() {
                 </div>
                 <section className="section">
                   <TransferProgress items={transfers} />
+                </section>
+                <section className="section">
+                  <div className="section-title"><span>历史记录</span></div>
+                  <TransferHistory
+                    items={history}
+                    onClear={() => { if (confirm("清空全部传输记录？")) clearHistory(); }}
+                  />
                 </section>
               </>
             )}

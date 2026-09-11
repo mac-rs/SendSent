@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getIdentity, setDisplayName } from "../lib/invoke";
+import { SaveLocation } from "./SaveLocation";
 
 type Msg = { type: "ok" | "err"; text: string };
 
@@ -51,6 +52,8 @@ export function Settings() {
           其他设备会看到这个名字,长度建议 2-20 个字符
         </div>
       </div>
+
+      <SaveLocation />
 
       <div className="field">
         <label className="field-label">关于</label>

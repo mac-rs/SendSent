@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { revealItemInDir, openPath } from "@tauri-apps/plugin-opener";
 import type { ProgressView } from "../hooks/useTransfer";
+import type { HistoryRecord } from "../lib/types";
+import { usePlatform } from "../lib/platform";
 import { CheckIcon, XIcon, SendIcon } from "./Icons";
 
 function fmtSize(bytes: number): string {
@@ -129,6 +132,66 @@ export function TransferProgress({
       {items.map((p) => (
         <TransferRow key={p.session_id} p={p} compact={compact} />
       ))}
+    </div>
+  );
+}
+
+function HistoryRow({ r }: { r: HistoryRecord }) {
+  const names = r.files.map((f) => f.name);
+  const { platform } = usePlatform();
+  const isMobile = platform === "ios" || platform === "android";
+  const canReveal = r.direction === "recv" && r.status === "completed" && !!r.save_dir && !isMobile;
+  const reveal = () => {
+    if (!r.save_dir) return;
+    const first = r.files[0]?.rel_path;
+    const target = first ? `${r.save_dir}/${first}` : r.save_dir;
+    revealItemInDir(target).catch(() => openPath(r.save_dir!));
+  };
+  const statusText =
+    r.status === "completed" ? "完成"
+      : r.status === "rejected" ? "已拒绝"
+      : r.status === "cancelled" ? "已取消"
+      : "失败";
+  const dirText = r.direction === "send" ? "发送" : "接收";
+  return (
+    <div className={`transfer ${r.status === "completed" ? "done" : "failed"} fade-in`}>
+      <div className="transfer-head">
+        <div className="transfer-icon">
+          {r.status === "completed" ? <CheckIcon size={16} /> : <XIcon size={16} />}
+        </div>
+        <div className="transfer-info">
+          <span className="transfer-name">
+            {names.length <= 1 ? names[0] : `${names[0]} 等 ${names.length} 个文件`}
+          </span>
+          <div className="transfer-sub">
+            {dirText} · {r.peer_name} · {fmtSize(r.bytes_done)} / {fmtSize(r.total_size)}
+          </div>
+        </div>
+        <div className="transfer-pct">{statusText}</div>
+      </div>
+      {canReveal && (
+        <div className="transfer-meta">
+          <button className="btn btn-ghost" onClick={reveal}>在文件夹中显示</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function TransferHistory({ items, onClear }: { items: HistoryRecord[]; onClear: () => void }) {
+  if (items.length === 0) {
+    return (
+      <div className="card">
+        <div className="transfer-empty">暂无历史记录</div>
+      </div>
+    );
+  }
+  return (
+    <div className="transfers">
+      <div className="history-actions">
+        <button className="btn btn-ghost" onClick={onClear}>清空记录</button>
+      </div>
+      {items.map((r) => <HistoryRow key={r.session_id} r={r} />)}
     </div>
   );
 }
