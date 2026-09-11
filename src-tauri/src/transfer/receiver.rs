@@ -52,6 +52,8 @@ pub async fn run_receiver(
     tls_config: crate::transfer::tls::TlsConfig,
 ) -> Result<()> {
     let session_id = hello.session_id;
+    let started_at_ms = crate::history::now_ms();
+    let peer_plat = peer_platform(hello.platform);
     let mut control_plain = Some(control);
 
     {
@@ -80,6 +82,11 @@ pub async fn run_receiver(
             write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected PinCode".into() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: "expected PinCode".into() }) });
+            let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+                crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+                vec![], 0, 0, crate::history::HistoryStatus::Failed,
+                started_at_ms, None, Some("expected PinCode".into()),
+            )));
             return Ok(());
         }
         let sender_pin: PinCode = postcard::from_bytes(&pbuf)?;
@@ -92,6 +99,11 @@ pub async fn run_receiver(
         write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: "expected manifest".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: "expected manifest".into() }) });
+        let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+            crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+            vec![], 0, 0, crate::history::HistoryStatus::Failed,
+            started_at_ms, None, Some("expected manifest".into()),
+        )));
         return Ok(());
     }
     let manifest: Manifest = match postcard::from_bytes(&buf) {
@@ -99,9 +111,19 @@ pub async fn run_receiver(
             write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ProtocolError, message: e.to_string() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::ProtocolError, message: e.to_string() }) });
+            let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+                crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+                vec![], 0, 0, crate::history::HistoryStatus::Failed,
+                started_at_ms, None, Some(e.to_string()),
+            )));
             return Ok(());
         }
     };
+
+    let hist_files: Vec<crate::history::HistoryFile> = manifest.files.iter()
+        .filter(|f| f.kind == FileKind::File)
+        .map(|f| crate::history::HistoryFile { name: f.name.clone(), size: f.size, rel_path: f.rel_path.clone() })
+        .collect();
 
     let peer = crate::discovery::Peer { device_id: hello.device_id.clone(), name: hello.name.clone(),
         platform: peer_platform(hello.platform), proto_version: hello.proto_ver as u16, addrs: vec![], port: 0, last_seen_ms: 0 };
@@ -111,6 +133,11 @@ pub async fn run_receiver(
     if !decision.accept {
         write_ctrl!(MsgType::Reject, &postcard::to_stdvec(&Reject { reason: "declined".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Rejected, error: None });
+        let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+            crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+            hist_files.clone(), manifest.total_size, 0, crate::history::HistoryStatus::Rejected,
+            started_at_ms, Some(decision.save_dir.to_string_lossy().into_owned()), None,
+        )));
         return Ok(());
     }
     write_ctrl!(MsgType::Accept, &postcard::to_stdvec(&Accept { save_dir: decision.save_dir.to_string_lossy().into() })?);
@@ -122,6 +149,11 @@ pub async fn run_receiver(
             write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::WriteFailed, message: e.to_string() })?);
             let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
                 error: Some(ErrorPayload { code: ErrorCode::WriteFailed, message: e.to_string() }) });
+            let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+                crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+                hist_files.clone(), manifest.total_size, 0, crate::history::HistoryStatus::Failed,
+                started_at_ms, Some(decision.save_dir.to_string_lossy().into_owned()), Some(e.to_string()),
+            )));
             return Ok(());
         }
     };
@@ -208,10 +240,23 @@ pub async fn run_receiver(
         write_ctrl!(MsgType::Complete, &postcard::to_stdvec(&Complete)?);
         let _ = events.send(TransferEvent::Finished { session_id, state: if all_ok { FinishedState::Completed } else { FinishedState::Failed },
             error: if all_ok { None } else { Some(ErrorPayload { code: ErrorCode::WriteFailed, message: "finalize failed".into() }) } });
+        let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+            crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+            hist_files.clone(), manifest.total_size, done,
+            if all_ok { crate::history::HistoryStatus::Completed } else { crate::history::HistoryStatus::Failed },
+            started_at_ms, Some(decision.save_dir.to_string_lossy().into_owned()),
+            if all_ok { None } else { Some("finalize failed".into()) },
+        )));
     } else {
         write_ctrl!(MsgType::Error, &postcard::to_stdvec(&ErrorMsg { code: ErrorCode::ConnectionLost, message: "incomplete".into() })?);
         let _ = events.send(TransferEvent::Finished { session_id, state: FinishedState::Failed,
             error: Some(ErrorPayload { code: ErrorCode::ConnectionLost, message: "transfer incomplete".into() }) });
+        let _ = events.send(TransferEvent::Recorded(crate::history::make_record(
+            crate::history::Direction::Recv, &session_id.to_string(), &hello.name, peer_plat,
+            hist_files.clone(), manifest.total_size, done, crate::history::HistoryStatus::Failed,
+            started_at_ms, Some(decision.save_dir.to_string_lossy().into_owned()),
+            Some("transfer incomplete".into()),
+        )));
     }
     Ok(())
 }
