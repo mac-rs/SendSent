@@ -1,4 +1,6 @@
 pub mod mdns;
+#[cfg(target_os = "ios")]
+pub mod ios_bonjour;
 
 use async_trait::async_trait;
 use serde::{Serialize, Deserialize};
@@ -10,7 +12,21 @@ pub const STALE_AFTER: Duration = Duration::from_secs(90);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum Platform { Macos, Windows, Linux, Ios, Android }
+pub enum Platform { Macos, Windows, Linux, Ios, Android, Unknown }
+
+/// Map an mDNS `plat` TXT value to a platform. Unrecognized labels (including
+/// the legacy "unknown" emitted by older mobile builds) become `Unknown` rather
+/// than masquerading as macOS.
+pub fn platform_from_str(s: &str) -> Platform {
+    match s {
+        "macos" => Platform::Macos,
+        "windows" => Platform::Windows,
+        "linux" => Platform::Linux,
+        "ios" => Platform::Ios,
+        "android" => Platform::Android,
+        _ => Platform::Unknown,
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Peer {
@@ -83,5 +99,13 @@ mod tests {
         r.upsert(now, peer("a"));
         assert!(matches!(r.remove("a"), Some(PeerEvent::Lost(_))));
         assert!(r.list().is_empty());
+    }
+    #[test]
+    fn platform_labels_map() {
+        assert_eq!(platform_from_str("ios"), Platform::Ios);
+        assert_eq!(platform_from_str("android"), Platform::Android);
+        assert_eq!(platform_from_str("macos"), Platform::Macos);
+        assert_eq!(platform_from_str("unknown"), Platform::Unknown);
+        assert_eq!(platform_from_str(""), Platform::Unknown);
     }
 }

@@ -9,7 +9,21 @@ pub const DEFAULT_CHUNK_SIZE: usize = 256 * 1024;
 pub const MAX_DATA_PAYLOAD: u32 = 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Platform { Macos, Windows, Linux, Ios, Android }
+pub enum Platform { Macos, Windows, Linux, Ios, Android, Unknown }
+
+impl Platform {
+    /// Map a platform label (as stored in `Identity.platform`) to the wire enum.
+    pub fn from_label(s: &str) -> Self {
+        match s {
+            "macos" => Platform::Macos,
+            "windows" => Platform::Windows,
+            "linux" => Platform::Linux,
+            "ios" => Platform::Ios,
+            "android" => Platform::Android,
+            _ => Platform::Unknown,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[repr(u8)]
@@ -87,6 +101,13 @@ mod tests {
             assert_eq!(t as u8, b);
         }
         assert!(MsgType::try_from(0xFF).is_err());
+    }
+    #[test]
+    fn platform_from_label() {
+        assert_eq!(Platform::from_label("ios"), Platform::Ios);
+        assert_eq!(Platform::from_label("android"), Platform::Android);
+        assert_eq!(Platform::from_label("macos"), Platform::Macos);
+        assert_eq!(Platform::from_label("nonsense"), Platform::Unknown);
     }
     #[test]
     fn manifest_bincode_roundtrip() {

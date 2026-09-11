@@ -1,4 +1,4 @@
-use crate::discovery::{Discovery, Peer, PeerEvent, PeerRegistry, Platform};
+use crate::discovery::{platform_from_str, Discovery, Peer, PeerEvent, PeerRegistry, Platform};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use mdns_sd::{ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
@@ -98,7 +98,7 @@ impl Discovery for MdnsDiscovery {
         let id = format!("manual-{}", uuid::Uuid::new_v4());
         let p = Peer {
             device_id: id, name: format!("{}:{}", addr.ip(), addr.port()),
-            platform: Platform::Macos, proto_version: 1,
+            platform: Platform::Unknown, proto_version: 1,
             addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
         };
         if let Some(ev) = self.registry.lock().await.upsert(Instant::now(), p) {
@@ -112,11 +112,7 @@ async fn handle_resolved(reg: &Arc<Mutex<PeerRegistry>>, info: &ResolvedService)
     let device_id = info.get_property_val_str("id")?.to_string();
     if device_id.is_empty() { return None; }
     let name = info.get_property_val_str("name").unwrap_or("?").to_string();
-    let platform = match info.get_property_val_str("plat").unwrap_or("") {
-        "windows" => Platform::Windows, "linux" => Platform::Linux,
-        "ios" => Platform::Ios, "android" => Platform::Android,
-        _ => Platform::Macos,
-    };
+    let platform = platform_from_str(info.get_property_val_str("plat").unwrap_or(""));
     let port: u16 = info.get_property_val_str("port")
         .and_then(|s| s.parse().ok()).unwrap_or(52225);
     let proto_version: u16 = info.get_property_val_str("v")

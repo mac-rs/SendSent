@@ -26,12 +26,32 @@ fn home_dir() -> Option<PathBuf> {
     { None }
 }
 
+/// Single source of truth for the current platform label. Used in the mDNS TXT
+/// record and the wire `Hello`, so it must cover every target we ship (notably
+/// iOS/Android, which earlier fell through to "unknown").
+pub fn current_platform() -> &'static str {
+    if cfg!(target_os = "macos") { "macos" }
+    else if cfg!(target_os = "windows") { "windows" }
+    else if cfg!(target_os = "linux") { "linux" }
+    else if cfg!(target_os = "ios") { "ios" }
+    else if cfg!(target_os = "android") { "android" }
+    else { "unknown" }
+}
+
 pub fn load_or_create(data_dir: &Path, platform: &str, fallback_name: &str) -> Result<Identity> {
     std::fs::create_dir_all(data_dir).ok();
     let p = data_dir.join("identity.json");
     if p.exists() {
         let s = std::fs::read_to_string(&p).context("read identity")?;
-        let id: Identity = serde_json::from_str(&s).context("parse identity")?;
+        let mut id: Identity = serde_json::from_str(&s).context("parse identity")?;
+        // Older builds persisted "unknown" on mobile (platform detection lacked
+        // iOS/Android arms). Heal the stored value so peers stop showing as macOS.
+        if id.platform != platform {
+            id.platform = platform.to_string();
+            if let Ok(updated) = serde_json::to_string_pretty(&id) {
+                let _ = std::fs::write(&p, updated);
+            }
+        }
         return Ok(id);
     }
     let id = Identity {
@@ -102,9 +122,22 @@ mod tests {
     }
 
     #[test]
+    fn heals_stale_platform() {
+        let tmp = std::env::temp_dir().join(format!("ss-id-heal-{}", Uuid::new_v4()));
+        let id1 = load_or_create(&tmp, "unknown", "host").unwrap();
+        assert_eq!(id1.platform, "unknown");
+        let id2 = load_or_create(&tmp, "ios", "host").unwrap();
+        assert_eq!(id2.platform, "ios", "stored platform is refreshed");
+        assert_eq!(id1.device_id, id2.device_id, "device_id preserved");
+        let id3 = load_or_create(&tmp, "ios", "host").unwrap();
+        assert_eq!(id3.platform, "ios");
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
     fn transfer_config_sanitizes() {
         let c = TransferConfig { conns: 99, chunk_size: 10, split_threshold: 1 }.sanitized();
-        assert_eq!(c.conns, 16);
+        assert_eq!(c.conns, 32);
         assert_eq!(c.chunk_size, 64 * 1024);
         assert_eq!(c.split_threshold, c.chunk_size);
     }

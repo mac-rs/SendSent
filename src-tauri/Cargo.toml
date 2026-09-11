@@ -47,6 +47,9 @@ rand = "0.10.1"
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.14"
 
+[target.'cfg(target_os = "ios")'.dependencies]
+zeroconf = "0.18"
+
 [dev-dependencies]
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 tokio-rustls = "0.26"

@@ -1,4 +1,4 @@
-export type Platform = "macos" | "windows" | "linux" | "ios" | "android";
+export type Platform = "macos" | "windows" | "linux" | "ios" | "android" | "unknown";
 
 export interface Peer {
   device_id: string;

@@ -25,6 +25,7 @@ fn peer_platform(p: Platform) -> crate::discovery::Platform {
         Platform::Macos => crate::discovery::Platform::Macos, Platform::Windows => crate::discovery::Platform::Windows,
         Platform::Linux => crate::discovery::Platform::Linux, Platform::Ios => crate::discovery::Platform::Ios,
         Platform::Android => crate::discovery::Platform::Android,
+        Platform::Unknown => crate::discovery::Platform::Unknown,
     }
 }
 

@@ -46,7 +46,7 @@ async fn run_sender_inner(
     });
     let c = control.as_mut().unwrap();
     let hello = Hello { device_id: our.device_id.clone(), name: our.name.clone(),
-        platform: Platform::Macos, session_id, proto_ver: PROTO_VER, secure, verify };
+        platform: Platform::from_label(&our.platform), session_id, proto_ver: PROTO_VER, secure, verify };
     write_control(c, MsgType::Hello, &postcard::to_stdvec(&hello)?).await?;
     let (ty, buf) = read_control(c).await?;
     if ty != MsgType::HelloAck { return Err(anyhow!("expected helloack, got {ty:?}")); }

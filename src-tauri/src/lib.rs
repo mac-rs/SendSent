@@ -12,7 +12,11 @@ use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use tokio::sync::mpsc;
 
-use discovery::{mdns::MdnsDiscovery, Discovery, PeerEvent};
+#[cfg(not(target_os = "ios"))]
+use discovery::mdns::MdnsDiscovery;
+#[cfg(target_os = "ios")]
+use discovery::ios_bonjour::BonjourDiscovery;
+use discovery::{Discovery, PeerEvent};
 use events::{name, TransferEvent};
 use state::AppState;
 use store::{default_save_dir, load_or_create};
@@ -45,10 +49,7 @@ pub fn run() {
     builder
         .setup(|app| {
             let data_dir = app.path().app_data_dir().expect("app_data_dir");
-            let platform = if cfg!(target_os = "macos") { "macos" }
-                else if cfg!(target_os = "windows") { "windows" }
-                else if cfg!(target_os = "linux") { "linux" }
-                else { "unknown" };
+            let platform = store::current_platform();
             let host = hostname().unwrap_or_else(|| "device".into());
             let identity = load_or_create(&data_dir, platform, &host).expect("identity");
             // Default 52225; the iOS SIMULATOR gets 52226 automatically (it shares the Mac's
@@ -80,6 +81,11 @@ pub fn run() {
                 .expect("tls config");
 
             let (ptx, mut prx) = mpsc::unbounded_channel::<PeerEvent>();
+            // iOS can't open raw multicast sockets without a restricted entitlement, so it
+            // uses the system Bonjour responder (`zeroconf`); other platforms keep mdns-sd.
+            #[cfg(target_os = "ios")]
+            let discovery: Arc<dyn Discovery> = Arc::new(BonjourDiscovery::new(identity.clone(), port, ptx));
+            #[cfg(not(target_os = "ios"))]
             let discovery: Arc<dyn Discovery> = Arc::new(MdnsDiscovery::new(identity.clone(), port, ptx));
             {
                 let d = discovery.clone();
