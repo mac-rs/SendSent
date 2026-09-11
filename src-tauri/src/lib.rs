@@ -3,6 +3,7 @@ pub mod discovery;
 pub mod transfer;
 pub mod store;
 pub mod events;
+pub mod history;
 pub mod state;
 pub mod commands;
 #[cfg(target_os = "android")]
