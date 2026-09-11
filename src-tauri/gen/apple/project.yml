@@ -56,6 +56,11 @@ targets:
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
         NSLocalNetworkUsageDescription: SendSent needs local network access to discover nearby devices and transfer files.
+        CFBundleDisplayName: SendSent
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        ITSAppUsesNonExemptEncryption: false
+        UIApplicationSupportsIndirectInputEvents: true
         NSBonjourServices:
           - _sendsent._tcp
         NSAppTransportSecurity:
