@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Identity, Peer } from "./types";
+import type { HistoryRecord, Identity, Peer } from "./types";
 
 export const getIdentity = () => invoke<Identity>("get_identity");
 export const setDisplayName = (name: string) => invoke<void>("set_display_name", { name });
@@ -17,3 +17,5 @@ export const pickFilesIos = () => invoke<string[]>("pick_files_ios");
 export const getTransferConfig = () => invoke<{ conns: number; chunk_size: number; split_threshold: number }>("get_transfer_config");
 export const setTransferConfig = (conns: number, chunk_kb: number, split_mb: number) =>
   invoke<void>("set_transfer_config", { conns, chunkKb: chunk_kb, splitMb: split_mb });
+export const listTransferHistory = () => invoke<HistoryRecord[]>("list_transfer_history");
+export const clearTransferHistory = () => invoke<void>("clear_transfer_history");

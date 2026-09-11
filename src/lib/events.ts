@@ -1,5 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { Peer, TransferEvent } from "./types";
+import type { HistoryRecord, Peer, TransferEvent } from "./types";
 
 export function onPeerFound(cb: (peer: Peer) => void): Promise<UnlistenFn> {
   return listen<{ peer: Peer }>("peer://found", (e) => cb(e.payload.peer));
@@ -15,4 +15,7 @@ export function onTransferEvent(cb: (e: TransferEvent) => void): Promise<Unliste
       const combined: UnlistenFn = () => { u1(); u2(); u3(); };
       return combined;
     });
+}
+export function onHistoryRecord(cb: (r: HistoryRecord) => void): Promise<UnlistenFn> {
+  return listen<HistoryRecord>("transfer://history", (e) => cb(e.payload));
 }

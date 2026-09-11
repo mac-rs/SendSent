@@ -12,6 +12,24 @@ export interface Peer {
 
 export interface Identity { device_id: string; name: string; platform: string; }
 
+export type TransferDirection = "send" | "recv";
+export type HistoryStatus = "completed" | "failed" | "rejected" | "cancelled";
+export interface HistoryFile { name: string; size: number; rel_path: string }
+export interface HistoryRecord {
+  session_id: string;
+  direction: TransferDirection;
+  peer_name: string;
+  peer_platform: Platform;
+  files: HistoryFile[];
+  total_size: number;
+  bytes_done: number;
+  status: HistoryStatus;
+  started_at_ms: number;
+  ended_at_ms: number;
+  save_dir: string | null;
+  error: string | null;
+}
+
 export type FileKind = "File" | "Dir";
 export interface FileMeta {
   id: string; name: string; rel_path: string;

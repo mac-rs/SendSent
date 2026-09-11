@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { onTransferEvent } from "../lib/events";
-import type { Manifest } from "../lib/types";
+import { onTransferEvent, onHistoryRecord } from "../lib/events";
+import { listTransferHistory, clearTransferHistory } from "../lib/invoke";
+import type { HistoryRecord, Manifest } from "../lib/types";
 
 export interface RequestView {
   session_id: string; sender_name: string; count: number; size: number;
@@ -21,6 +22,18 @@ export function useTransfer() {
   const [request, setRequest] = useState<RequestView | null>(null);
   const [progress, setProgress] = useState<Record<string, ProgressView>>({});
   const [manifests] = useState<Record<string, Manifest>>({});
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+
+  useEffect(() => {
+    let un: (() => void) | undefined;
+    (async () => {
+      listTransferHistory().then(setHistory).catch(() => {});
+      un = await onHistoryRecord((r) =>
+        setHistory((cur) => [r, ...cur.filter((x) => x.session_id !== r.session_id)])
+      );
+    })();
+    return () => { un?.(); };
+  }, []);
 
   useEffect(() => {
     let un: (() => void) | undefined;
@@ -79,5 +92,10 @@ export function useTransfer() {
     return () => { un?.(); };
   }, []);
 
-  return { request, progress, clearRequest: () => setRequest(null) };
+  const clearHistory = async () => {
+    await clearTransferHistory();
+    setHistory([]);
+  };
+
+  return { request, progress, history, clearHistory, clearRequest: () => setRequest(null) };
 }
