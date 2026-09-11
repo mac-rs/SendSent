@@ -75,11 +75,11 @@ function App() {
     <div className={`app ${platform}${isMobile ? " mobile" : ""}`}>
       {/* ── Top bar ──────────────────────────────────── */}
       <header className="topbar" data-tauri-drag-region>
-        <div className="brand">
+        <div className="brand" data-tauri-drag-region>
           <div className="brand-mark"><LogoIcon size={18} /></div>
           <span className="brand-text">SendSent</span>
         </div>
-        <div className="topbar-spacer" />
+        <div className="topbar-spacer" data-tauri-drag-region />
         <div className="topbar-actions">
           <div className="segmented" role="group" aria-label="主题">
             {(["auto", "light", "dark"] as ThemePref[]).map((t) => (

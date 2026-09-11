@@ -1175,3 +1175,13 @@ textarea,
   justify-content: flex-end;
   margin-bottom: var(--s-2);
 }
+
+/* Mobile safe area: the base `.app.mobile .topbar` padding shorthand zeroed the
+   top inset, pushing the header under the status bar. The top bar owns the top
+   inset; the main pane does not need to repeat it. */
+.app.mobile .topbar {
+  padding-top: env(safe-area-inset-top, 0);
+}
+.app.mobile .main {
+  padding-top: var(--s-4);
+}
