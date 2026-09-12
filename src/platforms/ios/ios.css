@@ -431,3 +431,405 @@
   -webkit-overflow-scrolling: touch;
 }
 .app.ios .sheet-content::-webkit-scrollbar { width: 0; }
+
+/* ============================================================
+   iOS 组件样式 — Transfer / Cmd / Modal / Sheet / Scan /
+   Recent / Swipe / PTR / Ripple / 按钮变体(结构 + iOS 视觉)
+   ============================================================ */
+
+/* ── 按钮变体 ─────────────────────────────────────────── */
+.app.ios .btn-primary { background: var(--ios-blue); border-color: transparent; color: #fff; }
+.app.ios .btn-primary:active { background: #0a84ff; }
+.app.ios .btn-danger { background: var(--ios-red); border-color: transparent; color: #fff; }
+.app.ios .btn-ghost { background: transparent; border-color: transparent; color: var(--ios-blue); }
+.app.ios .btn-ghost:active { opacity: 0.6; }
+
+/* ── 工具类 ───────────────────────────────────────────── */
+.app.ios .muted { color: var(--text-3); }
+.app.ios .dim { color: var(--text-4); }
+.app.ios .mono { font-family: var(--font-mono); }
+.app.ios .spacer { flex: 1; }
+.app.ios .error { color: var(--ios-red); }
+.app.ios .card-body { padding: 14px 16px; }
+.app.ios .col { display: flex; flex-direction: column; }
+.app.ios .row { display: flex; align-items: center; gap: 8px; }
+.app.ios .v { font: 700 17px var(--font-display); color: var(--text); }
+.app.ios .l { font: 400 12px var(--font-text); color: var(--text-3); }
+.app.ios .icon-btn {
+  border: 0; background: transparent; color: var(--text-2);
+  display: grid; place-items: center; cursor: pointer;
+  padding: 8px; border-radius: 50%;
+  transition: background var(--dur-fast), opacity var(--dur-fast);
+}
+.app.ios .icon-btn:active { background: var(--surface-hover); }
+
+/* ── 传输卡(Liquid Glass) ─────────────────────────────── */
+.app.ios .transfers { display: flex; flex-direction: column; gap: 12px; }
+.app.ios .transfer {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px 16px;
+  background: var(--glass-2);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+.app.ios .transfer-head { display: flex; align-items: center; gap: 12px; }
+.app.ios .transfer-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--ios-blue-soft); color: var(--ios-blue);
+}
+.app.ios .transfer.done .transfer-icon { background: rgba(52, 199, 89, 0.15); color: var(--ios-green); }
+.app.ios .transfer.failed .transfer-icon { background: rgba(255, 59, 48, 0.15); color: var(--ios-red); }
+.app.ios .transfer-info { flex: 1; min-width: 0; }
+.app.ios .transfer-name {
+  display: block;
+  font: 500 15px var(--font-text); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app.ios .transfer-sub {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font: 400 12px var(--font-text); color: var(--text-2);
+  margin-top: 2px;
+}
+.app.ios .transfer-pct {
+  font: 600 14px var(--font-mono); color: var(--ios-blue);
+  flex-shrink: 0;
+}
+.app.ios .transfer.done .transfer-pct { color: var(--ios-green); }
+.app.ios .transfer.failed .transfer-pct { color: var(--ios-red); }
+.app.ios .transfer-bar {
+  height: 5px; border-radius: 3px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.app.ios .transfer-bar-fill {
+  height: 100%; border-radius: 3px;
+  background: var(--ios-blue);
+  transition: width 0.3s var(--ease-standard);
+}
+.app.ios .transfer.done .transfer-bar-fill { background: var(--ios-green); }
+.app.ios .transfer.failed .transfer-bar-fill { background: var(--ios-red); }
+.app.ios .transfer-meta {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 0; padding-top: 0;
+  font: 500 12px var(--font-text); color: var(--text-2);
+}
+.app.ios .speed { font-family: var(--font-mono); color: var(--ios-blue); }
+.app.ios .dir-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font: 600 11px var(--font-text);
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  border: 0.5px solid var(--separator);
+  flex-shrink: 0;
+}
+.app.ios .transfer-empty {
+  font: 400 14px var(--font-text); color: var(--text-3);
+  text-align: center; padding: 16px 0;
+}
+
+/* ── 历史记录 ─────────────────────────────────────────── */
+.app.ios .transfers.history { position: relative; }
+.app.ios .history-actions { display: flex; justify-content: flex-start; padding: 0 4px 2px; }
+.app.ios .history-hint { font: 400 12px var(--font-text); color: var(--text-4); }
+.app.ios .history-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.ios .history-confirm {
+  width: 272px;
+  padding: 24px 20px 16px;
+  background: var(--glass-3);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: pop 0.28s var(--ease-ios-spring);
+}
+.app.ios .history-confirm-icon { color: var(--ios-red); margin-bottom: 4px; }
+.app.ios .history-confirm-title { font: 600 15px var(--font-text); color: var(--text); }
+.app.ios .history-confirm-sub { font: 400 12px var(--font-text); color: var(--text-3); }
+.app.ios .history-confirm-actions { display: flex; gap: 8px; margin-top: 14px; }
+.app.ios .history-confirm-actions .btn { padding: 8px 16px; border-radius: 12px; }
+
+/* ── 命令面板(iOS 弹层风格) ───────────────────────────── */
+.app.ios .cmd-backdrop {
+  position: fixed; inset: 0; z-index: 130;
+  display: grid; place-items: center;
+  padding-top: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  animation: fadeIn 0.16s ease;
+}
+.app.ios .cmd-panel {
+  width: calc(100vw - 48px);
+  max-height: 70vh;
+  display: flex; flex-direction: column;
+  border-radius: 20px;
+  background: var(--glass-3);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: cmdPop 0.22s var(--ease-ios-spring);
+}
+.app.ios .cmd-search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px;
+  border-bottom: 0.5px solid var(--separator);
+  color: var(--text-3);
+}
+.app.ios .cmd-search input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: 400 16px var(--font-text); color: var(--text);
+}
+.app.ios .cmd-search input::placeholder { color: var(--text-4); }
+.app.ios .cmd-search svg { color: var(--text-3); }
+.app.ios .cmd-clear {
+  border: 0; background: transparent; color: var(--text-3);
+  cursor: pointer; padding: 4px; display: grid; place-items: center;
+  border-radius: 50%;
+}
+.app.ios .cmd-results { flex: 1; overflow-y: auto; padding: 8px; }
+.app.ios .cmd-empty {
+  padding: 32px 16px; text-align: center;
+  color: var(--text-3); font: 400 15px var(--font-text);
+}
+.app.ios .cmd-group { margin-bottom: 6px; }
+.app.ios .cmd-group-label {
+  font: 500 12px var(--font-text); color: var(--text-3);
+  text-transform: none; letter-spacing: 0;
+  padding: 10px 12px 4px;
+}
+.app.ios .cmd-item {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0; border-radius: 10px;
+  background: transparent;
+  text-align: left; cursor: pointer;
+  font: 400 15px var(--font-text); color: var(--text);
+}
+.app.ios .cmd-item.active { background: var(--ios-blue-soft); }
+.app.ios .cmd-item-icon { color: var(--text-2); display: grid; place-items: center; }
+.app.ios .cmd-item.active .cmd-item-icon { color: var(--ios-blue); }
+.app.ios .cmd-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.app.ios .cmd-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.ios .cmd-item-hint { font: 400 12px var(--font-text); color: var(--text-3); margin-top: 1px; }
+.app.ios .cmd-item-kbd { display: none; }
+.app.ios .cmd-footer { display: none; }
+
+/* ── Modal(收到文件请求 · iOS alert) ──────────────────── */
+.app.ios .modal-backdrop {
+  position: fixed; inset: 0; z-index: 120;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.ios .modal {
+  width: 280px;
+  padding: 24px 20px;
+  border-radius: 20px;
+  background: var(--glass-3);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex; flex-direction: column; gap: 14px;
+  animation: pop 0.3s var(--ease-ios-spring);
+}
+.app.ios .modal-header {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.app.ios .modal-avatar {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--ios-blue), #5e5ce6);
+  color: #fff;
+  font: 700 20px var(--font-display);
+  margin-bottom: 4px;
+}
+.app.ios .modal-title { font: 600 17px var(--font-text); color: var(--text); }
+.app.ios .modal-sub { font: 400 13px var(--font-text); color: var(--text-3); }
+.app.ios .modal-stats { display: flex; gap: 8px; }
+.app.ios .modal-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ios-blue);
+}
+.app.ios .modal-actions { flex-direction: column; gap: 8px; }
+.app.ios .modal-actions .btn { flex: none; justify-content: center; padding: 12px; border-radius: 12px; }
+.app.ios .modal-actions .btn.btn-primary { background: var(--ios-blue); }
+
+/* ── AddDeviceSheet 嵌入外层 Sheet 时透明融入 ──────────── */
+.app.ios .sheet .sheet-backdrop {
+  position: static; inset: auto;
+  background: transparent;
+  pointer-events: none;
+  transition: none;
+}
+.app.ios .sheet .sheet {
+  position: static;
+  left: auto; right: auto; bottom: auto;
+  background: transparent;
+  border: 0; box-shadow: none; border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.app.ios .sheet .sheet-handle { display: none; }
+.app.ios .sheet .sheet-header { padding: 12px 16px 0; }
+.app.ios .sheet .sheet-close { background: var(--surface); }
+.app.ios .sheet .sheet-confirm { background: var(--ios-blue); }
+.app.ios .sheet .sheet-mode-toggle { margin: 12px 16px 0; border-radius: 12px; background: var(--surface); }
+.app.ios .sheet .sheet-mode.active { background: var(--glass-2); box-shadow: none; }
+.app.ios .sheet .sheet-body { padding: 14px 20px 24px; }
+.app.ios .sheet .field-row input { font-size: 16px; padding: 10px 12px; }
+
+/* ── 扫码 ─────────────────────────────────────────────── */
+.app.ios .scan-stage { display: flex; flex-direction: column; gap: 12px; }
+.app.ios .scan-viewport {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%; max-height: 320px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+  align-self: center;
+}
+.app.ios .scan-video { width: 100%; height: 100%; object-fit: cover; }
+.app.ios .scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.app.ios .scan-corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+}
+.app.ios .scan-corner-tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.app.ios .scan-corner-tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.app.ios .scan-corner-bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.app.ios .scan-corner-br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+.app.ios .scan-line {
+  position: absolute; left: 10%; right: 10%; top: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ios-blue), transparent);
+  animation: scanSweep 2.4s var(--ease-standard) infinite;
+  pointer-events: none;
+}
+.app.ios .scan-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font: 400 13px var(--font-text);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ── 最近添加(inset grouped) ──────────────────────────── */
+.app.ios .recent-list { margin-top: 4px; }
+.app.ios .recent-list-header {
+  display: flex; align-items: center; gap: 6px;
+  font: 500 12px var(--font-text); color: var(--text-3);
+  text-transform: none; letter-spacing: 0;
+  padding: 10px 12px 6px;
+}
+.app.ios .recent-list-items {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 0;
+  background: var(--surface-2);
+}
+.app.ios .recent-item { display: flex; align-items: center; background: transparent; }
+.app.ios .recent-item + .recent-item { border-top: 0.5px solid var(--separator); }
+.app.ios .recent-item-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  padding: 12px 14px;
+  border: 0; background: transparent;
+  font: 400 15px var(--font-mono); color: var(--text);
+  cursor: pointer; text-align: left;
+}
+.app.ios .recent-item-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.ios .recent-item-remove {
+  width: 34px; height: 34px;
+  border: 0; background: transparent;
+  color: var(--text-3);
+  display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.app.ios .recent-item-remove:active { color: var(--ios-red); }
+
+/* ── 滑动手势指示 ─────────────────────────────────────── */
+.app.ios .swipe-edge-shadow {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 80;
+}
+.app.ios .swipe-edge-bar {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.ios .swipe-edge-glow {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--ios-blue);
+  filter: blur(2px);
+}
+.app.ios .swipe-indicator {
+  position: fixed; bottom: 24vh; right: 0;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  pointer-events: none; z-index: 80;
+}
+.app.ios .swipe-indicator-bg {
+  position: absolute; inset: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--glass-2);
+  box-shadow: var(--shadow-2);
+}
+.app.ios .swipe-indicator svg { position: relative; }
+
+/* ── 下拉刷新 / toast ─────────────────────────────────── */
+.app.ios .ptr {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 32px;
+  color: var(--ios-blue);
+  font: 500 13px var(--font-text);
+  pointer-events: none;
+}
+.app.ios .ptr-spinner { display: grid; place-items: center; color: var(--ios-blue); }
+.app.ios .ptr.refreshing .ptr-spinner svg { animation: spin 0.9s linear infinite; }
+.app.ios .ripple-host { -webkit-tap-highlight-color: transparent; }
+.app.ios .toast-msg {
+  font: 500 13px var(--font-text);
+  color: var(--success);
+  background: var(--success-soft);
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-top: 10px;
+  animation: fadeInUp 0.24s var(--ease-ios-spring);
+}
+.app.ios .toast-msg.error {
+  color: var(--ios-red);
+  background: rgba(255, 59, 48, 0.12);
+}

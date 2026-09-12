@@ -1,201 +1,361 @@
 /* ============================================================
-   Android 平台样式 — Material 3
+   Android 平台样式 — Material 3 (Material You)
+   对齐 docs/design-mocks/android.html
    ============================================================ */
 
 :root {
+  /* ── M3 baseline light palette ───────────────────────── */
   --m3-primary: #6750A4;
+  --m3-on-primary: #FFFFFF;
   --m3-primary-container: #EADDFF;
+  --m3-on-primary-container: #21005D;
   --m3-secondary: #625B71;
+  --m3-on-secondary: #FFFFFF;
   --m3-secondary-container: #E8DEF8;
+  --m3-on-secondary-container: #1D192B;
   --m3-tertiary: #7D5260;
+  --m3-on-tertiary: #FFFFFF;
+  --m3-tertiary-container: #FFD8E4;
+  --m3-on-tertiary-container: #31111D;
+  --m3-error: #B3261E;
+  --m3-on-error: #FFFFFF;
+  --m3-error-container: #F9DEDC;
+  --m3-on-error-container: #410E0B;
+
   --m3-surface: #FEF7FF;
-  --m3-surface-variant: #E7E0EC;
+  --m3-surface-dim: #DED8E1;
+  --m3-surface-container-lowest: #FFFFFF;
+  --m3-surface-container-low: #F7F2FA;
+  --m3-surface-container: #F3EDF7;
+  --m3-surface-container-high: #ECE6F0;
+  --m3-surface-container-highest: #E6E0E9;
   --m3-on-surface: #1D1B20;
   --m3-on-surface-variant: #49454F;
   --m3-outline: #79747E;
-  --m3-elevation-1: 0 1px 2px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
-  --m3-elevation-2: 0 1px 2px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.10);
-  --m3-shape: 12px;
-  --m3-shape-lg: 16px;
-  /* 动态 color 切换时,所有 M3 组件颜色平滑过渡 */
+  --m3-outline-variant: #CAC4D0;
+
+  /* ── M3 elevation / shape ─────────────────────────────── */
+  --m3-elev-1: 0 1px 2px rgba(0,0,0,0.30), 0 1px 3px 1px rgba(0,0,0,0.15);
+  --m3-elev-2: 0 1px 2px rgba(0,0,0,0.30), 0 2px 6px 2px rgba(0,0,0,0.15);
+  --m3-elev-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.30);
+  --m3-shape-xs: 8px;
+  --m3-shape-sm: 12px;
+  --m3-shape-md: 16px;
+  --m3-shape-lg: 28px;
+  --m3-shape-full: 999px;
+
+  --font-m3: "Roboto", "Noto Sans SC", -apple-system, system-ui, sans-serif;
+
+  /* 动态取色(applyAndroidDynamicColor)切换时平滑过渡 */
   transition:
     --m3-primary 0.4s var(--ease-ios-spring),
+    --m3-on-primary 0.4s var(--ease-ios-spring),
     --m3-primary-container 0.4s var(--ease-ios-spring),
     --m3-secondary 0.4s var(--ease-ios-spring),
     --m3-tertiary 0.4s var(--ease-ios-spring),
     --m3-surface 0.4s var(--ease-ios-spring);
 }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --m3-primary: #D0BCFF;
+    --m3-on-primary: #381E72;
     --m3-primary-container: #4F378B;
+    --m3-on-primary-container: #EADDFF;
     --m3-secondary: #CCC2DC;
+    --m3-on-secondary: #332D41;
+    --m3-secondary-container: #4A4458;
+    --m3-on-secondary-container: #E8DEF8;
+    --m3-tertiary: #EFB8C8;
+    --m3-on-tertiary: #332D41;
+    --m3-tertiary-container: #633B48;
+    --m3-on-tertiary-container: #FFD8E4;
+    --m3-error: #F2B8B5;
+    --m3-on-error: #601410;
+    --m3-error-container: #8C1D18;
+    --m3-on-error-container: #F9DEDC;
+
     --m3-surface: #141218;
-    --m3-surface-variant: #49454F;
+    --m3-surface-dim: #141218;
+    --m3-surface-container-lowest: #0F0D13;
+    --m3-surface-container-low: #1D1B20;
+    --m3-surface-container: #211F26;
+    --m3-surface-container-high: #2B2930;
+    --m3-surface-container-highest: #36343B;
     --m3-on-surface: #E6E0E9;
     --m3-on-surface-variant: #CAC4D0;
     --m3-outline: #938F99;
+    --m3-outline-variant: #49454F;
   }
 }
 
+/* ── Root layout: AppBar / content / NavigationBar ─────────── */
 .app.android.mobile {
+  position: relative;
   display: grid;
   grid-template-rows: auto 1fr auto;
   height: 100vh;
   height: 100dvh;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-text);
+  background: var(--m3-surface);
+  color: var(--m3-on-surface);
+  font-family: var(--font-m3);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
-/* ── AppBar (M3 medium) ────────────────────────────────────── */
+/* ── M3 Top AppBar (small) — 沉浸式状态栏 ─────────────────── */
+/* padding-top 让出状态栏,背景 surface-container 延伸覆盖整个状态栏 */
 .app.android .appbar {
-  background: var(--m3-surface);
-  box-shadow: var(--m3-elevation-1);
-  padding: 14px 16px 12px;
-  display: flex; flex-direction: column; gap: 10px;
+  background: var(--m3-surface-container);
+  padding: env(safe-area-inset-top, 0px) 4px 0;
+  flex-shrink: 0;
 }
-.app.android .appbar-head {
-  display: flex; align-items: center; justify-content: space-between;
+.app.android .appbar-row {
+  height: 64px;
+  display: flex; align-items: center;
+  padding: 0 4px;
 }
 .app.android .appbar-title {
-  font: 500 22px var(--font-display);
+  flex: 1;
+  font: 500 22px/1 var(--font-m3);
+  letter-spacing: 0.1px;
   color: var(--m3-on-surface);
-  letter-spacing: -0.1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.app.android .appbar-actions { display: flex; gap: 0; }
-.app.android .appbar .icon-btn {
-  width: 40px; height: 40px;
+.app.android .appbar-action {
+  width: 48px; height: 48px;
+  border-radius: var(--m3-shape-full);
   border: 0; background: transparent;
-  border-radius: 50%;
-  cursor: pointer;
   color: var(--m3-on-surface-variant);
   display: grid; place-items: center;
-  transition: background 0.14s;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
 }
-.app.android .appbar .icon-btn:hover { background: var(--m3-surface-variant); }
-.app.android .appbar-search {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--m3-surface-variant);
-  border-radius: 28px;
-  padding: 8px 16px;
+.app.android .appbar-action:hover,
+.app.android .appbar-action:active { background: var(--m3-surface-container-highest); }
+
+/* ── M3 Search Bar ─────────────────────────────────────────── */
+.app.android .m3-search {
+  margin: 2px 16px 12px;
+  height: 56px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+  border-radius: var(--m3-shape-lg);
+  background: var(--m3-surface-container-high);
   color: var(--m3-on-surface-variant);
+  flex-shrink: 0;
 }
-.app.android .appbar-search input {
-  flex: 1; border: 0; background: transparent; outline: 0;
-  font: 400 14px var(--font-text);
+.app.android .m3-search input {
+  flex: 1; min-width: 0;
+  border: 0; background: transparent; outline: 0;
+  font: 400 16px var(--font-m3);
   color: var(--m3-on-surface);
 }
+.app.android .m3-search input::placeholder { color: var(--m3-on-surface-variant); }
 
 /* ── Content ───────────────────────────────────────────────── */
 .app.android .content {
   overflow-y: auto;
-  padding: 12px 16px 24px;
-  display: flex; flex-direction: column; gap: 14px;
+  padding: 4px 16px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--m3-surface);
   -webkit-overflow-scrolling: touch;
 }
 .app.android .section-title {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 4px 0;
+  padding: 8px 16px 0;
 }
 .app.android .section-title h2 {
-  font: 600 16px var(--font-display);
+  font: 500 14px/1 var(--font-m3);
+  letter-spacing: 0.1px;
+  color: var(--m3-on-surface-variant);
   margin: 0;
 }
 .app.android .btn.btn-text {
   background: transparent;
   border: 0;
   color: var(--m3-primary);
-  font: 500 14px var(--font-text);
+  font: 500 14px var(--font-m3);
   cursor: pointer;
   padding: 4px 12px;
 }
 
-/* M3 List */
+/* ── M3 List ───────────────────────────────────────────────── */
 .app.android .m3-list {
-  background: var(--m3-surface);
-  border-radius: var(--m3-shape-lg);
+  border-radius: var(--m3-shape-sm);
   overflow: hidden;
-  box-shadow: var(--m3-elevation-1);
+  background: var(--m3-surface-container-low);
 }
 .app.android .m3-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 16px;
+  display: flex; align-items: center; gap: 16px;
   min-height: 56px;
-  background: transparent;
-  border: 0;
   width: 100%;
+  padding: 8px 16px;
+  border: 0; background: transparent;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  color: var(--text);
+  position: relative;
 }
-.app.android .m3-row + .m3-row { border-top: 1px solid var(--separator); }
-.app.android .m3-row-icon {
-  width: 32px; height: 32px;
-  border-radius: 8px;
+.app.android .m3-row + .m3-row::before {
+  content: "";
+  position: absolute;
+  left: 72px; right: 16px; top: 0;
+  height: 1px;
+  background: var(--m3-outline-variant);
+  opacity: 0.7;
+}
+.app.android .m3-row:active { background: var(--m3-surface-container-highest); }
+.app.android .m3-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
   display: grid; place-items: center;
-  color: white;
   flex-shrink: 0;
 }
-.app.android .m3-row .info { flex: 1; }
+.app.android .m3-row .info { flex: 1; min-width: 0; }
 .app.android .m3-row .name {
-  font: 500 15px var(--font-text);
+  font: 500 16px/1.3 var(--font-m3);
+  letter-spacing: 0.15px;
   color: var(--m3-on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .app.android .m3-row .sub {
-  font: 400 12px var(--font-text);
+  font: 400 14px/1.3 var(--font-m3);
+  letter-spacing: 0.25px;
   color: var(--m3-on-surface-variant);
   margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app.android .m3-row .trailing {
+  color: var(--m3-on-surface-variant);
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
 }
 
-/* ── NavigationBar (M3) ────────────────────────────────────── */
+/* ── M3 Card (transfer 卡片) ───────────────────────────────── */
+.app.android .m3-card {
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-low);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.app.android .m3-card .card-head {
+  display: flex; align-items: center; gap: 14px;
+}
+.app.android .m3-card .file-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.app.android .m3-card .fname {
+  font: 500 15px/1.3 var(--font-m3);
+  color: var(--m3-on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app.android .m3-card .fmeta {
+  font: 400 12px/1.3 var(--font-m3);
+  color: var(--m3-on-surface-variant);
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app.android .m3-card .fstat { text-align: right; flex-shrink: 0; }
+.app.android .m3-card .pct {
+  font: 600 14px var(--font-m3);
+  color: var(--m3-primary);
+}
+.app.android .m3-card .speed {
+  font: 500 11px var(--font-m3);
+  color: var(--m3-tertiary);
+  margin-top: 2px;
+}
+.app.android .m3-progress {
+  height: 4px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container-highest);
+  overflow: hidden;
+}
+.app.android .m3-progress .fill {
+  height: 100%;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-primary);
+}
+
+/* ── M3 Extended FAB ───────────────────────────────────────── */
+.app.android .fab-ext {
+  position: absolute;
+  right: 20px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  height: 56px;
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 0 20px;
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+  border: 0;
+  font: 600 14px var(--font-m3);
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  box-shadow: var(--m3-elev-2);
+  z-index: 6;
+  transition: box-shadow 0.15s;
+}
+.app.android .fab-ext:active { box-shadow: var(--m3-elev-1); }
+
+/* ── M3 NavigationBar (spec: active pill 64×32) ────────────── */
 .app.android .m3-navbar {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  background: var(--m3-surface);
-  border-top: 1px solid var(--m3-outline);
-  padding: 10px 0 14px;
+  display: flex;
+  justify-content: space-around;
+  background: var(--m3-surface-container);
+  padding: 0 8px calc(env(safe-area-inset-bottom, 0px) + 8px);
+  flex-shrink: 0;
 }
 .app.android .m3-nav-item {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  color: var(--m3-on-surface-variant);
-  font: 500 12px var(--font-text);
-  cursor: pointer;
+  flex: 1;
+  max-width: 168px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding-top: 12px;
   border: 0; background: none;
-  padding: 4px 0;
+  cursor: pointer;
+  font: 500 12px var(--font-m3);
+  letter-spacing: 0.5px;
+  color: var(--m3-on-surface-variant);
+  transition: color 0.2s;
 }
 .app.android .m3-nav-item.active { color: var(--m3-on-surface); }
 .app.android .m3-nav-pill {
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 14px;
-  border-radius: 16px;
-  transition: background 0.18s;
+  width: 64px; height: 32px;
+  border-radius: var(--m3-shape-full);
+  display: grid; place-items: center;
   position: relative;
+  transition: background 0.2s;
 }
 .app.android .m3-nav-item.active .m3-nav-pill {
   background: var(--m3-secondary-container);
 }
-.app.android .m3-nav-label {
-  font: 500 12px var(--font-text);
-  letter-spacing: 0.4px;
-}
 .app.android .m3-nav-pill .badge {
-  background: var(--m3-primary);
-  color: white;
-  font: 600 10px var(--font-text);
-  padding: 1px 6px;
-  border-radius: 999px;
+  position: absolute;
+  top: -2px; right: 4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-error);
+  color: var(--m3-on-error);
+  font: 600 9px/16px var(--font-m3);
+  display: grid; place-items: center;
+  box-sizing: border-box;
 }
+.app.android .m3-nav-item.active .m3-nav-pill .badge { top: 2px; }
 
-/* ── Ripple effect (Material 3 touch feedback) ──────── */
+/* ── Ripple (M3 touch feedback) ────────────────────────────── */
 .app.android .m3-row,
 .app.android .m3-nav-item,
-.app.android .appbar .icon-btn,
-.app.android .appbar-search,
-.app.android .m3-nav-pill {
+.app.android .m3-nav-pill,
+.app.android .appbar-action,
+.app.android .m3-search,
+.app.android .peer-item,
+.app.android .peer-check {
   position: relative;
   overflow: hidden;
   --ripple: var(--m3-primary);
@@ -213,27 +373,854 @@
   to { transform: scale(4); opacity: 0; }
 }
 
-/* ── 复用现有组件在 Android 下微调 ────────────────────────── */
+/* ── PeerList → M3 列表 ────────────────────────────────────── */
 .app.android .peer-list {
-  background: var(--m3-surface);
-  border-radius: var(--m3-shape-lg);
+  border-radius: var(--m3-shape-sm);
   overflow: hidden;
-  box-shadow: var(--m3-elevation-1);
+  background: var(--m3-surface-container-low);
 }
 .app.android .peer-item {
+  display: flex; align-items: center; gap: 16px;
+  min-height: 56px;
+  padding: 8px 16px;
   background: transparent;
   border-radius: 0;
-  padding: 10px 16px;
-  min-height: 56px;
-  border-bottom: 1px solid var(--separator);
+  border-bottom: 1px solid color-mix(in srgb, var(--m3-outline-variant) 60%, transparent);
   animation: none;
 }
 .app.android .peer-item:last-child { border-bottom: 0; }
-.app.android .peer-item.selected { background: var(--m3-primary-container); }
-.app.android .peer-avatar { border-radius: 50%; }
+.app.android .peer-item.selected { background: var(--m3-secondary-container); }
+.app.android .peer-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.app.android .peer-check {
+  margin-left: auto;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--m3-outline);
+  display: grid; place-items: center;
+  color: transparent;
+  flex-shrink: 0;
+}
+.app.android .peer-item.selected .peer-check {
+  background: var(--m3-primary);
+  border-color: var(--m3-primary);
+  color: var(--m3-on-primary);
+}
+.app.android .peer-name {
+  font: 500 16px var(--font-m3);
+  letter-spacing: 0.15px;
+  color: var(--m3-on-surface);
+}
+.app.android .peer-meta {
+  font: 400 13px var(--font-m3);
+  letter-spacing: 0.25px;
+  color: var(--m3-on-surface-variant);
+}
+.app.android .peer-empty {
+  background: var(--m3-surface-container-low);
+  border-radius: var(--m3-shape-sm);
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--m3-on-surface-variant);
+}
+.app.android .peer-empty .pulse {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--m3-primary-container);
+  color: var(--m3-primary);
+  display: grid; place-items: center;
+  margin: 0 auto 12px;
+}
+.app.android .peer-empty .title {
+  font: 500 15px var(--font-m3);
+  color: var(--m3-on-surface);
+  margin-bottom: 4px;
+}
+.app.android .peer-empty .hint { font: 400 13px var(--font-m3); }
+
+/* ── FilePicker → M3 ───────────────────────────────────────── */
 .app.android .dropzone {
-  background: var(--m3-surface);
+  background: var(--m3-surface-container-low);
   border: 2px dashed var(--m3-outline);
+  border-radius: var(--m3-shape-md);
+  padding: 20px 16px;
+  color: var(--m3-on-surface-variant);
+}
+.app.android .dropzone:hover,
+.app.android .dropzone.dragging {
+  background: var(--m3-primary-container);
+  border-color: var(--m3-primary);
+  color: var(--m3-on-primary-container);
+}
+.app.android .dropzone-title {
+  font: 500 15px var(--font-m3);
+  color: var(--m3-on-surface);
+}
+.app.android .dropzone-hint {
+  font: 400 13px var(--font-m3);
+  color: var(--m3-on-surface-variant);
+}
+.app.android .dropzone-actions { margin-top: 12px; }
+.app.android .options-row {
+  background: var(--m3-surface-container-low);
+  border-radius: var(--m3-shape-sm);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--m3-on-surface);
+  font: 400 14px var(--font-m3);
+}
+.app.android .options-row + .options-row { margin-top: 10px; }
+/* M3 Switch(选中时轨道 primary) */
+.app.android .options-row .toggle { margin-left: auto; }
+.app.android .options-row .switch {
+  width: 52px; height: 32px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container-highest);
+  border: 2px solid var(--m3-outline);
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.app.android .options-row .switch::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--m3-outline);
+  transition: transform 0.25s var(--ease-standard), background 0.2s;
+}
+.app.android .options-row .switch.on {
+  background: var(--m3-primary);
+  border-color: var(--m3-primary);
+}
+.app.android .options-row .switch.on::after {
+  transform: translateX(20px);
+  background: var(--m3-on-primary);
+}
+
+/* ── TransferProgress / History → M3 ───────────────────────── */
+.app.android .card {
+  background: var(--m3-surface-container-low);
+  border: 0;
+  border-radius: var(--m3-shape-sm);
+  box-shadow: none;
+}
+.app.android .transfer-bar {
+  height: 4px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container-highest);
+  overflow: hidden;
+}
+.app.android .transfer-bar-fill {
+  height: 100%;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-primary);
+}
+.app.android .transfer-name {
+  font: 500 15px var(--font-m3);
+  color: var(--m3-on-surface);
+}
+.app.android .transfer-meta,
+.app.android .transfer-sub {
+  font: 400 13px var(--font-m3);
+  color: var(--m3-on-surface-variant);
+}
+.app.android .transfer-pct {
+  font: 600 14px var(--font-m3);
+  color: var(--m3-primary);
+}
+.app.android .speed { color: var(--m3-tertiary); font: 500 12px var(--font-m3); }
+.app.android .transfer-empty {
+  background: var(--m3-surface-container-low);
+  border-radius: var(--m3-shape-sm);
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--m3-on-surface-variant);
+  font: 400 14px var(--font-m3);
+}
+.app.android .history-actions { margin-top: 12px; }
+.app.android .history-confirm-backdrop { z-index: 90; }
+.app.android .history-confirm {
   border-radius: var(--m3-shape-lg);
-  box-shadow: var(--m3-elevation-1);
+  background: var(--m3-surface-container-high);
+}
+
+/* ── IncomingRequest → M3 AlertDialog ──────────────────────── */
+.app.android .modal-backdrop {
+  background: rgba(20, 18, 24, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.app.android .modal {
+  border-radius: var(--m3-shape-lg);
+  background: var(--m3-surface-container-high);
+  box-shadow: var(--m3-elev-3);
+  border: 0;
+  max-width: 320px;
+  width: calc(100vw - 40px);
+  padding: 24px;
+  color: var(--m3-on-surface);
+}
+.app.android .modal-header { align-items: flex-start; gap: 12px; }
+.app.android .modal-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+.app.android .modal-title { font: 500 20px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .modal-sub,
+.app.android .modal-stat { font: 400 14px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.app.android .modal-actions .btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  font: 600 14px var(--font-m3);
+  letter-spacing: 0.1px;
+}
+.app.android .modal-actions .btn-secondary {
+  background: transparent;
+  border: 0;
+  color: var(--m3-primary);
+}
+.app.android .modal-actions .btn-primary {
+  background: var(--m3-primary);
+  border: 0;
+  color: var(--m3-on-primary);
+}
+
+/* ── AddDeviceSheet → M3 bottom sheet ──────────────────────── */
+.app.android .sheet-backdrop {
+  background: rgba(20, 18, 24, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.app.android .sheet {
+  border-radius: var(--m3-shape-lg) var(--m3-shape-lg) 0 0;
+  background: var(--m3-surface-container-low);
+  max-width: none;
+  width: 100%;
+  padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  border: 0;
+}
+.app.android .sheet-handle {
+  width: 32px; height: 4px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-outline-variant);
+  margin: 8px auto 12px;
+}
+.app.android .sheet-header { padding: 0 4px 8px; }
+.app.android .sheet-title {
+  font: 500 20px var(--font-m3);
+  color: var(--m3-on-surface);
+}
+.app.android .sheet-mode-toggle {
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container-high);
+  padding: 4px;
+}
+.app.android .sheet-mode-toggle .btn {
+  border: 0;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  font: 500 14px var(--font-m3);
+}
+.app.android .sheet-mode-toggle .btn.active {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.app.android .sheet-confirm {
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-primary);
+  color: var(--m3-on-primary);
+  border: 0;
+  height: 48px;
+  font: 600 14px var(--font-m3);
+  letter-spacing: 0.1px;
+  width: 100%;
+}
+.app.android .sheet-close {
+  border: 0;
+  background: var(--m3-surface-container-high);
+  color: var(--m3-on-surface-variant);
+  border-radius: var(--m3-shape-full);
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+}
+.app.android .recent-list {
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-lowest);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.app.android .recent-item {
+  min-height: 48px;
+  border-bottom: 1px solid var(--m3-outline-variant);
+}
+.app.android .recent-item:last-child { border-bottom: 0; }
+.app.android .recent-item-text { font: 400 14px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .recent-item-remove {
+  border: 0; background: transparent;
+  color: var(--m3-on-surface-variant);
+}
+.app.android .scan-viewport {
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-highest);
+}
+.app.android .sheet-tip,
+.app.android .field-hint { font: 400 12px var(--font-m3); color: var(--m3-on-surface-variant); }
+
+/* ── PrefsPanel → M3 全屏设置页 ────────────────────────────── */
+.app.android .prefs-backdrop {
+  background: var(--m3-surface);
+}
+.app.android .prefs-panel {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none; max-height: none;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  flex-direction: column;
+  background: var(--m3-surface);
+  color: var(--m3-on-surface);
+}
+/* 顶部导航:标题区让出状态栏 */
+.app.android .prefs-sidebar {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: env(safe-area-inset-top, 0px) 12px 8px;
+  background: var(--m3-surface-container);
+  border-right: 0;
+  border-bottom: 1px solid var(--m3-outline-variant);
+  flex-shrink: 0;
+}
+.app.android .prefs-sidebar-header,
+.app.android .prefs-search,
+.app.android .prefs-sidebar-footer { display: none; }
+.app.android .prefs-nav {
+  flex-direction: row;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0;
+  padding: 4px 0;
+  flex: none;
+}
+.app.android .prefs-nav::-webkit-scrollbar { display: none; }
+.app.android .prefs-nav-item {
+  width: auto;
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  font: 500 14px var(--font-m3);
+  gap: 6px;
+}
+.app.android .prefs-nav-item:hover { background: var(--m3-surface-container-high); }
+.app.android .prefs-nav-item.active {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.app.android .prefs-nav-empty { padding: 8px 12px; }
+.app.android .prefs-content { background: var(--m3-surface); }
+.app.android .prefs-content-header {
+  padding: 16px 16px 0;
+}
+.app.android .prefs-content-header h2 {
+  font: 500 20px var(--font-m3);
+  color: var(--m3-on-surface);
+}
+.app.android .prefs-content-close {
+  width: 40px; height: 40px;
+  border-radius: var(--m3-shape-full);
+  color: var(--m3-on-surface-variant);
+  background: transparent;
+}
+.app.android .prefs-content-close:hover { background: var(--m3-surface-container-high); }
+.app.android .prefs-content-body { padding: 12px 16px 24px; }
+.app.android .field-label { font: 500 14px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .field-row input {
+  border-radius: var(--m3-shape-xs);
+  border: 1px solid var(--m3-outline);
+  background: var(--m3-surface);
+  font: 400 16px var(--font-m3);
+  color: var(--m3-on-surface);
+  padding: 12px 14px;
+}
+.app.android .field-row input:focus {
+  border-color: var(--m3-primary);
+  box-shadow: 0 0 0 1px var(--m3-primary);
+}
+.app.android .config-row { border-bottom: 1px solid var(--m3-outline-variant); }
+.app.android .config-row .name { font: 500 15px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .config-row .name small { font: 400 12px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .stepper {
+  border-radius: var(--m3-shape-full);
+  border: 1px solid var(--m3-outline);
+  background: var(--m3-surface);
+  height: 40px;
+}
+.app.android .stepper-btn { width: 36px; color: var(--m3-primary); }
+.app.android .stepper-btn:disabled { color: var(--m3-outline); }
+.app.android .stepper-input {
+  width: 56px;
+  font: 500 15px var(--font-m3);
+  color: var(--m3-on-surface);
+}
+.app.android .about-mark {
+  width: 56px; height: 56px;
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+.app.android .about-name { font: 500 22px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .about-version,
+.app.android .about-addrs-empty { color: var(--m3-on-surface-variant); font: 400 13px var(--font-m3); }
+.app.android .about-desc { font: 400 14px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .about-chip {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+  border-radius: var(--m3-shape-full);
+  font: 500 12px var(--font-mono);
+}
+.app.android .about-addrs {
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-low);
+  border: 0;
+}
+.app.android .about-addrs-title { font: 500 14px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .about-addrs-list li {
+  background: var(--m3-surface-container-highest);
+  border-radius: var(--m3-shape-xs);
+  font: 500 13px var(--font-mono);
+}
+.app.android .about-addrs-foot { color: var(--m3-on-surface-variant); font: 400 12px var(--font-m3); }
+
+/* ── MyQrDialog → M3 ───────────────────────────────────────── */
+.app.android .myqr-dialog {
+  border-radius: var(--m3-shape-lg);
+  background: var(--m3-surface-container-high);
+  border: 0;
+  box-shadow: var(--m3-elev-3);
+  color: var(--m3-on-surface);
+}
+.app.android .myqr-header h3 { font: 500 20px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .myqr-canvas {
+  border-radius: var(--m3-shape-sm);
+  border: 1px solid var(--m3-outline-variant);
+}
+.app.android .myqr-canvas-legend,
+.app.android .myqr-payload { color: var(--m3-on-surface-variant); font: 400 12px var(--font-m3); }
+.app.android .myqr-name { font: 500 16px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .myqr-meta { font: 400 13px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .myqr-ip-chip {
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-surface-container-lowest);
+  font: 500 13px var(--font-mono);
+  color: var(--m3-on-surface-variant);
+}
+.app.android .myqr-ip-chip.active {
+  background: var(--m3-secondary-container);
+  border-color: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.app.android .myqr-actions { margin-top: 16px; }
+.app.android .myqr-hint { color: var(--m3-on-surface-variant); font: 400 12px var(--font-m3); }
+
+/* ── CommandPalette → M3 ───────────────────────────────────── */
+.app.android .cmd-backdrop {
+  background: rgba(20, 18, 24, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.app.android .cmd-panel {
+  border-radius: var(--m3-shape-lg);
+  background: var(--m3-surface-container-high);
+  border: 0;
+  box-shadow: var(--m3-elev-3);
+  max-width: 480px;
+  width: calc(100vw - 40px);
+}
+.app.android .cmd-search {
+  border-radius: var(--m3-shape-lg);
+  background: var(--m3-surface-container-highest);
+  color: var(--m3-on-surface-variant);
+  font: 400 16px var(--font-m3);
+}
+.app.android .cmd-search input { color: var(--m3-on-surface); }
+.app.android .cmd-group-label { font: 500 12px var(--font-m3); color: var(--m3-primary); letter-spacing: 0.4px; }
+.app.android .cmd-item { border-radius: var(--m3-shape-sm); }
+.app.android .cmd-item.active { background: var(--m3-secondary-container); }
+.app.android .cmd-item-label { font: 500 15px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .cmd-item-hint { font: 400 12px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .cmd-empty { color: var(--m3-on-surface-variant); font: 400 14px var(--font-m3); }
+
+/* ── Toast → M3 Snackbar ───────────────────────────────────── */
+.app.android .app-toast {
+  position: fixed;
+  left: 16px; right: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-on-surface);
+  color: var(--m3-surface);
+  font: 500 14px var(--font-m3);
+  letter-spacing: 0.25px;
+  padding: 14px 16px;
+  box-shadow: var(--m3-elev-3);
+  z-index: 200;
+  text-align: center;
+}
+
+/* ── 通用按钮 M3 化(面板内 btn) ────────────────────────────── */
+.app.android .btn {
+  border-radius: 20px;
+  font: 600 14px var(--font-m3);
+  letter-spacing: 0.1px;
+  padding: 0 16px;
+  height: 40px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.app.android .btn-primary {
+  background: var(--m3-primary);
+  border: 0;
+  color: var(--m3-on-primary);
+}
+.app.android .btn-secondary {
+  background: var(--m3-secondary-container);
+  border: 0;
+  color: var(--m3-on-secondary-container);
+}
+.app.android .btn-ghost {
+  background: transparent;
+  border: 0;
+  color: var(--m3-primary);
+}
+.app.android .btn-danger {
+  background: var(--m3-error-container);
+  border: 0;
+  color: var(--m3-on-error-container);
+}
+
+/* ── MyQrDialog backdrop ───────────────────────────────────── */
+.app.android .myqr-backdrop {
+  background: rgba(20, 18, 24, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ============================================================
+   M3 补齐 — 组件真实类名(transfer 主体 / sheet-mode / scan /
+   cmd 补充 / ptr / toast-msg / 工具类)
+   ============================================================ */
+
+/* ── Transfer 卡片主体 ───────────────────────────────────── */
+.app.android .transfers { display: flex; flex-direction: column; gap: 12px; }
+.app.android .transfer {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--m3-surface-container-low);
+  border: 0;
+  border-radius: var(--m3-shape-sm);
+  box-shadow: none;
+  padding: 14px 16px;
+}
+.app.android .transfer-head { display: flex; align-items: center; gap: 12px; }
+.app.android .transfer-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.app.android .transfer.done .transfer-icon {
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+.app.android .transfer.failed .transfer-icon {
+  background: var(--m3-error-container);
+  color: var(--m3-on-error-container);
+}
+.app.android .transfer-info { flex: 1; min-width: 0; }
+.app.android .transfer-pct { color: var(--m3-primary); }
+.app.android .transfer.done .transfer-pct { color: var(--m3-tertiary); }
+.app.android .transfer.failed .transfer-pct { color: var(--m3-error); }
+.app.android .transfer.done .transfer-bar-fill { background: var(--m3-tertiary); }
+.app.android .transfer.failed .transfer-bar-fill { background: var(--m3-error); }
+.app.android .dir-badge {
+  font: 500 11px var(--font-m3);
+  color: var(--m3-on-surface-variant);
+  background: var(--m3-surface-container-high);
+  border: 0;
+}
+.app.android .transfer-meta { border-top: 1px solid var(--m3-outline-variant); }
+
+/* ── 历史确认对话框补齐 ─────────────────────────────────── */
+.app.android .history-confirm-icon { color: var(--m3-error); }
+.app.android .history-confirm-title { font: 500 18px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .history-confirm-sub { font: 400 14px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .history-confirm-actions { gap: 8px; }
+.app.android .history-hint { color: var(--m3-on-surface-variant); }
+
+/* ── 命令面板补齐 ───────────────────────────────────────── */
+.app.android .cmd-results { padding: 8px; }
+.app.android .cmd-group { margin-bottom: 4px; }
+.app.android .cmd-item { padding: 12px; gap: 16px; }
+.app.android .cmd-item-icon { color: var(--m3-on-surface-variant); }
+.app.android .cmd-item.active .cmd-item-icon { color: var(--m3-primary); }
+.app.android .cmd-item-kbd { display: none; }
+.app.android .cmd-clear { color: var(--m3-on-surface-variant); }
+.app.android .cmd-footer {
+  border-top: 1px solid var(--m3-outline-variant);
+  color: var(--m3-on-surface-variant);
+  font: 400 12px var(--font-m3);
+}
+
+/* ── 扫码补齐 ───────────────────────────────────────────── */
+.app.android .scan-stage { gap: 12px; }
+.app.android .scan-video { object-fit: cover; }
+.app.android .scan-corner { border-color: var(--m3-primary); }
+.app.android .scan-line {
+  background: linear-gradient(90deg, transparent, var(--m3-primary), transparent);
+}
+.app.android .scan-placeholder { color: var(--m3-on-surface-variant); }
+
+/* ── Sheet 补齐(sheet-mode 是 AddDeviceSheet 真实类名) ──── */
+.app.android .sheet-mode-toggle .sheet-mode {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: 0;
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  font: 500 14px var(--font-m3);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.app.android .sheet-mode-toggle .sheet-mode.active {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+}
+.app.android .sheet-body { padding: 12px 0 24px; }
+.app.android .sheet-content { padding: 0 16px 24px; }
+.app.android .sheet-handle-bar { display: none; }
+
+/* ── 最近添加补齐 ───────────────────────────────────────── */
+.app.android .recent-list-header {
+  font: 500 12px var(--font-m3);
+  color: var(--m3-primary);
+  text-transform: none; letter-spacing: 0.4px;
+  padding: 12px 4px 6px;
+}
+.app.android .recent-list-items { overflow: hidden; }
+.app.android .recent-item-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  padding: 12px 14px;
+  border: 0; background: transparent;
+  font: 400 14px var(--font-mono);
+  color: var(--m3-on-surface);
+  cursor: pointer; text-align: left;
+}
+
+/* ── ptr / toast-msg / 工具类 ───────────────────────────── */
+.app.android .ptr { color: var(--m3-primary); font: 500 13px var(--font-m3); }
+.app.android .ptr-spinner { color: var(--m3-primary); }
+.app.android .toast-msg {
+  font: 500 13px var(--font-m3);
+  color: var(--m3-on-primary-container);
+  background: var(--m3-primary-container);
+  border-radius: var(--m3-shape-xs);
+}
+.app.android .toast-msg.error {
+  color: var(--m3-on-error-container);
+  background: var(--m3-error-container);
+}
+.app.android .dim,
+.app.android .muted { color: var(--m3-on-surface-variant); }
+.app.android .error { color: var(--m3-error); }
+.app.android .mono { font-family: var(--font-mono); }
+.app.android .spacer { flex: 1; }
+.app.android .icon-btn { color: var(--m3-on-surface-variant); }
+.app.android .icon-btn:hover { background: var(--m3-surface-container-high); }
+.app.android .card-body { padding: 16px; }
+.app.android .col { display: flex; flex-direction: column; }
+.app.android .row { display: flex; align-items: center; gap: 8px; }
+.app.android .v { font: 600 18px var(--font-m3); color: var(--m3-on-surface); }
+.app.android .l { font: 400 12px var(--font-m3); color: var(--m3-on-surface-variant); }
+.app.android .swipe-edge-glow { background: var(--m3-primary); }
+.app.android .swipe-indicator-bg { background: var(--m3-surface-container-high); }
+.app.android .dropzone-icon { color: var(--m3-primary); }
+.app.android .myqr-info { color: var(--m3-on-surface-variant); }
+/* ── PeerList 完整覆盖(peer-info / peer-presence) ─────── */
+.app.android .peer-info { flex: 1; min-width: 0; }
+.app.android .peer-presence {
+  position: absolute;
+  right: 4px; bottom: 4px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--m3-tertiary);
+  border: 2px solid var(--m3-surface-container-low);
+  box-sizing: content-box;
+}
+.app.android .peer-presence.manual { background: var(--m3-outline); }
+
+/* ── CommandPalette: cmd-item-main / kbd ──────────────── */
+.app.android .cmd-item-main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.app.android .cmd-item-kbd {
+  font: 500 11px var(--font-mono);
+  color: var(--m3-on-surface-variant);
+  padding: 2px 8px;
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-surface-container-highest);
+  flex-shrink: 0;
+}
+
+/* ── Field (表单字段基础布局) ───────────────────────── */
+.app.android .field { margin-bottom: 16px; }
+.app.android .field-label {
+  display: block;
+  font: 500 14px var(--font-m3);
+  color: var(--m3-on-surface);
+  margin-bottom: 6px;
+  letter-spacing: 0.1px;
+}
+.app.android .field-hint {
+  font: 400 12px var(--font-m3);
+  color: var(--m3-on-surface-variant);
+  margin-top: 6px;
+  letter-spacing: 0.25px;
+}
+
+/* ── History 容器(transfers.history 列表) ───────────── */
+.app.android .transfers.history { position: relative; }
+
+/* ── Kbd 跨组件 ─────────────────────────────────────── */
+.app.android .kbd {
+  font: 500 11px var(--font-mono);
+  padding: 1px 6px;
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-surface-container-highest);
+  color: var(--m3-on-surface-variant);
+  border: 1px solid var(--m3-outline-variant);
+  display: inline-block;
+  line-height: 1.3;
+}
+
+/* ── PullToRefresh: ptr-text ─────────────────────────── */
+.app.android .ptr-text { color: var(--m3-on-surface-variant); }
+
+/* ── SwipeIndicator: 边缘条 / 阴影 / 指示器 ──────────── */
+.app.android .swipe-edge-shadow {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 80;
+  width: 16px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.18), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.android .swipe-edge-bar {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, rgba(103, 80, 164, 0.35), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.android .swipe-indicator {
+  position: fixed; bottom: 24vh; right: 0;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  color: var(--m3-on-surface-variant);
+  pointer-events: none; z-index: 80;
+}
+.app.android .swipe-indicator-right {
+  position: fixed; top: 0; bottom: 0; right: 0;
+  width: 16px;
+  background: linear-gradient(270deg, rgba(0,0,0,0.18), transparent);
+  border-radius: 8px 0 0 8px;
+  pointer-events: none; z-index: 80;
+}
+
+/* ── ScanViewport 四角 ───────────────────────────────── */
+.app.android .scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.app.android .scan-corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 3px solid var(--m3-primary);
+}
+.app.android .scan-corner-tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.app.android .scan-corner-tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.app.android .scan-corner-bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.app.android .scan-corner-br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+
+/* ── MyQrDialog 补全 ─────────────────────────────────── */
+.app.android .myqr-canvas-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.app.android .myqr-canvas-placeholder {
+  display: grid; place-items: center;
+  color: var(--m3-on-surface-variant);
+  font: 400 14px var(--font-m3);
+  background: var(--m3-surface-container-highest);
+}
+.app.android .myqr-body { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+.app.android .myqr-ips { display: flex; flex-direction: column; gap: 6px; }
+.app.android .myqr-ips-label {
+  display: flex; align-items: center; gap: 6px;
+  font: 500 13px var(--font-m3);
+  color: var(--m3-on-surface);
+  letter-spacing: 0.1px;
+}
+.app.android .myqr-ips-list {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.app.android .myqr-ip-iface { color: var(--m3-on-surface-variant); }
+.app.android .myqr-ip-addr { color: var(--m3-on-surface); }
+
+/* ── About 完整覆盖 ──────────────────────────────────── */
+.app.android .about-stack {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+  padding-top: 8px;
+}
+.app.android .about-tech { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.app.android .about-qr-btn { margin-top: 8px; }
+.app.android .about-addrs-iface { color: var(--m3-on-surface-variant); }
+.app.android .about-addrs-ip { color: var(--m3-on-surface); }
+
+/* ── PrefsPanel: close 按钮 / search 辅助 ───────────── */
+.app.android .prefs-close {
+  width: 40px; height: 40px;
+  border: 0; border-radius: var(--m3-shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.15s;
+}
+.app.android .prefs-close:hover { background: var(--m3-surface-container-high); }
+.app.android .prefs-search-clear {
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--m3-on-surface-variant);
+  padding: 2px; display: grid; place-items: center;
+}
+.app.android .prefs-search-kbd {
+  font: 500 11px var(--font-mono);
+  color: var(--m3-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.app.android .modal-stats { gap: 8px; }
+.app.android .modal-stat {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--m3-shape-sm);
+  background: var(--m3-surface-container-high);
 }

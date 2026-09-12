@@ -1,13 +1,11 @@
-// Android 平台布局
-// Material 3 风格:
-//   · 顶部 AppBar(中等高度,左侧菜单可选,右侧 actions)
-//   · 内容区:Material 3 Card + List
-//   · 底部:NavigationBar(无 FAB,新建走 AppBar 的 + 按钮)
-//   · FAB:仅在 devices tab 出现(extended FAB)
-//
-// 复用现有 React 组件,只换 wrapper 和样式
-// Android 12+ 支持 Material You dynamic color,这里用 JS 从 wallpaper 提取 fallback
-// (因为 webview 无法直接读 Android 系统的 wallpaper / monet palette)
+// Android 平台布局 — Material 3
+// 对齐 docs/design-mocks/android.html:
+//   · 沉浸式状态栏:AppBar 背景延伸(顶部 padding 用 safe-area-inset)
+//   · M3 Top AppBar(surface-container + 48px 圆形 action)
+//   · M3 Search Bar + M3 List + Extended FAB
+//   · M3 NavigationBar(active 用 64×32 pill,底部手势条避让)
+// Material You dynamic color:JS 从壁纸 URL 提取 palette
+// (webview 无法直接读 Android 系统的 monet palette)
 
 import { useEffect, useState } from "react";
 import type { PlatformAppProps } from "../types";
@@ -26,6 +24,7 @@ import {
 } from "../../lib/dynamicColor";
 import {
   DevicesIcon, TransferIcon, SettingsIcon, PlusIcon, SearchIcon,
+  ChevronRightIcon,
 } from "../../components/Icons";
 
 export function AndroidApp(props: PlatformAppProps) {
@@ -36,11 +35,9 @@ export function AndroidApp(props: PlatformAppProps) {
     commands, cmdOpen, setCmdOpen, clearHistory, clearRequest, respond, toast,
   } = props;
 
-  const [search] = useState("");
   const [palette, setPalette] = useState<MaterialPalette | null>(null);
 
-  // Material You dynamic color:从 wallhaven 等 sample 提取
-  // 真实 Android 上是系统注入的 monets palette,这里做 web fallback
+  // Material You dynamic color:从壁纸 URL 提取
   useEffect(() => {
     const url = localStorage.getItem("sendsent.android.wallpaper");
     if (!url) return;
@@ -63,7 +60,6 @@ export function AndroidApp(props: PlatformAppProps) {
     if (url === "") {
       localStorage.removeItem("sendsent.android.wallpaper");
       setPalette(null);
-      // 重置 m3-* 到默认
       ["--m3-primary", "--m3-on-primary", "--m3-primary-container",
        "--m3-secondary", "--m3-tertiary", "--m3-surface"].forEach((k) =>
         document.documentElement.style.removeProperty(k));
@@ -84,29 +80,31 @@ export function AndroidApp(props: PlatformAppProps) {
 
   return (
     <div className="app android mobile" data-platform="android">
-      {/* AppBar (M3 medium) */}
+      {/* M3 Top AppBar — 背景延伸至状态栏(沉浸式),内容不遮挡 */}
       <header className="appbar">
-        <div className="appbar-head">
+        <div className="appbar-row">
           <div className="appbar-title">{label(tab)}</div>
-          <div className="appbar-actions">
-            <button className="icon-btn" onClick={() => setCmdOpen(true)} title="搜索">
-              <SearchIcon size={20} />
+          <button
+            className="appbar-action"
+            onClick={() => setCmdOpen(true)}
+            aria-label="搜索"
+          >
+            <SearchIcon size={24} />
+          </button>
+          {(tab === "devices" || tab === "settings") && (
+            <button
+              className="appbar-action"
+              onClick={() => setAddSheetOpen(true)}
+              aria-label="添加"
+            >
+              <PlusIcon size={24} />
             </button>
-            {(tab === "devices" || tab === "settings") && (
-              <button
-                className="icon-btn"
-                onClick={() => setAddSheetOpen(true)}
-                title="添加"
-              >
-                <PlusIcon size={22} />
-              </button>
-            )}
-          </div>
+          )}
         </div>
         {tab === "devices" && peers.length > 0 && (
-          <div className="appbar-search">
-            <SearchIcon size={16} />
-            <input placeholder="搜索设备" defaultValue={search} />
+          <div className="m3-search">
+            <SearchIcon size={20} />
+            <input placeholder="搜索设备、文件" />
           </div>
         )}
       </header>
@@ -137,43 +135,43 @@ export function AndroidApp(props: PlatformAppProps) {
           <div className="m3-list">
             <Ripple>
             <button className="m3-row" onClick={() => setPrefsOpen(true)}>
-              <div className="m3-row-icon" style={{ background: "var(--m3-primary)" }}>
-                <SettingsIcon size={18} />
+              <div className="m3-avatar" style={{ background: "var(--m3-primary-container)", color: "var(--m3-on-primary-container)" }}>
+                <SettingsIcon size={20} />
               </div>
               <div className="info">
                 <div className="name">偏好设置</div>
                 <div className="sub">显示名称、保存目录、传输参数</div>
               </div>
+              <div className="trailing"><ChevronRightIcon size={20} /></div>
             </button>
             </Ripple>
             <Ripple>
             <button className="m3-row" onClick={() => setAddSheetOpen(true)}>
-              <div className="m3-row-icon" style={{ background: "var(--m3-tertiary)" }}>
-                <PlusIcon size={18} />
+              <div className="m3-avatar" style={{ background: "var(--m3-tertiary-container)", color: "var(--m3-on-tertiary-container)" }}>
+                <PlusIcon size={20} />
               </div>
               <div className="info">
                 <div className="name">添加设备</div>
                 <div className="sub">手动输入或扫码</div>
               </div>
+              <div className="trailing"><ChevronRightIcon size={20} /></div>
             </button>
             </Ripple>
             <Ripple>
             <button className="m3-row" onClick={() => setCmdOpen(true)}>
-              <div className="m3-row-icon" style={{ background: "var(--m3-secondary)" }}>
-                <SearchIcon size={18} />
+              <div className="m3-avatar" style={{ background: "var(--m3-secondary-container)", color: "var(--m3-on-secondary-container)" }}>
+                <SearchIcon size={20} />
               </div>
               <div className="info">
                 <div className="name">命令面板</div>
                 <div className="sub">快速跳转到任意操作</div>
               </div>
+              <div className="trailing"><ChevronRightIcon size={20} /></div>
             </button>
             </Ripple>
             <Ripple>
             <button className="m3-row" onClick={onPickWallpaper}>
-              <div
-                className="m3-row-icon"
-                style={{ background: "var(--m3-primary)" }}
-              >
+              <div className="m3-avatar" style={{ background: "var(--m3-primary)", color: "var(--m3-on-primary)" }}>
                 <span style={{ font: "700 14px var(--font-m3)" }}>M</span>
               </div>
               <div className="info">
@@ -184,13 +182,22 @@ export function AndroidApp(props: PlatformAppProps) {
                     : "默认紫色,贴入壁纸 URL 启用"}
                 </div>
               </div>
+              <div className="trailing"><ChevronRightIcon size={20} /></div>
             </button>
             </Ripple>
           </div>
         )}
       </main>
 
-      {/* Navigation bar (M3) */}
+      {/* M3 Extended FAB — 仅设备页 */}
+      {tab === "devices" && (
+        <button className="fab-ext" onClick={() => setAddSheetOpen(true)}>
+          <PlusIcon size={22} />
+          <span>添加设备</span>
+        </button>
+      )}
+
+      {/* M3 NavigationBar */}
       <nav className="m3-navbar" aria-label="主导航">
         {tabs.map((t) => {
           const Icon = t.icon;
@@ -203,7 +210,7 @@ export function AndroidApp(props: PlatformAppProps) {
               onClick={() => setTab(t.id)}
             >
               <div className="m3-nav-pill">
-                <Icon size={20} />
+                <Icon size={24} />
                 {badge > 0 && active && <span className="badge">{badge}</span>}
               </div>
               <span className="m3-nav-label">{t.label}</span>

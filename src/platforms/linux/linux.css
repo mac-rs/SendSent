@@ -19,6 +19,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* 组件兜底 → GNOME accent */
+.app.linux {
+  --accent: var(--linux-accent);
+  --accent-hover: #2c6fd1;
+  --accent-soft: var(--linux-accent-soft);
+}
+
 .app.linux .titlebar {
   display: grid;
   grid-template-columns: 200px 1fr 160px;
@@ -215,4 +222,468 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Linux 组件样式 — Transfer / Cmd / Modal / Sheet / Scan /
+   Recent / Swipe / PTR / Ripple / 按钮变体(GNOME Adwaita)
+   ============================================================ */
+
+/* ── 按钮变体 ─────────────────────────────────────────── */
+.app.linux .btn-primary {
+  background: var(--linux-accent);
+  border-color: transparent;
+  color: #fff;
+}
+.app.linux .btn-primary:hover { background: #2f76d0; }
+.app.linux .btn-danger {
+  background: var(--danger-soft);
+  border-color: transparent;
+  color: var(--danger);
+}
+.app.linux .btn-danger:hover { background: var(--danger); color: #fff; }
+.app.linux .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--linux-accent);
+}
+.app.linux .btn-ghost:hover { background: var(--surface-hover); }
+
+/* ── 工具类 ───────────────────────────────────────────── */
+.app.linux .muted { color: var(--text-3); }
+.app.linux .dim { color: var(--text-4); }
+.app.linux .mono { font-family: var(--font-mono); }
+.app.linux .spacer { flex: 1; }
+.app.linux .error { color: var(--danger); }
+.app.linux .card-body { padding: 14px 16px; }
+.app.linux .col { display: flex; flex-direction: column; }
+.app.linux .row { display: flex; align-items: center; gap: 8px; }
+.app.linux .v { font: 700 16px var(--font-linux); color: var(--text); }
+.app.linux .l { font: 400 11px var(--font-linux); color: var(--text-3); }
+.app.linux .icon-btn {
+  border: 0; background: transparent; color: var(--text-2);
+  display: grid; place-items: center; cursor: pointer;
+  padding: 6px; border-radius: 6px;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.app.linux .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ── 传输列表(Adwaita 卡片) ───────────────────────────── */
+.app.linux .transfers { display: flex; flex-direction: column; gap: 10px; }
+.app.linux .transfer {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: background var(--dur-fast);
+}
+.app.linux .transfer:hover { background: var(--surface-3); }
+.app.linux .transfer-head { display: flex; align-items: center; gap: 10px; }
+.app.linux .transfer-icon {
+  width: 32px; height: 32px; border-radius: 6px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--linux-accent-soft); color: var(--linux-accent);
+}
+.app.linux .transfer.done .transfer-icon { background: var(--success-soft); color: var(--success); }
+.app.linux .transfer.failed .transfer-icon { background: var(--danger-soft); color: var(--danger); }
+.app.linux .transfer-info { flex: 1; min-width: 0; }
+.app.linux .transfer-name {
+  display: block;
+  font: 600 13px var(--font-linux); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app.linux .transfer-sub {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font: 500 11px var(--font-linux); color: var(--text-3);
+  margin-top: 2px;
+}
+.app.linux .transfer-pct {
+  font: 600 12px var(--font-mono); color: var(--linux-accent);
+  flex-shrink: 0;
+}
+.app.linux .transfer.done .transfer-pct { color: var(--success); }
+.app.linux .transfer.failed .transfer-pct { color: var(--danger); }
+.app.linux .transfer-bar {
+  height: 4px; border-radius: 2px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.app.linux .transfer-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--linux-accent);
+  transition: width 0.3s var(--ease-standard);
+}
+.app.linux .transfer.done .transfer-bar-fill { background: var(--success); }
+.app.linux .transfer.failed .transfer-bar-fill { background: var(--danger); }
+.app.linux .transfer-meta {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 8px; border-top: 1px solid var(--separator);
+  font: 500 11px var(--font-linux); color: var(--text-3);
+}
+.app.linux .speed { font-family: var(--font-mono); color: var(--linux-accent); }
+.app.linux .dir-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font: 600 10px var(--font-linux);
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.app.linux .transfer-empty {
+  font: 400 12px var(--font-linux); color: var(--text-3);
+  text-align: center; padding: 10px 0;
+}
+
+/* ── 历史记录 ─────────────────────────────────────────── */
+.app.linux .transfers.history { position: relative; }
+.app.linux .history-actions { display: flex; justify-content: flex-end; padding: 0 2px 2px; }
+.app.linux .history-hint { font: 400 11px var(--font-linux); color: var(--text-4); }
+.app.linux .history-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.linux .history-confirm {
+  width: 280px;
+  padding: 24px 20px 16px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: pop 0.24s var(--ease-standard);
+}
+.app.linux .history-confirm-icon { color: var(--danger); margin-bottom: 4px; }
+.app.linux .history-confirm-title { font: 600 15px var(--font-linux); color: var(--text); }
+.app.linux .history-confirm-sub { font: 400 12px var(--font-linux); color: var(--text-3); }
+.app.linux .history-confirm-actions { display: flex; gap: 8px; margin-top: 14px; }
+.app.linux .history-confirm-actions .btn { padding: 8px 16px; }
+
+/* ── 命令面板 ─────────────────────────────────────────── */
+.app.linux .cmd-backdrop {
+  position: fixed; inset: 0; z-index: 130;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid; place-items: start center;
+  padding-top: 12vh;
+  animation: fadeIn 0.16s ease;
+}
+.app.linux .cmd-panel {
+  width: 560px; max-width: calc(100vw - 48px);
+  max-height: 60vh;
+  display: flex; flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: cmdPop 0.2s var(--ease-standard);
+}
+.app.linux .cmd-search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--separator);
+  color: var(--text-3);
+}
+.app.linux .cmd-search input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: 400 15px var(--font-linux); color: var(--text);
+}
+.app.linux .cmd-search input::placeholder { color: var(--text-4); }
+.app.linux .cmd-clear {
+  border: 0; background: transparent; color: var(--text-3);
+  cursor: pointer; padding: 4px; display: grid; place-items: center;
+  border-radius: 50%;
+}
+.app.linux .cmd-clear:hover { background: var(--surface-hover); }
+.app.linux .cmd-results { flex: 1; overflow-y: auto; padding: 8px; }
+.app.linux .cmd-empty {
+  padding: 32px 16px; text-align: center;
+  color: var(--text-3); font: 400 13px var(--font-linux);
+}
+.app.linux .cmd-group { margin-bottom: 6px; }
+.app.linux .cmd-group-label {
+  font: 600 11px var(--font-linux); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 10px 4px;
+}
+.app.linux .cmd-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0; border-radius: 4px;
+  background: transparent;
+  text-align: left; cursor: pointer;
+  font: 400 13px var(--font-linux); color: var(--text);
+}
+.app.linux .cmd-item.active { background: var(--linux-accent-soft); }
+.app.linux .cmd-item-icon { color: var(--text-2); display: grid; place-items: center; }
+.app.linux .cmd-item.active .cmd-item-icon { color: var(--linux-accent); }
+.app.linux .cmd-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.app.linux .cmd-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.linux .cmd-item-hint { font: 400 11px var(--font-linux); color: var(--text-3); margin-top: 1px; }
+.app.linux .cmd-item-kbd {
+  font: 500 10px var(--font-mono);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1px 6px; border-radius: 4px;
+  flex-shrink: 0;
+}
+.app.linux .cmd-footer {
+  display: flex; gap: 14px; align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid var(--separator);
+  color: var(--text-3);
+  font: 400 11px var(--font-linux);
+}
+
+/* ── Modal(收到文件请求) ──────────────────────────────── */
+.app.linux .modal-backdrop {
+  position: fixed; inset: 0; z-index: 120;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.linux .modal {
+  width: 320px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  display: flex; flex-direction: column; gap: 14px;
+  animation: pop 0.24s var(--ease-standard);
+}
+.app.linux .modal-header {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.app.linux .modal-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #3584e4, #9141ac);
+  color: #fff;
+  font: 700 20px var(--font-linux);
+  margin-bottom: 4px;
+}
+.app.linux .modal-title { font: 600 17px var(--font-linux); color: var(--text); }
+.app.linux .modal-sub { font: 400 13px var(--font-linux); color: var(--text-3); }
+.app.linux .modal-stats { display: flex; gap: 8px; }
+.app.linux .modal-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--linux-accent);
+}
+.app.linux .modal-actions { display: flex; gap: 10px; }
+.app.linux .modal-actions .btn { flex: 1; justify-content: center; padding: 8px 14px; }
+
+/* ── Sheet(AddDeviceSheet 独立渲染) ───────────────────── */
+.app.linux .sheet-backdrop {
+  position: fixed; inset: 0; z-index: 110;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 24px 24px;
+  animation: fadeIn 0.18s ease;
+}
+.app.linux .sheet {
+  width: 460px; max-width: 100%;
+  max-height: 78vh;
+  display: flex; flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: sheetUp 0.26s var(--ease-standard);
+}
+.app.linux .sheet-handle { display: none; }
+.app.linux .sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.linux .sheet-close, .app.linux .sheet-confirm {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 0;
+  display: grid; place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--dur-fast), transform var(--dur-fast);
+}
+.app.linux .sheet-close:hover, .app.linux .sheet-confirm:hover { background: var(--surface-hover); }
+.app.linux .sheet-close:active, .app.linux .sheet-confirm:active { transform: scale(0.92); }
+.app.linux .sheet-confirm { background: var(--linux-accent); color: #fff; }
+.app.linux .sheet-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.app.linux .sheet-title { font: 600 15px var(--font-linux); color: var(--text); }
+.app.linux .sheet-mode-toggle {
+  display: flex; gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: 6px;
+  margin: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.linux .sheet-mode {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 10px;
+  border: 0; border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  font: 500 12px var(--font-linux);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.app.linux .sheet-mode.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.app.linux .sheet-body { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
+.app.linux .sheet-tip {
+  display: flex; align-items: flex-start; gap: 6px;
+  font: 400 11px var(--font-linux);
+  color: var(--text-3);
+  line-height: 1.5;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.app.linux .sheet-tip svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── QR 扫码取景 ──────────────────────────────────────── */
+.app.linux .scan-stage { display: flex; flex-direction: column; gap: 12px; }
+.app.linux .scan-viewport {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%; max-height: 320px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  align-self: center;
+}
+.app.linux .scan-video { width: 100%; height: 100%; object-fit: cover; }
+.app.linux .scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.app.linux .scan-corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+}
+.app.linux .scan-corner-tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.app.linux .scan-corner-tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.app.linux .scan-corner-bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.app.linux .scan-corner-br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+.app.linux .scan-line {
+  position: absolute; left: 10%; right: 10%; top: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--linux-accent), transparent);
+  animation: scanSweep 2.4s var(--ease-standard) infinite;
+  pointer-events: none;
+}
+.app.linux .scan-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font: 400 13px var(--font-linux);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ── 最近添加 ─────────────────────────────────────────── */
+.app.linux .recent-list { margin-top: 4px; }
+.app.linux .recent-list-header {
+  display: flex; align-items: center; gap: 6px;
+  font: 600 11px var(--font-linux); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 2px 6px;
+}
+.app.linux .recent-list-items {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.app.linux .recent-item { display: flex; align-items: center; background: var(--surface-2); }
+.app.linux .recent-item + .recent-item { border-top: 1px solid var(--separator); }
+.app.linux .recent-item-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  padding: 10px 12px;
+  border: 0; background: transparent;
+  font: 500 13px var(--font-mono); color: var(--text);
+  cursor: pointer; text-align: left;
+}
+.app.linux .recent-item-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.linux .recent-item-remove {
+  width: 34px; height: 34px;
+  border: 0; background: transparent;
+  color: var(--text-3);
+  display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.app.linux .recent-item-remove:hover { color: var(--danger); }
+
+/* ── 滑动手势指示 / 下拉刷新 / ripple / toast ─────────── */
+.app.linux .swipe-edge-shadow {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 80;
+}
+.app.linux .swipe-edge-bar {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.linux .swipe-edge-glow {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--linux-accent);
+  filter: blur(2px);
+}
+.app.linux .swipe-indicator {
+  position: fixed; bottom: 24vh; right: 0;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  pointer-events: none; z-index: 80;
+}
+.app.linux .swipe-indicator-bg {
+  position: absolute; inset: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-2);
+}
+.app.linux .swipe-indicator svg { position: relative; }
+.app.linux .ptr {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 32px;
+  color: var(--text-2);
+  font: 500 12px var(--font-linux);
+  pointer-events: none;
+}
+.app.linux .ptr-spinner { display: grid; place-items: center; color: var(--linux-accent); }
+.app.linux .ptr.refreshing .ptr-spinner svg { animation: spin 0.9s linear infinite; }
+.app.linux .ripple-host { -webkit-tap-highlight-color: transparent; }
+.app.linux .toast-msg {
+  font: 500 12px var(--font-linux);
+  color: var(--success);
+  background: var(--success-soft);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 10px;
+  animation: fadeInUp 0.24s var(--ease-standard);
+}
+.app.linux .toast-msg.error {
+  color: var(--danger);
+  background: var(--danger-soft);
 }

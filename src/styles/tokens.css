@@ -297,6 +297,22 @@ kbd {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+@keyframes fadeInUp {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+@keyframes cmdPop {
+  from { transform: scale(0.97) translateY(-8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);      opacity: 1; }
+}
+@keyframes scanSweep {
+  0%   { top: 8%; }
+  50%  { top: 92%; }
+  100% { top: 8%; }
+}
+@keyframes rippleEffect {
+  to { transform: scale(1); opacity: 0; }
+}
 
 /* ── Shared utility classes ─────────────────────────── */
 .sr-only {

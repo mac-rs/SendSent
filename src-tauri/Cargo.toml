@@ -54,6 +54,13 @@ android_logger = "0.14"
 [target.'cfg(target_os = "ios")'.dependencies]
 zeroconf = "0.18"
 
+# iOS 27 / Xcode 27: tao 0.35.3's `configurationForConnectingSceneSession`
+# over-releases the UISceneConfiguration and the app crashes on launch
+# (EXC_BAD_ACCESS in objc_retain). Fixed upstream by tauri-apps/tao#1245
+# ("use autorelease_ptr"); pin until it is released.
+[patch.crates-io]
+tao = { git = "https://github.com/tauri-apps/tao", rev = "f2163508104413ef0609178dcebdd5803b496211" }
+
 [dev-dependencies]
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 tokio-rustls = "0.26"

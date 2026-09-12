@@ -31,6 +31,477 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* 组件兜底 → Windows accent */
+.app.windows {
+  --accent: var(--win-accent);
+  --accent-hover: #006cbd;
+  --accent-soft: var(--win-accent-soft);
+}
+
+/* ============================================================
+   Windows 组件样式 — Transfer / Cmd / Modal / Sheet / Scan /
+   Recent / Swipe / PTR / Ripple / 按钮变体(Win11 Mica/Acrylic)
+   ============================================================ */
+
+/* ── 按钮变体 ─────────────────────────────────────────── */
+.app.windows .btn-primary {
+  background: var(--win-accent);
+  border-color: transparent;
+  color: #fff;
+}
+.app.windows .btn-primary:hover { background: var(--accent-hover); }
+.app.windows .btn-danger {
+  background: #d13438;
+  border-color: transparent;
+  color: #fff;
+}
+.app.windows .btn-danger:hover { background: #b02e31; }
+.app.windows .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--win-accent);
+}
+.app.windows .btn-ghost:hover { background: var(--surface-hover); }
+
+/* ── 工具类 ───────────────────────────────────────────── */
+.app.windows .muted { color: var(--text-3); }
+.app.windows .dim { color: var(--text-4); }
+.app.windows .mono { font-family: var(--font-mono); }
+.app.windows .spacer { flex: 1; }
+.app.windows .error { color: #d13438; }
+.app.windows .card-body { padding: 14px 16px; }
+.app.windows .col { display: flex; flex-direction: column; }
+.app.windows .row { display: flex; align-items: center; gap: 8px; }
+.app.windows .v { font: 600 16px var(--font-win-text); color: var(--text); }
+.app.windows .l { font: 400 11px var(--font-win-text); color: var(--text-3); }
+.app.windows .icon-btn {
+  border: 0; background: transparent; color: var(--text-2);
+  display: grid; place-items: center; cursor: pointer;
+  padding: 6px; border-radius: 4px;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.app.windows .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ── 传输列表(Acrylic 卡片) ───────────────────────────── */
+.app.windows .transfers { display: flex; flex-direction: column; gap: 10px; }
+.app.windows .transfer {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background var(--dur-fast);
+}
+.app.windows .transfer:hover { background: var(--surface-3); }
+.app.windows .transfer-head { display: flex; align-items: center; gap: 10px; }
+.app.windows .transfer-icon {
+  width: 32px; height: 32px; border-radius: 4px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--win-accent-soft); color: var(--win-accent);
+}
+.app.windows .transfer.done .transfer-icon { background: rgba(16, 124, 16, 0.12); color: #107c10; }
+.app.windows .transfer.failed .transfer-icon { background: rgba(209, 52, 56, 0.12); color: #d13438; }
+.app.windows .transfer-info { flex: 1; min-width: 0; }
+.app.windows .transfer-name {
+  display: block;
+  font: 600 13px var(--font-win-text); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app.windows .transfer-sub {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font: 500 11px var(--font-win-text); color: var(--text-3);
+  margin-top: 2px;
+}
+.app.windows .transfer-pct {
+  font: 600 12px var(--font-mono); color: var(--win-accent);
+  flex-shrink: 0;
+}
+.app.windows .transfer.done .transfer-pct { color: #107c10; }
+.app.windows .transfer.failed .transfer-pct { color: #d13438; }
+.app.windows .transfer-bar {
+  height: 4px; border-radius: 2px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.app.windows .transfer-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--win-accent);
+  transition: width 0.3s var(--ease-standard);
+}
+.app.windows .transfer.done .transfer-bar-fill { background: #107c10; }
+.app.windows .transfer.failed .transfer-bar-fill { background: #d13438; }
+.app.windows .transfer-meta {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 8px; border-top: 1px solid var(--separator);
+  font: 500 11px var(--font-win-text); color: var(--text-3);
+}
+.app.windows .speed { font-family: var(--font-mono); color: var(--win-accent); }
+.app.windows .dir-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font: 600 10px var(--font-win-text);
+  padding: 1px 6px; border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.app.windows .transfer-empty {
+  font: 400 12px var(--font-win-text); color: var(--text-3);
+  text-align: center; padding: 10px 0;
+}
+
+/* ── 历史记录 ─────────────────────────────────────────── */
+.app.windows .transfers.history { position: relative; }
+.app.windows .history-actions { display: flex; justify-content: flex-end; padding: 0 2px 2px; }
+.app.windows .history-hint { font: 400 11px var(--font-win-text); color: var(--text-4); }
+.app.windows .history-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.windows .history-confirm {
+  width: 280px;
+  padding: 24px 20px 16px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: pop 0.24s var(--ease-standard);
+}
+.app.windows .history-confirm-icon { color: #d13438; margin-bottom: 4px; }
+.app.windows .history-confirm-title { font: 600 15px var(--font-win-text); color: var(--text); }
+.app.windows .history-confirm-sub { font: 400 12px var(--font-win-text); color: var(--text-3); }
+.app.windows .history-confirm-actions { display: flex; gap: 8px; margin-top: 14px; }
+.app.windows .history-confirm-actions .btn { padding: 8px 16px; }
+
+/* ── 命令面板 ─────────────────────────────────────────── */
+.app.windows .cmd-backdrop {
+  position: fixed; inset: 0; z-index: 130;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid; place-items: start center;
+  padding-top: 12vh;
+  animation: fadeIn 0.16s ease;
+}
+.app.windows .cmd-panel {
+  width: 560px; max-width: calc(100vw - 48px);
+  max-height: 60vh;
+  display: flex; flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: cmdPop 0.2s var(--ease-standard);
+}
+.app.windows .cmd-search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--separator);
+  color: var(--text-3);
+}
+.app.windows .cmd-search input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: 400 15px var(--font-win-text); color: var(--text);
+}
+.app.windows .cmd-search input::placeholder { color: var(--text-4); }
+.app.windows .cmd-clear {
+  border: 0; background: transparent; color: var(--text-3);
+  cursor: pointer; padding: 4px; display: grid; place-items: center;
+  border-radius: 50%;
+}
+.app.windows .cmd-clear:hover { background: var(--surface-hover); }
+.app.windows .cmd-results { flex: 1; overflow-y: auto; padding: 8px; }
+.app.windows .cmd-empty {
+  padding: 32px 16px; text-align: center;
+  color: var(--text-3); font: 400 13px var(--font-win-text);
+}
+.app.windows .cmd-group { margin-bottom: 6px; }
+.app.windows .cmd-group-label {
+  font: 600 11px var(--font-win-text); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 10px 4px;
+}
+.app.windows .cmd-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0; border-radius: 4px;
+  background: transparent;
+  text-align: left; cursor: pointer;
+  font: 400 13px var(--font-win-text); color: var(--text);
+}
+.app.windows .cmd-item.active { background: var(--win-accent-soft); }
+.app.windows .cmd-item-icon { color: var(--text-2); display: grid; place-items: center; }
+.app.windows .cmd-item.active .cmd-item-icon { color: var(--win-accent); }
+.app.windows .cmd-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.app.windows .cmd-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.windows .cmd-item-hint { font: 400 11px var(--font-win-text); color: var(--text-3); margin-top: 1px; }
+.app.windows .cmd-item-kbd {
+  font: 500 10px var(--font-mono);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1px 6px; border-radius: 4px;
+  flex-shrink: 0;
+}
+.app.windows .cmd-footer {
+  display: flex; gap: 14px; align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid var(--separator);
+  color: var(--text-3);
+  font: 400 11px var(--font-win-text);
+}
+
+/* ── Modal(收到文件请求) ──────────────────────────────── */
+.app.windows .modal-backdrop {
+  position: fixed; inset: 0; z-index: 120;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.windows .modal {
+  width: 320px;
+  padding: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  display: flex; flex-direction: column; gap: 14px;
+  animation: pop 0.24s var(--ease-standard);
+}
+.app.windows .modal-header {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.app.windows .modal-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #0078d4, #5c2d91);
+  color: #fff;
+  font: 700 20px var(--font-win-text);
+  margin-bottom: 4px;
+}
+.app.windows .modal-title { font: 600 17px var(--font-win-text); color: var(--text); }
+.app.windows .modal-sub { font: 400 13px var(--font-win-text); color: var(--text-3); }
+.app.windows .modal-stats { display: flex; gap: 8px; }
+.app.windows .modal-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--win-accent);
+}
+.app.windows .modal-actions { display: flex; gap: 10px; }
+.app.windows .modal-actions .btn { flex: 1; justify-content: center; padding: 8px 14px; }
+
+/* ── Sheet(AddDeviceSheet 独立渲染) ───────────────────── */
+.app.windows .sheet-backdrop {
+  position: fixed; inset: 0; z-index: 110;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 24px 24px;
+  animation: fadeIn 0.18s ease;
+}
+.app.windows .sheet {
+  width: 460px; max-width: 100%;
+  max-height: 78vh;
+  display: flex; flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: sheetUp 0.26s var(--ease-standard);
+}
+.app.windows .sheet-handle { display: none; }
+.app.windows .sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.windows .sheet-close, .app.windows .sheet-confirm {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 0;
+  display: grid; place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--dur-fast), transform var(--dur-fast);
+}
+.app.windows .sheet-close:hover, .app.windows .sheet-confirm:hover { background: var(--surface-hover); }
+.app.windows .sheet-close:active, .app.windows .sheet-confirm:active { transform: scale(0.92); }
+.app.windows .sheet-confirm { background: var(--win-accent); color: #fff; }
+.app.windows .sheet-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.app.windows .sheet-title { font: 600 15px var(--font-win-text); color: var(--text); }
+.app.windows .sheet-mode-toggle {
+  display: flex; gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: 6px;
+  margin: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.windows .sheet-mode {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 10px;
+  border: 0; border-radius: 4px;
+  background: transparent;
+  color: var(--text-2);
+  font: 500 12px var(--font-win-text);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.app.windows .sheet-mode.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.app.windows .sheet-body { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
+.app.windows .sheet-tip {
+  display: flex; align-items: flex-start; gap: 6px;
+  font: 400 11px var(--font-win-text);
+  color: var(--text-3);
+  line-height: 1.5;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+.app.windows .sheet-tip svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── QR 扫码取景 ──────────────────────────────────────── */
+.app.windows .scan-stage { display: flex; flex-direction: column; gap: 12px; }
+.app.windows .scan-viewport {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%; max-height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  align-self: center;
+}
+.app.windows .scan-video { width: 100%; height: 100%; object-fit: cover; }
+.app.windows .scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.app.windows .scan-corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+}
+.app.windows .scan-corner-tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.app.windows .scan-corner-tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.app.windows .scan-corner-bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.app.windows .scan-corner-br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+.app.windows .scan-line {
+  position: absolute; left: 10%; right: 10%; top: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--win-accent), transparent);
+  animation: scanSweep 2.4s var(--ease-standard) infinite;
+  pointer-events: none;
+}
+.app.windows .scan-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font: 400 13px var(--font-win-text);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ── 最近添加 ─────────────────────────────────────────── */
+.app.windows .recent-list { margin-top: 4px; }
+.app.windows .recent-list-header {
+  display: flex; align-items: center; gap: 6px;
+  font: 600 11px var(--font-win-text); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 2px 6px;
+}
+.app.windows .recent-list-items {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.app.windows .recent-item { display: flex; align-items: center; background: var(--surface-2); }
+.app.windows .recent-item + .recent-item { border-top: 1px solid var(--separator); }
+.app.windows .recent-item-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  padding: 10px 12px;
+  border: 0; background: transparent;
+  font: 500 13px var(--font-mono); color: var(--text);
+  cursor: pointer; text-align: left;
+}
+.app.windows .recent-item-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.windows .recent-item-remove {
+  width: 34px; height: 34px;
+  border: 0; background: transparent;
+  color: var(--text-3);
+  display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.app.windows .recent-item-remove:hover { color: #d13438; }
+
+/* ── 滑动手势指示 / 下拉刷新 / ripple / toast ─────────── */
+.app.windows .swipe-edge-shadow {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 80;
+}
+.app.windows .swipe-edge-bar {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.windows .swipe-edge-glow {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--win-accent);
+  filter: blur(2px);
+}
+.app.windows .swipe-indicator {
+  position: fixed; bottom: 24vh; right: 0;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  pointer-events: none; z-index: 80;
+}
+.app.windows .swipe-indicator-bg {
+  position: absolute; inset: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-2);
+}
+.app.windows .swipe-indicator svg { position: relative; }
+.app.windows .ptr {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 32px;
+  color: var(--text-2);
+  font: 500 12px var(--font-win-text);
+  pointer-events: none;
+}
+.app.windows .ptr-spinner { display: grid; place-items: center; color: var(--win-accent); }
+.app.windows .ptr.refreshing .ptr-spinner svg { animation: spin 0.9s linear infinite; }
+.app.windows .ripple-host { -webkit-tap-highlight-color: transparent; }
+.app.windows .toast-msg {
+  font: 500 12px var(--font-win-text);
+  color: #107c10;
+  background: rgba(16, 124, 16, 0.1);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 10px;
+  animation: fadeInUp 0.24s var(--ease-standard);
+}
+.app.windows .toast-msg.error {
+  color: #d13438;
+  background: rgba(209, 52, 56, 0.1);
+}
+
 .app.windows.desktop::before {
   content: "";
   position: fixed; inset: 0;

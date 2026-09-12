@@ -750,3 +750,502 @@
   border-radius: 10px;
   box-shadow: var(--shadow-1);
 }
+
+/* ============================================================
+   macOS 组件样式 — Transfer / Cmd / Modal / Sheet / Scan /
+   Recent / Swipe / PTR / Ripple / 按钮变体(结构 + 玻璃视觉)
+   ============================================================ */
+
+/* ── 按钮变体 ─────────────────────────────────────────── */
+.app.macos .btn-primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+.app.macos .btn-primary:hover { background: var(--accent-hover); }
+.app.macos .btn-danger {
+  background: var(--danger-soft);
+  border-color: transparent;
+  color: var(--danger);
+}
+.app.macos .btn-danger:hover { background: var(--danger); color: #fff; }
+.app.macos .btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+.app.macos .btn-ghost:hover { background: var(--surface-hover); }
+
+/* ── 工具类 ───────────────────────────────────────────── */
+.app.macos .muted { color: var(--text-3); }
+.app.macos .dim { color: var(--text-4); }
+.app.macos .mono { font-family: var(--font-mono); }
+.app.macos .spacer { flex: 1; }
+.app.macos .error { color: var(--danger); }
+.app.macos .card-body { padding: 14px 16px; }
+.app.macos .col { display: flex; flex-direction: column; }
+.app.macos .row { display: flex; align-items: center; gap: 8px; }
+.app.macos .v { font: 700 16px var(--font-display); color: var(--text); }
+.app.macos .l { font: 400 11px var(--font-text); color: var(--text-3); }
+.app.macos .icon-btn {
+  border: 0; background: transparent; color: var(--text-2);
+  display: grid; place-items: center; cursor: pointer;
+  padding: 6px; border-radius: 6px;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.app.macos .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ── 传输列表(Liquid Glass 卡片) ───────────────────────── */
+.app.macos .transfers { display: flex; flex-direction: column; gap: 10px; }
+.app.macos .transfer {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+.app.macos .transfer:hover {
+  background: var(--glass-elev);
+  border-color: var(--glass-border);
+}
+.app.macos .transfer-head { display: flex; align-items: center; gap: 10px; }
+.app.macos .transfer-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.app.macos .transfer.done .transfer-icon { background: var(--success-soft); color: var(--success); }
+.app.macos .transfer.failed .transfer-icon { background: var(--danger-soft); color: var(--danger); }
+.app.macos .transfer-info { flex: 1; min-width: 0; }
+.app.macos .transfer-name {
+  display: block;
+  font: 600 13px var(--font-text); color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app.macos .transfer-sub {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font: 500 11px var(--font-text); color: var(--text-3);
+  margin-top: 2px;
+}
+.app.macos .transfer-pct {
+  font: 600 12px var(--font-mono); color: var(--accent);
+  flex-shrink: 0;
+}
+.app.macos .transfer.done .transfer-pct { color: var(--success); }
+.app.macos .transfer.failed .transfer-pct { color: var(--danger); }
+.app.macos .transfer-bar {
+  height: 4px; border-radius: 2px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.app.macos .transfer-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.3s var(--ease-standard);
+}
+.app.macos .transfer.done .transfer-bar-fill { background: var(--success); }
+.app.macos .transfer.failed .transfer-bar-fill { background: var(--danger); }
+.app.macos .transfer-meta {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 8px; border-top: 0.5px solid var(--separator);
+  font: 500 11px var(--font-text);
+  color: var(--text-3);
+}
+.app.macos .speed { font-family: var(--font-mono); color: var(--accent); }
+.app.macos .dir-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font: 600 10px var(--font-text);
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.app.macos .transfer-empty {
+  font: 400 12px var(--font-text); color: var(--text-3);
+  text-align: center; padding: 10px 0;
+}
+
+/* ── 历史记录 ─────────────────────────────────────────── */
+.app.macos .transfers.history { position: relative; }
+.app.macos .history-actions { display: flex; justify-content: flex-end; padding: 0 2px 2px; }
+.app.macos .history-hint { font: 400 11px var(--font-text); color: var(--text-4); }
+.app.macos .history-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.macos .history-confirm {
+  width: 280px;
+  padding: 24px 20px 16px;
+  border-radius: 14px;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--shadow-3);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: pop 0.28s var(--ease-ios-spring);
+}
+.app.macos .history-confirm-icon { color: var(--danger); margin-bottom: 4px; }
+.app.macos .history-confirm-title { font: 600 15px var(--font-text); color: var(--text); }
+.app.macos .history-confirm-sub { font: 400 12px var(--font-text); color: var(--text-3); }
+.app.macos .history-confirm-actions { display: flex; gap: 8px; margin-top: 14px; }
+.app.macos .history-confirm-actions .btn { padding: 8px 16px; }
+
+/* ── 命令面板 ─────────────────────────────────────────── */
+.app.macos .cmd-backdrop {
+  position: fixed; inset: 0; z-index: 130;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  display: grid; place-items: start center;
+  padding-top: 12vh;
+  animation: fadeIn 0.16s ease;
+}
+.app.macos .cmd-panel {
+  width: 560px; max-width: calc(100vw - 48px);
+  max-height: 60vh;
+  display: flex; flex-direction: column;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  animation: cmdPop 0.22s var(--ease-ios-spring);
+}
+.app.macos .cmd-search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--separator);
+  color: var(--text-3);
+}
+.app.macos .cmd-search input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: 500 15px var(--font-text); color: var(--text);
+}
+.app.macos .cmd-search input::placeholder { color: var(--text-4); }
+.app.macos .cmd-clear {
+  border: 0; background: transparent; color: var(--text-3);
+  cursor: pointer; padding: 4px; display: grid; place-items: center;
+  border-radius: 50%;
+}
+.app.macos .cmd-clear:hover { background: var(--surface-hover); }
+.app.macos .cmd-results {
+  flex: 1; overflow-y: auto; padding: 8px;
+  scrollbar-width: thin;
+}
+.app.macos .cmd-results::-webkit-scrollbar { width: 6px; }
+.app.macos .cmd-empty {
+  padding: 32px 16px; text-align: center;
+  color: var(--text-3); font: 400 13px var(--font-text);
+}
+.app.macos .cmd-group { margin-bottom: 6px; }
+.app.macos .cmd-group-label {
+  font: 600 11px var(--font-text); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 10px 4px;
+}
+.app.macos .cmd-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  text-align: left; cursor: pointer;
+  font: 400 13px var(--font-text); color: var(--text);
+}
+.app.macos .cmd-item.active { background: var(--accent-soft); }
+.app.macos .cmd-item-icon { color: var(--text-2); display: grid; place-items: center; }
+.app.macos .cmd-item.active .cmd-item-icon { color: var(--accent); }
+.app.macos .cmd-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.app.macos .cmd-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.macos .cmd-item-hint { font: 400 11px var(--font-text); color: var(--text-3); margin-top: 1px; }
+.app.macos .cmd-item-kbd {
+  font: 500 10px var(--font-mono);
+  color: var(--text-3);
+  border: 0.5px solid var(--border);
+  background: var(--surface-3);
+  padding: 1px 6px; border-radius: 4px;
+  flex-shrink: 0;
+}
+.app.macos .cmd-footer {
+  display: flex; gap: 14px; align-items: center;
+  padding: 10px 16px;
+  border-top: 0.5px solid var(--separator);
+  color: var(--text-3);
+  font: 400 11px var(--font-text);
+}
+
+/* ── Modal(收到文件请求) ──────────────────────────────── */
+.app.macos .modal-backdrop {
+  position: fixed; inset: 0; z-index: 120;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  display: grid; place-items: center;
+  animation: fadeIn 0.2s ease;
+}
+.app.macos .modal {
+  width: 320px;
+  padding: 20px;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-3);
+  display: flex; flex-direction: column; gap: 14px;
+  animation: pop 0.3s var(--ease-ios-spring);
+}
+.app.macos .modal-header {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.app.macos .modal-avatar {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #5e5ce6, #bf5af2);
+  color: #fff;
+  font: 700 20px var(--font-display);
+  margin-bottom: 4px;
+}
+.app.macos .modal-title { font: 600 17px var(--font-text); color: var(--text); }
+.app.macos .modal-sub { font: 400 13px var(--font-text); color: var(--text-3); }
+.app.macos .modal-stats { display: flex; gap: 8px; }
+.app.macos .modal-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+}
+.app.macos .modal-actions { display: flex; gap: 10px; }
+.app.macos .modal-actions .btn { flex: 1; justify-content: center; padding: 8px 14px; }
+
+/* ── Sheet(AddDeviceSheet 独立渲染) ───────────────────── */
+.app.macos .sheet-backdrop {
+  position: fixed; inset: 0; z-index: 110;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 24px 24px;
+  animation: fadeIn 0.18s ease;
+}
+.app.macos .sheet {
+  width: 460px; max-width: 100%;
+  max-height: 78vh;
+  display: flex; flex-direction: column;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  animation: sheetUp 0.3s var(--ease-ios-spring);
+}
+.app.macos .sheet-handle { display: none; }
+.app.macos .sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.macos .sheet-close, .app.macos .sheet-confirm {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 0;
+  display: grid; place-items: center;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--dur-fast), transform var(--dur-fast);
+}
+.app.macos .sheet-close:hover, .app.macos .sheet-confirm:hover { background: var(--surface-3); }
+.app.macos .sheet-close:active, .app.macos .sheet-confirm:active { transform: scale(0.92); }
+.app.macos .sheet-confirm { background: var(--accent); color: #fff; }
+.app.macos .sheet-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.app.macos .sheet-title { font: 600 15px var(--font-text); color: var(--text); }
+.app.macos .sheet-mode-toggle {
+  display: flex; gap: 4px;
+  padding: 6px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  margin: 12px 14px 0;
+  flex-shrink: 0;
+}
+.app.macos .sheet-mode {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 10px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font: 500 12px var(--font-text);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.app.macos .sheet-mode.active {
+  background: var(--glass-elev);
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+.app.macos .sheet-body {
+  flex: 1; overflow-y: auto;
+  padding: 14px 16px 20px;
+  scrollbar-width: thin;
+}
+.app.macos .sheet-body::-webkit-scrollbar { width: 6px; }
+.app.macos .sheet-tip {
+  display: flex; align-items: flex-start; gap: 6px;
+  font: 400 11px var(--font-text);
+  color: var(--text-3);
+  line-height: 1.5;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+.app.macos .sheet-tip svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── QR 扫码取景 ──────────────────────────────────────── */
+.app.macos .scan-stage { display: flex; flex-direction: column; gap: 12px; }
+.app.macos .scan-viewport {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%; max-height: 320px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  align-self: center;
+}
+.app.macos .scan-video { width: 100%; height: 100%; object-fit: cover; }
+.app.macos .scan-corners { position: absolute; inset: 0; pointer-events: none; }
+.app.macos .scan-corner {
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+}
+.app.macos .scan-corner-tl { top: 14px; left: 14px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.app.macos .scan-corner-tr { top: 14px; right: 14px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.app.macos .scan-corner-bl { bottom: 14px; left: 14px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.app.macos .scan-corner-br { bottom: 14px; right: 14px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+.app.macos .scan-line {
+  position: absolute; left: 10%; right: 10%; top: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanSweep 2.4s var(--ease-standard) infinite;
+  pointer-events: none;
+}
+.app.macos .scan-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font: 400 13px var(--font-text);
+  text-align: center;
+  padding: 20px;
+}
+
+/* ── 最近添加 ─────────────────────────────────────────── */
+.app.macos .recent-list { margin-top: 4px; }
+.app.macos .recent-list-header {
+  display: flex; align-items: center; gap: 6px;
+  font: 600 11px var(--font-text); color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 8px 2px 6px;
+}
+.app.macos .recent-list-items {
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 0.5px solid var(--border);
+}
+.app.macos .recent-item { display: flex; align-items: center; background: var(--surface-2); }
+.app.macos .recent-item + .recent-item { border-top: 0.5px solid var(--separator); }
+.app.macos .recent-item-main {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center;
+  padding: 10px 12px;
+  border: 0; background: transparent;
+  font: 500 13px var(--font-mono); color: var(--text);
+  cursor: pointer; text-align: left;
+}
+.app.macos .recent-item-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.macos .recent-item-remove {
+  width: 34px; height: 34px;
+  border: 0; background: transparent;
+  color: var(--text-3);
+  display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.app.macos .recent-item-remove:hover { color: var(--danger); }
+
+/* ── 滑动手势指示 ─────────────────────────────────────── */
+.app.macos .swipe-edge-shadow {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  pointer-events: none; z-index: 80;
+}
+.app.macos .swipe-edge-bar {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 0 8px 8px 0;
+}
+.app.macos .swipe-edge-glow {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--accent);
+  filter: blur(2px);
+}
+.app.macos .swipe-indicator {
+  position: fixed; bottom: 24vh; right: 0;
+  width: 48px; height: 48px;
+  display: grid; place-items: center;
+  color: var(--text-2);
+  pointer-events: none; z-index: 80;
+}
+.app.macos .swipe-indicator-bg {
+  position: absolute; inset: 0;
+  border-radius: 12px 0 0 12px;
+  background: var(--glass-base);
+  box-shadow: var(--shadow-2);
+}
+.app.macos .swipe-indicator svg { position: relative; }
+
+/* ── 下拉刷新 ─────────────────────────────────────────── */
+.app.macos .ptr {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 32px;
+  color: var(--text-2);
+  font: 500 12px var(--font-text);
+  pointer-events: none;
+}
+.app.macos .ptr-spinner { display: grid; place-items: center; color: var(--accent); }
+.app.macos .ptr.refreshing .ptr-spinner svg { animation: spin 0.9s linear infinite; }
+
+/* ── Ripple / toast ───────────────────────────────────── */
+.app.macos .ripple-host { -webkit-tap-highlight-color: transparent; }
+.app.macos .toast-msg {
+  font: 500 12px var(--font-text);
+  color: var(--success);
+  background: var(--success-soft);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+  animation: fadeInUp 0.24s var(--ease-ios-spring);
+}
+.app.macos .toast-msg.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
