@@ -2,7 +2,9 @@ use crate::discovery::Peer;
 use crate::state::AppState;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, State};
+#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 use uuid::Uuid;
 
 #[tauri::command]
@@ -346,8 +348,8 @@ pub fn splash_ready(app: tauri::AppHandle) {
 }
 
 /// 在 lib.rs setup 中调用,创建 splash 窗口(显示在 main 之上)。
-/// 桌面端使用一个小的居中窗口加载 splash.html;移动端通常
-/// 不需要 splash(系统启动画面已覆盖),但仍创建以保持一致行为。
+/// 仅桌面端:`maximizable`/`decorations` 等是桌面专用 API,移动端不编译。
+#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
 pub fn create_splash_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     if app.get_webview_window("splash").is_some() {
         return Ok(());
