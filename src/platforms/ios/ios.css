@@ -1,0 +1,433 @@
+/* ============================================================
+   iOS 平台样式 — NavigationStack + Liquid Glass
+   设计参考 docs/design-mocks/ios.html
+   ============================================================ */
+
+.app.ios.mobile {
+  display: grid;
+  grid-template-rows: 44px auto 1fr auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* ── Status bar (9:41) ─────────────────────────────────────── */
+.app.ios .status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px 6px;
+  font: 600 15px var(--font-display);
+  color: var(--text);
+  background: var(--glass-1);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.app.ios .status-right {
+  display: flex; gap: 5px; align-items: center;
+}
+.app.ios .signal,
+.app.ios .wifi,
+.app.ios .battery {
+  display: inline-block;
+  background: currentColor;
+  border-radius: 2px;
+}
+.app.ios .signal {
+  width: 16px; height: 11px;
+  mask: radial-gradient(circle 1.5px at 2px 8.5px, #000 99%, transparent 100%) 0 0/3.5px 3px,
+        radial-gradient(circle 1.5px at 7px 6.5px, #000 99%, transparent 100%) 0 0/3.5px 3px,
+        radial-gradient(circle 1.5px at 12px 4.5px, #000 99%, transparent 100%) 0 0/3.5px 3px;
+  -webkit-mask: radial-gradient(circle 1.5px at 2px 8.5px, #000 99%, transparent 100%) 0 0/3.5px 3px,
+                radial-gradient(circle 1.5px at 7px 6.5px, #000 99%, transparent 100%) 0 0/3.5px 3px,
+                radial-gradient(circle 1.5px at 12px 4.5px, #000 99%, transparent 100%) 0 0/3.5px 3px;
+}
+.app.ios .wifi {
+  width: 14px; height: 10px;
+  clip-path: polygon(0% 100%, 30% 60%, 55% 85%, 55% 100%, 70% 100%, 70% 70%, 100% 100%, 100% 100%, 50% 0%, 0% 100%);
+}
+.app.ios .battery {
+  width: 24px; height: 11px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  position: relative;
+  background: transparent;
+}
+.app.ios .battery::after {
+  content: "";
+  position: absolute;
+  right: -2px; top: 3px;
+  width: 2px; height: 5px;
+  background: currentColor;
+  border-radius: 0 1px 1px 0;
+}
+
+/* ── Navbar (大标题 + inline) ──────────────────────────────── */
+.app.ios .navbar {
+  padding: 4px 20px 0;
+  background: var(--glass-1);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-bottom: 0.5px solid var(--separator);
+  position: relative;
+  transition: max-height 0.42s var(--ease-elastic),
+              padding 0.42s var(--ease-elastic);
+  will-change: max-height, padding;
+}
+.app.ios .nav-head {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 44px;
+}
+.app.ios .nav-title-inline {
+  font: 600 17px var(--font-display);
+  color: var(--text);
+  transition: opacity 0.32s var(--ease-elastic),
+              transform 0.32s var(--ease-elastic);
+  pointer-events: none;
+}
+.app.ios .nav-actions { display: flex; gap: 18px; }
+.app.ios .nav-action {
+  border: 0; background: none;
+  color: var(--ios-blue);
+  display: grid; place-items: center;
+  cursor: pointer;
+  padding: 6px;
+}
+.app.ios .large-title {
+  font: 700 34px/1.1 var(--font-display);
+  letter-spacing: -0.4px;
+  color: var(--text);
+  margin: 0;
+  padding: 4px 0 10px;
+  transform-origin: left top;
+  /* scrolling=true 时 transition 关掉(linear 跟手),停止时用 spring overshoot */
+  transition: transform 0.42s var(--ease-elastic),
+              font-size 0.42s var(--ease-elastic),
+              letter-spacing 0.42s var(--ease-elastic),
+              padding 0.42s var(--ease-elastic),
+              opacity 0.42s var(--ease-elastic);
+  will-change: transform, font-size, opacity;
+}
+.app.ios .large-title.scrolling { transition: none; }
+
+/* Elastic 弹簧曲线: overshoot ~5%,然后弹回 */
+:root { --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ── Content ───────────────────────────────────────────────── */
+.app.ios .content {
+  overflow-y: auto;
+  padding: 8px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Search bar */
+.app.ios .ios-search {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface);
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--text-2);
+  font: 400 16px var(--font-text);
+  margin: 4px 0;
+}
+.app.ios .ios-search input {
+  flex: 1; border: 0; background: transparent; outline: 0;
+  font: 400 16px var(--font-text); color: var(--text);
+}
+.app.ios .ios-search input::placeholder { color: var(--text-2); }
+
+/* iOS Inset Grouped List */
+.app.ios .section-label {
+  font: 400 13px var(--font-text);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-2);
+  padding: 0 4px 4px;
+}
+.app.ios .ios-list {
+  background: var(--surface-2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.app.ios .ios-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  min-height: 48px;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  font-family: inherit;
+  color: var(--text);
+}
+.app.ios .ios-row + .ios-row::before {
+  content: "";
+  position: absolute;
+  left: 60px; right: 0; top: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+.app.ios .ios-row-icon {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  display: grid; place-items: center;
+  color: white;
+  flex-shrink: 0;
+}
+.app.ios .ios-row .info { flex: 1; min-width: 0; }
+.app.ios .ios-row .name {
+  font: 400 16px var(--font-text);
+  color: var(--text);
+}
+.app.ios .ios-row .sub {
+  font: 400 12px var(--font-text);
+  color: var(--text-2);
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 2px;
+}
+.app.ios .ios-row .sub.mono { font-family: var(--font-mono); }
+.app.ios .ios-row .chev {
+  color: var(--text-3);
+  font: 400 18px var(--font-text);
+}
+
+/* Liquid Glass transfer card */
+.app.ios .transfer-glass {
+  background: var(--glass-2);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 0.5px solid var(--glass-border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.app.ios .transfer-glass .head { display: flex; align-items: center; gap: 10px; }
+.app.ios .transfer-glass .head-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue);
+  display: grid; place-items: center;
+}
+.app.ios .transfer-glass .name {
+  font: 500 15px var(--font-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app.ios .transfer-glass .pct {
+  font: 600 14px var(--font-mono);
+  color: var(--ios-blue);
+}
+.app.ios .transfer-glass .progress-track {
+  height: 5px;
+  background: var(--surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.app.ios .transfer-glass .progress-fill {
+  height: 100%;
+  background: var(--ios-blue);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.app.ios .transfer-glass .meta {
+  display: flex; align-items: center; gap: 6px;
+  font: 500 12px var(--font-text);
+  color: var(--text-2);
+}
+.app.ios .transfer-glass .meta .spacer { flex: 1; }
+
+/* ── Bottom tab bar (Liquid Glass) ─────────────────────────── */
+.app.ios .tabbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 64px 1fr 1fr;
+  align-items: center;
+  margin: 0 8px 8px;
+  padding: 6px 8px 4px;
+  height: 64px;
+  background: var(--glass-2);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-radius: 32px;
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+}
+.app.ios .tab-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--text-2);
+  font: 500 10px var(--font-text);
+  cursor: pointer;
+  border: 0; background: none;
+  position: relative;
+}
+.app.ios .tab-item.active { color: var(--ios-blue); }
+.app.ios .tab-item .icon-wrap {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  transition: all 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+}
+.app.ios .tab-item.active .icon-wrap {
+  background: var(--ios-blue-soft);
+}
+.app.ios .tab-badge {
+  position: absolute;
+  top: -2px; right: -2px;
+  min-width: 16px; height: 16px;
+  border-radius: 8px;
+  background: var(--ios-red);
+  color: white;
+  font: 600 9px var(--font-rd);
+  display: grid; place-items: center;
+  padding: 0 4px;
+}
+.app.ios .tab-fab {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ios-blue), #5e5ce6);
+  color: white;
+  display: grid; place-items: center;
+  border: 0;
+  box-shadow: 0 8px 20px rgba(0,122,255,0.4);
+  cursor: pointer;
+  justify-self: center;
+}
+.app.ios .tab-fab:active { transform: scale(0.94); }
+
+/* ── Home indicator ────────────────────────────────────────── */
+.app.ios .home-indicator {
+  position: absolute;
+  bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 130px; height: 5px;
+  background: var(--text);
+  border-radius: 3px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Swipe-back ghost ──────────────────────────────────────── */
+.app.ios .swipe-ghost {
+  position: fixed; top: 0; bottom: 0; left: 0;
+  width: 6px;
+  background: var(--ios-blue);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+/* ── Section title (used in transfers tab) ─────────────────── */
+.app.ios .section-title {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px;
+}
+.app.ios .section-title h2 {
+  font: 600 18px var(--font-display);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.app.ios .btn.btn-ghost {
+  background: transparent;
+  border: 0;
+  color: var(--ios-blue);
+  font: 500 14px var(--font-text);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.app.ios .btn.btn-primary {
+  background: var(--ios-blue);
+  color: white;
+  border: 0;
+  font: 600 16px var(--font-rd);
+  padding: 12px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+/* ── 调整全局组件在 iOS 下的外观 ─────────────────────────── */
+.app.ios .peer-list {
+  background: var(--surface-2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.app.ios .peer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  min-height: 56px;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 0.5px solid var(--separator);
+  animation: none;
+}
+.app.ios .peer-item:last-child { border-bottom: 0; }
+.app.ios .peer-item.selected { background: var(--ios-blue-soft); }
+.app.ios .peer-info { flex: 1; }
+.app.ios .peer-name { font: 500 16px var(--font-text); }
+.app.ios .peer-meta { font: 400 12px var(--font-text); color: var(--text-2); }
+.app.ios .peer-avatar { width: 36px; height: 36px; border-radius: 9px; font: 600 15px var(--font-display); }
+.app.ios .dropzone {
+  background: var(--surface-2);
+  border: 0;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+/* ============================================================
+   iOS Sheet (UISheetPresentationController 风格)
+   ============================================================ */
+.sheet-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 90;
+  pointer-events: none;
+  transition: background 0.32s ease;
+}
+.sheet-backdrop.open {
+  background: rgba(0, 0, 0, 0.36);
+  pointer-events: auto;
+}
+.app.ios .sheet {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 8px;
+  background: var(--glass-3);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-radius: 24px;
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  z-index: 95;
+}
+.app.ios .sheet.closing { transform: translateY(100%) !important; }
+.app.ios .sheet-handle {
+  display: flex; justify-content: center;
+  padding: 8px 0 4px;
+  cursor: grab;
+  touch-action: none;
+}
+.app.ios .sheet.dragging .sheet-handle { cursor: grabbing; }
+.app.ios .sheet-handle-bar {
+  width: 36px; height: 5px;
+  background: var(--text-4);
+  border-radius: 3px;
+}
+.app.ios .sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+.app.ios .sheet-content::-webkit-scrollbar { width: 0; }

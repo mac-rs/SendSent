@@ -241,3 +241,23 @@ export const LogoIcon = (p: IconProps) => (
     <circle cx="20" cy="12" r="1.4" fill="currentColor" stroke="none" />
   </svg>
 );
+
+export const ScanIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const ReceiveIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+  </svg>
+);
+
+export const ThemeIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" />
+  </svg>
+);

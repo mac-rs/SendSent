@@ -1,0 +1,218 @@
+/* ============================================================
+   Linux 平台样式 — Adwaita / GNOME
+   ============================================================ */
+
+:root {
+  --linux-accent: #3584e4;
+  --linux-accent-soft: rgba(53, 132, 228, 0.14);
+  --font-linux: "Cantarell", "Inter", "Noto Sans", system-ui, -apple-system, sans-serif;
+}
+
+.app.linux.desktop {
+  display: grid;
+  grid-template-rows: 46px 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-linux);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app.linux .titlebar {
+  display: grid;
+  grid-template-columns: 200px 1fr 160px;
+  align-items: center;
+  height: 46px;
+  padding: 0 12px;
+  background: var(--glass-base);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 1px solid var(--separator);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.app.linux .titlebar-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.app.linux .hamburger {
+  width: 32px; height: 32px;
+  border: 0; background: transparent;
+  border-radius: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+  -webkit-app-region: no-drag;
+}
+.app.linux .hamburger:hover { background: var(--surface); }
+.app.linux .titlebar-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--linux-accent);
+  color: white;
+  display: grid; place-items: center;
+}
+.app.linux .titlebar-name {
+  font: 700 13px var(--font-linux);
+  color: var(--text);
+}
+.app.linux .titlebar-center {
+  display: flex; justify-content: center;
+  -webkit-app-region: no-drag;
+}
+.app.linux .gnome-tabs {
+  display: flex;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 0;
+}
+.app.linux .gnome-tab {
+  border: 0; background: transparent;
+  padding: 4px 16px;
+  border-radius: 6px;
+  font: 500 12px var(--font-linux);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.app.linux .gnome-tab:hover { background: var(--surface-2); }
+.app.linux .gnome-tab.active {
+  background: var(--linux-accent);
+  color: white;
+}
+.app.linux .titlebar-right {
+  display: flex; gap: 4px; justify-content: flex-end; align-items: center;
+  -webkit-app-region: no-drag;
+}
+.app.linux .caption-btn {
+  width: 30px; height: 30px;
+  border: 0; background: transparent;
+  border-radius: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.app.linux .caption-btn:hover { background: var(--surface); color: var(--text); }
+
+.app.linux .body {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+.app.linux .main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px 80px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.app.linux .hero { display: flex; flex-direction: column; gap: 4px; }
+.app.linux .hero-title {
+  font: 700 28px/1.1 var(--font-linux);
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--text);
+}
+.app.linux .hero-sub {
+  font: 400 13px var(--font-linux);
+  color: var(--text-2);
+  margin: 0;
+}
+.app.linux .searchbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  margin-top: 12px;
+  max-width: 460px;
+}
+.app.linux .searchbar input {
+  flex: 1; border: 0; background: transparent; outline: 0;
+  font: 400 13px var(--font-linux);
+  color: var(--text);
+}
+.app.linux .searchbar .kbd {
+  font: 500 11px var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--glass-elev);
+  color: var(--text-2);
+  border: 1px solid var(--separator);
+}
+.app.linux .stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.app.linux .stat {
+  background: var(--glass-elev);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.app.linux .stat-label {
+  font: 500 11px var(--font-linux);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.app.linux .stat-value {
+  font: 600 22px var(--font-linux);
+  color: var(--text);
+  margin-top: 4px;
+}
+.app.linux .toolbar-row {
+  display: flex; justify-content: flex-end;
+}
+.app.linux .refresh-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  color: var(--text);
+  font: 500 12px var(--font-linux);
+  cursor: pointer;
+}
+.app.linux .refresh-btn:hover { background: var(--linux-accent-soft); border-color: var(--linux-accent); }
+.app.linux .refresh-btn.refreshing svg { animation: spin 1s linear infinite; }
+.app.linux .section-title {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app.linux .section-title h2 {
+  font: 600 16px var(--font-linux);
+  margin: 0;
+}
+.app.linux .card {
+  background: var(--glass-elev);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.app.linux .btn.btn-primary {
+  background: var(--linux-accent);
+  color: white;
+  border: 1px solid transparent;
+  font: 500 13px var(--font-linux);
+  padding: 7px 16px;
+  border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
+  cursor: pointer;
+  transition: filter 0.14s;
+}
+.app.linux .btn.btn-primary:hover { filter: brightness(1.05); }
+.app.linux .btn.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  color: var(--text);
+  font: 500 12px var(--font-linux);
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.app.linux .btn.btn-ghost:hover { background: var(--surface-2); }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

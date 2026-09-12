@@ -53,6 +53,21 @@ pub fn run() {
     let builder = builder.plugin(content_plugin::plugin()).plugin(nsd_plugin::plugin());
     builder
         .setup(|app| {
+            // ── 启动 splash screen ──────────────────────────
+            // 桌面端(Windows / macOS / Linux)由 tauri.conf.json 静态声明
+            // 一个 splash 窗口(visible=true, transparent=true),主窗口
+            // visible=false 隐藏。前端 mount 后通过 invoke("splash_ready")
+            // 关闭 splash 窗口并显示主窗口。
+            // 移动端(iOS / Android)由系统启动画面接管过渡,直接显示主窗口。
+            #[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
+            {
+                if app.get_webview_window("splash").is_none()
+                    && let Err(e) = commands::create_splash_window(app.handle())
+                {
+                    tracing::warn!("splash window create failed: {e}");
+                }
+            }
+
             let data_dir = app.path().app_data_dir().expect("app_data_dir");
             let platform = store::current_platform();
             let host = hostname().unwrap_or_else(|| "device".into());
@@ -162,6 +177,8 @@ pub fn run() {
             if let Ok(dir) = default_save_dir() {
                 let _ = std::fs::create_dir_all(&dir);
             }
+            // macOS 系统红绿灯的位置由 tauri.conf.json 的 trafficLightPosition
+            // 在启动期设到屏幕外(-100,-100),此处不再运行时调整。
             app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history, port });
             Ok(())
         })
@@ -183,6 +200,7 @@ pub fn run() {
             commands::set_transfer_config,
             commands::get_my_qr,
             commands::get_my_addresses,
+            commands::splash_ready,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

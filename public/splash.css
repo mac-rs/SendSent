@@ -1,0 +1,248 @@
+/* ============================================================
+   SendSent · 启动 Splash Screen
+   与主题颜色变量保持一致;light/dark 自适应
+   ============================================================ */
+
+:root {
+  --splash-bg: #f5f5f7;
+  --splash-bg-deep: #ececf1;
+  --splash-text: #0c0c10;
+  --splash-text-2: rgba(12, 12, 16, 0.62);
+  --splash-text-3: rgba(12, 12, 16, 0.42);
+  --splash-card: rgba(255, 255, 255, 0.6);
+  --splash-card-border: rgba(12, 12, 16, 0.08);
+  --splash-shadow: rgba(0, 0, 0, 0.08);
+  --splash-blob-a: rgba(123, 92, 255, 0.32);
+  --splash-blob-b: rgba(79, 182, 255, 0.28);
+  --splash-blob-c: rgba(52, 212, 161, 0.24);
+  --splash-elev: rgba(255, 255, 255, 0.7);
+  --splash-dot: rgba(12, 12, 16, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --splash-bg: #0a0a0f;
+    --splash-bg-deep: #14141c;
+    --splash-text: #f5f5f7;
+    --splash-text-2: rgba(245, 245, 247, 0.66);
+    --splash-text-3: rgba(245, 245, 247, 0.42);
+    --splash-card: rgba(28, 28, 36, 0.7);
+    --splash-card-border: rgba(255, 255, 255, 0.08);
+    --splash-shadow: rgba(0, 0, 0, 0.42);
+    --splash-blob-a: rgba(123, 92, 255, 0.32);
+    --splash-blob-b: rgba(79, 182, 255, 0.26);
+    --splash-blob-c: rgba(52, 212, 161, 0.22);
+    --splash-elev: rgba(40, 40, 52, 0.6);
+    --splash-dot: rgba(245, 245, 247, 0.55);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--splash-bg);
+  color: var(--splash-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+               "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  cursor: default;
+}
+
+/* ── 背景柔光 ──────────────────────────────────────────── */
+.bg {
+  position: fixed; inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 20%, var(--splash-blob-a) 0%, transparent 42%),
+    radial-gradient(circle at 80% 10%, var(--splash-blob-b) 0%, transparent 38%),
+    radial-gradient(circle at 50% 90%, var(--splash-blob-c) 0%, transparent 44%),
+    linear-gradient(160deg, var(--splash-bg) 0%, var(--splash-bg-deep) 100%);
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.7;
+  animation: drift 14s var(--ease, ease-in-out) infinite alternate;
+}
+.blob.b1 {
+  width: 320px; height: 320px;
+  top: -10%; left: -10%;
+  background: var(--splash-blob-a);
+}
+.blob.b2 {
+  width: 260px; height: 260px;
+  top: 8%; right: -8%;
+  background: var(--splash-blob-b);
+  animation-delay: -4s;
+}
+.blob.b3 {
+  width: 360px; height: 360px;
+  bottom: -16%; left: 30%;
+  background: var(--splash-blob-c);
+  animation-delay: -8s;
+}
+@keyframes drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(40px, -30px) scale(1.08); }
+  100% { transform: translate(-30px, 40px) scale(0.96); }
+}
+
+/* ── 中央舞台 ──────────────────────────────────────────── */
+.stage {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 24px;
+  animation: rise 0.7s var(--ease, cubic-bezier(0.18, 0.89, 0.32, 1.28)) 0.05s backwards;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Logo 与光晕 ──────────────────────────────────────── */
+.logo-wrap {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 6px;
+}
+.logo-glow {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle, var(--splash-blob-a) 0%, transparent 60%),
+    radial-gradient(circle at 30% 70%, var(--splash-blob-b) 0%, transparent 60%);
+  filter: blur(28px);
+  opacity: 0.7;
+  z-index: 0;
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.08); }
+}
+.logo-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--splash-card-border);
+  pointer-events: none;
+}
+.logo-ring.r1 {
+  width: 100%; height: 100%;
+  animation: spin 8s linear infinite;
+  border-top-color: rgba(123, 92, 255, 0.55);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+.logo-ring.r2 {
+  width: 138%; height: 138%;
+  animation: spin 14s linear infinite reverse;
+  border-top-color: rgba(79, 182, 255, 0.45);
+  border-bottom-color: rgba(52, 212, 161, 0.45);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  opacity: 0.6;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.logo {
+  position: relative;
+  z-index: 1;
+  width: 84px; height: 84px;
+  filter: drop-shadow(0 6px 18px var(--splash-shadow));
+  animation: floaty 4.2s ease-in-out infinite;
+}
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* ── 文案 ──────────────────────────────────────────────── */
+.brand {
+  margin: 0;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  color: var(--splash-text);
+  background: linear-gradient(120deg,
+    var(--splash-text) 0%,
+    var(--splash-text) 40%,
+    rgba(123, 92, 255, 0.9) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tagline {
+  margin: 0;
+  font-size: 13px;
+  color: var(--splash-text-2);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+/* ── 加载点 ────────────────────────────────────────────── */
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 18px;
+}
+.dots span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--splash-dot);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.dots span:nth-child(1) { animation-delay: 0s; }
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1.0); opacity: 1; }
+}
+
+/* ── 底部状态 ──────────────────────────────────────────── */
+.foot {
+  position: absolute;
+  bottom: 22px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 1;
+}
+.status {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: var(--splash-text-3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--splash-card);
+  border: 0.5px solid var(--splash-card-border);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 500;
+  animation: statusFade 0.5s var(--ease, ease-out) 0.6s backwards;
+}
+@keyframes statusFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

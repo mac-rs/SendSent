@@ -36,3 +36,7 @@ export const getMyQr = (size?: number, ip?: string) =>
   invoke<string>("get_my_qr", { size, ip });
 export const getMyAddresses = () =>
   invoke<Array<{ interface: string; ip: string }>>("get_my_addresses");
+
+// 启动 splash screen:通知 Rust 端关闭 splash 窗口、显示主窗口。
+// 安全无副作用,多次调用幂等(Rust 端 splash 关闭后 noop)。
+export const splashReady = () => invoke<void>("splash_ready");

@@ -1,0 +1,646 @@
+/* ============================================================
+   macOS 平台样式 — Liquid Glass + SF Pro
+   适配 docs/design-mocks/macos.html 的设计
+   ============================================================ */
+
+.app.macos.desktop {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 44px 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-text);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* ── Wallpaper behind window ────────────────────────────────── */
+.app.macos.desktop::before {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255, 107, 157, 0.18) 0%, transparent 38%),
+    radial-gradient(circle at 82% 12%, rgba(255, 167, 81, 0.16) 0%, transparent 40%),
+    radial-gradient(circle at 12% 88%, rgba(79, 172, 254, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 88% 92%, rgba(157, 78, 221, 0.16) 0%, transparent 45%),
+    linear-gradient(135deg, #0a0e27 0%, #1a0b2e 50%, #16213e 100%);
+  z-index: -1;
+}
+
+/* ── Titlebar ──────────────────────────────────────────────── */
+.app.macos .titlebar {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--glass-base);
+  backdrop-filter: blur(80px) saturate(180%);
+  -webkit-backdrop-filter: blur(80px) saturate(180%);
+  border-bottom: 0.5px solid var(--separator);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.app.macos .traffic-lights {
+  display: flex; gap: 8px;
+  -webkit-app-region: no-drag;
+}
+.app.macos .traffic-lights span {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0,0,0,0.12);
+}
+.app.macos .traffic-lights .close { background: #ff5f57; }
+.app.macos .traffic-lights .min   { background: #febc2e; }
+.app.macos .traffic-lights .max   { background: #28c840; }
+.app.macos .titlebar-center {
+  display: flex;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+}
+.app.macos .segmented {
+  display: flex;
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 0;
+}
+.app.macos .seg-btn {
+  border: 0; background: transparent;
+  padding: 3px 14px;
+  border-radius: 5px;
+  font: 500 var(--fs-callout) var(--font-text);
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all 0.32s var(--ease-macos-spring);
+}
+.app.macos .seg-btn:hover:not(.active) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.app.macos .seg-btn.active {
+  background: var(--glass-elev);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transform: scale(1.02);
+}
+.app.macos .seg-badge {
+  font: 600 10px var(--font-text);
+  color: var(--text-3);
+  background: var(--surface);
+  padding: 1px 5px;
+  border-radius: 999px;
+}
+.app.macos .seg-btn.active .seg-badge {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue);
+}
+.app.macos .titlebar-right {
+  display: flex; gap: 4px; justify-content: flex-end;
+  -webkit-app-region: no-drag;
+}
+.app.macos .titlebar-right .icon-btn {
+  width: 28px; height: 28px;
+  border: 0; background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-2);
+  display: grid; place-items: center;
+  transition: all 0.14s;
+}
+.app.macos .titlebar-right .icon-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* ── Body grid ─────────────────────────────────────────────── */
+.app.macos .body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.app.macos .sidebar {
+  border-right: 0.5px solid var(--separator);
+  background: var(--glass-base);
+  backdrop-filter: blur(60px) saturate(180%);
+  -webkit-backdrop-filter: blur(60px) saturate(180%);
+  padding: 14px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.app.macos .nav-section {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.app.macos .nav-section-label {
+  font: 600 11px var(--font-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  padding: 0 10px 4px;
+}
+.app.macos .sidebar-id {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--ios-blue-soft);
+}
+.app.macos .sidebar-id .dot.online {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--ios-green);
+  box-shadow: 0 0 6px var(--ios-green);
+}
+.app.macos .sidebar-id-name {
+  font: 600 12px var(--font-text);
+  color: var(--text);
+}
+.app.macos .sidebar-id-meta {
+  font: 500 10px var(--font-mono);
+  color: var(--text-2);
+}
+.app.macos .nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 0; background: transparent;
+  text-align: left;
+  font: 500 13px var(--font-text);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.18s var(--ease-macos-spring),
+              transform 0.32s var(--ease-macos-spring),
+              padding-left 0.32s var(--ease-macos-spring);
+  width: 100%;
+  position: relative;
+}
+.app.macos .nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 3px; height: 0;
+  background: var(--ios-blue);
+  border-radius: 0 2px 2px 0;
+  transform: translateY(-50%);
+  transition: height 0.32s var(--ease-macos-spring);
+}
+.app.macos .nav-item:hover {
+  background: var(--surface);
+  padding-left: 12px;
+}
+.app.macos .nav-item:hover::before { height: 60%; }
+.app.macos .nav-item.active {
+  background: var(--ios-blue);
+  color: white;
+}
+.app.macos .nav-item.active::before { height: 70%; }
+.app.macos .nav-item.active svg { color: white; }
+.app.macos .nav-item .nav-badge {
+  margin-left: auto;
+  font: 600 10px var(--font-text);
+  color: var(--text-3);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface);
+}
+.app.macos .nav-item.active .nav-badge {
+  background: rgba(255,255,255,0.25);
+  color: white;
+}
+.app.macos .nav-fav {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font: 500 12px var(--font-text);
+  color: var(--text-2);
+}
+.app.macos .nav-fav:hover { background: var(--surface); }
+.app.macos .nav-fav .peer-avatar {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  font: 600 11px var(--font-display);
+  color: white;
+  display: grid; place-items: center;
+}
+.app.macos .nav-fav .peer-avatar.small {
+  width: 22px; height: 22px;
+}
+.app.macos .nav-empty {
+  padding: 4px 10px;
+  font: 400 11px var(--font-text);
+  color: var(--text-3);
+}
+
+.app.macos .sidebar-footer {
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--separator);
+}
+.app.macos .refresh-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  color: var(--text);
+  font: 500 11px var(--font-text);
+  cursor: pointer;
+  align-self: flex-start;
+}
+.app.macos .refresh-btn:hover { background: var(--surface-2); }
+.app.macos .refresh-btn.refreshing svg { animation: spin 1s linear infinite; }
+.app.macos .shortcut-hints {
+  display: flex; flex-wrap: wrap; gap: 4px 6px;
+  font: 500 10px var(--font-text);
+  color: var(--text-3);
+  padding: 0 4px;
+}
+.app.macos .shortcut-hints .kbd {
+  font: 500 10px var(--font-mono);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  color: var(--text-2);
+}
+
+/* ── Main content ──────────────────────────────────────────── */
+.app.macos .main {
+  overflow-y: auto;
+  padding: 24px 32px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.app.macos .hero {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.app.macos .hero-title {
+  font: 700 32px/1.1 var(--font-display);
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+.app.macos .hero-sub {
+  font: 400 13px var(--font-text);
+  color: var(--text-2);
+  margin: 0;
+}
+.app.macos .searchbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  margin-top: 12px;
+  max-width: 460px;
+}
+.app.macos .searchbar input {
+  flex: 1; border: 0; background: transparent; outline: 0;
+  font: 400 13px var(--font-text);
+  color: var(--text);
+}
+.app.macos .searchbar .kbd {
+  font: 500 11px var(--font-mono);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--glass-elev);
+  color: var(--text-2);
+  border: 0.5px solid var(--separator);
+}
+
+/* Stat strip */
+.app.macos .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.app.macos .stat {
+  background: var(--glass-elev);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  animation: statIn 0.5s var(--ease-macos-spring) backwards;
+}
+.app.macos .stat:nth-child(1) { animation-delay: 0.05s; }
+.app.macos .stat:nth-child(2) { animation-delay: 0.10s; }
+.app.macos .stat:nth-child(3) { animation-delay: 0.15s; }
+@keyframes statIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.app.macos .stat-label {
+  font: 500 11px var(--font-text);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.app.macos .stat-value {
+  font: 600 22px var(--font-display);
+  color: var(--text);
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+/* Section title */
+.app.macos .section-title {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 8px 0 4px;
+}
+.app.macos .section-title h2 {
+  font: 600 18px var(--font-display);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ── Floating dock ─────────────────────────────────────────── */
+.app.macos .floating-dock {
+  position: fixed;
+  right: 24px; bottom: 24px;
+  display: flex; gap: 4px;
+  background: var(--glass-deep);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  padding: 6px;
+  border-radius: 14px;
+  border: 0.5px solid var(--glass-border-dark);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.32);
+  z-index: 50;
+  animation: dockSpring 0.6s var(--ease-macos-spring) 0.2s backwards;
+}
+@keyframes dockSpring {
+  from { transform: translateY(20px) scale(0.9); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.app.macos .floating-dock button {
+  width: 32px; height: 32px;
+  border: 0; background: transparent;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.18s var(--ease-macos-spring),
+              transform 0.32s var(--ease-macos-spring);
+}
+.app.macos .floating-dock button:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-3px) scale(1.08);
+}
+.app.macos .floating-dock button:active { transform: translateY(0) scale(0.92); }
+.app.macos .floating-dock .dock-divider {
+  width: 1px;
+  background: rgba(255,255,255,0.15);
+  margin: 4px 2px;
+}
+
+/* ── Cards inside main (override existing .card style) ─────── */
+.app.macos .card {
+  background: var(--glass-elev);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 12px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 14px 16px;
+}
+.app.macos .btn.btn-primary {
+  background: var(--ios-blue);
+  color: white;
+  border-color: transparent;
+  font: 500 13px var(--font-text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 0;
+  cursor: pointer;
+  transition: filter 0.14s;
+}
+.app.macos .btn.btn-primary:hover { filter: brightness(1.05); }
+.app.macos .btn.btn-ghost {
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  color: var(--text);
+  font: 500 12px var(--font-text);
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background 0.14s;
+}
+.app.macos .btn.btn-ghost:hover { background: var(--surface-2); }
+
+/* ── Sidebar collapse / expand ────────────────────────── */
+.app.macos .body {
+  transition: grid-template-columns 0.42s var(--ease-macos-spring);
+  grid-template-columns: var(--sidebar-w) 1fr;
+}
+.app.macos .body.collapsed {
+  grid-template-columns: 56px 1fr;
+}
+.app.macos .sidebar {
+  transition: width 0.42s var(--ease-macos-spring),
+              padding 0.42s var(--ease-macos-spring),
+              gap 0.42s var(--ease-macos-spring);
+  width: var(--sidebar-w);
+  overflow: hidden;
+}
+.app.macos .body.collapsed .sidebar {
+  width: 56px;
+  padding: 14px 6px 10px;
+  gap: 8px;
+}
+
+/* 默认隐藏折叠专属元素 */
+.app.macos .sidebar-id-icon,
+.app.macos .nav-fav-more {
+  display: none;
+}
+
+/* ── 折叠态:本机 ID — 用一个 32×32 居中图标替代圆点 + 文字 ── */
+.app.macos .body.collapsed .sidebar-id-icon {
+  display: grid;
+  place-items: center;
+  width: 32px; height: 32px;
+  margin: 0 auto 2px;
+  border-radius: 8px;
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue);
+  position: relative;
+  cursor: default;
+}
+.app.macos .body.collapsed .sidebar-id-icon::after {
+  content: "";
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--ios-green);
+  box-shadow: 0 0 0 2px var(--bg-elevated);
+}
+.app.macos .body.collapsed .sidebar-id {
+  display: none;
+}
+
+/* ── 折叠态:section 标题/分组 — 完全收起,不再占垂直空间 ── */
+.app.macos .body.collapsed .nav-section-label {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: height 0.32s var(--ease-macos-spring),
+              margin 0.32s var(--ease-macos-spring),
+              opacity 0.18s ease;
+}
+.app.macos .body.collapsed .nav-section {
+  gap: 2px;
+  align-items: center;          /* 折叠时各 nav-item 水平居中 */
+}
+.app.macos .body.collapsed .nav-section-id {
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--separator);
+}
+
+/* ── 折叠态:nav-fav 收藏 — 只显示头像,水平紧贴居中 ── */
+.app.macos .body.collapsed .nav-section-fav {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 22px;
+}
+.app.macos .body.collapsed .nav-fav {
+  /* 折叠:nav-fav 包装变成 0 尺寸,只有内部 peer-avatar 显形 */
+  display: contents;
+}
+.app.macos .body.collapsed .nav-fav .peer-avatar.small {
+  /* 头像在水平方向跟 flex 流走,自动被父 justify-content: center 拉中 */
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 22px;
+}
+.app.macos .body.collapsed .nav-fav .nav-label {
+  /* 折叠时彻底隐藏文字 */
+  display: none;
+}
+.app.macos .body.collapsed .nav-fav-more {
+  display: contents;
+}
+.app.macos .body.collapsed .nav-empty {
+  display: none;
+}
+
+/* ── 折叠态:底部 footer 只保留居中的小刷新按钮 ── */
+.app.macos .body.collapsed .sidebar-footer {
+  gap: 0;
+  padding-top: 6px;
+  align-items: center;          /* 折叠时刷新按钮水平居中 */
+}
+.app.macos .body.collapsed .refresh-btn {
+  /* button 元素,块级,32×32,内容绝对居中 */
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0 auto;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 0;              /* 屏蔽 button 内部 text 行高 */
+  font-size: 0;
+}
+.app.macos .body.collapsed .refresh-btn > svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  margin: 0;
+  color: currentColor;
+}
+.app.macos .body.collapsed .refresh-btn:hover {
+  background: var(--surface);
+}
+.app.macos .body.collapsed .refresh-btn .nav-label {
+  display: none;
+}
+.app.macos .body.collapsed .shortcut-hints {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: height 0.32s var(--ease-macos-spring),
+              margin 0.32s var(--ease-macos-spring),
+              opacity 0.18s ease;
+}
+
+/* ── 折叠态:nav-item — svg 绝对居中(避免 Safari grid 渲染差异) ── */
+.app.macos .body.collapsed .nav-item {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  padding: 0;
+  font-size: 0;            /* 屏蔽原 13px text font,避免 line-height 撑高 */
+  line-height: 0;
+}
+.app.macos .body.collapsed .nav-item > svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  margin: 0;
+  color: currentColor;
+}
+.app.macos .body.collapsed .nav-item .nav-label,
+.app.macos .body.collapsed .nav-item .nav-badge {
+  display: none;
+}
+
+/* ── 折叠态:hover nav-item 时给一个 tooltip 风格的小圆角背景 ── */
+.app.macos .body.collapsed .nav-item:hover {
+  background: var(--surface);
+  padding-left: 0;
+}
+
+/* ── 展开/折叠过渡:通用 opacity 淡入淡出 ── */
+.app.macos .body.collapsed .nav-section-label,
+.app.macos .body.collapsed .sidebar-id-text,
+.app.macos .body.collapsed .nav-fav .nav-label,
+.app.macos .body.collapsed .refresh-btn .nav-label {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.app.macos .nav-section-label,
+.app.macos .sidebar-id-text,
+.app.macos .nav-fav .nav-label,
+.app.macos .refresh-btn .nav-label,
+.app.macos .shortcut-hints,
+.app.macos .nav-empty {
+  transition: opacity 0.32s var(--ease-macos-spring) 0.1s;
+}
