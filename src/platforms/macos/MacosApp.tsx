@@ -17,12 +17,8 @@ import { CommandPalette } from "../../components/CommandPalette";
 import {
   DevicesIcon, TransferIcon, SettingsIcon, SearchIcon, PlusIcon,
   RefreshIcon, QrCodeIcon, ScanIcon,
-  SunIcon, MoonIcon, AutoIcon,
+  SunIcon, MoonIcon,
 } from "../../components/Icons";
-
-function cycleTheme(t: PlatformAppProps["theme"]) {
-  return t === "auto" ? "light" : t === "light" ? "dark" : "auto";
-}
 
 export function MacosApp(props: PlatformAppProps) {
   const {
@@ -41,18 +37,12 @@ export function MacosApp(props: PlatformAppProps) {
     { id: "settings" as const, label: "设置", icon: SettingsIcon },
   ], [peers.length, activeCount]);
 
-  const ThemeIconEl = theme === "light" ? SunIcon : theme === "dark" ? MoonIcon : AutoIcon;
+  const ThemeIconEl = theme === "dark" ? MoonIcon : SunIcon;
 
   return (
     <div className="app macos desktop" data-platform="macos">
       {/* ── Titlebar ──────────────────────────────────────── */}
       <header className="titlebar" data-tauri-drag-region>
-        <div className="traffic-lights" data-tauri-drag-region>
-          <span className="close" data-tauri-drag-region />
-          <span className="min" data-tauri-drag-region />
-          <span className="max" data-tauri-drag-region />
-        </div>
-
         <div className="titlebar-center" data-tauri-drag-region>
           <div className="segmented">
             {navItems.map((it) => (
@@ -93,7 +83,7 @@ export function MacosApp(props: PlatformAppProps) {
           <button
             className="icon-btn"
             title="主题"
-            onClick={() => setTheme(cycleTheme(theme))}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
             <ThemeIconEl size={14} />
           </button>
@@ -256,9 +246,6 @@ export function MacosApp(props: PlatformAppProps) {
         <div className="dock-divider" />
         <button title="扫码添加" onClick={() => setAddSheetOpen(true)}>
           <ScanIcon size={14} />
-        </button>
-        <button title="主题" onClick={() => setTheme(cycleTheme(theme))}>
-          <ThemeIconEl size={14} />
         </button>
       </div>
 
