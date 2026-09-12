@@ -95,6 +95,99 @@
   background: var(--accent-soft);
   border-color: var(--accent);
 }
+.peer-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: transparent;
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0;
+  transition: all 0.18s var(--ease-ios-spring);
+}
+.peer-item.selected .peer-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: scale(1.05);
+}
+.peer-avatar { position: relative; }
+.peer-presence {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ios-green);
+  border: 2px solid var(--surface-3);
+  box-sizing: content-box;
+}
+.peer-presence.manual { background: var(--text-4); }
+.fade-in {
+  animation: fadeInUp 0.35s var(--ease-ios-spring) backwards;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.peer-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-2);
+}
+.peer-empty .title { font: 600 15px var(--font-text); color: var(--text); }
+.peer-empty .hint { font: 400 12px var(--font-text); color: var(--text-3); }
+.peer-empty .pulse {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  animation: pulseRing 2.2s var(--ease-standard) infinite;
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 var(--accent-soft); }
+  70%  { box-shadow: 0 0 0 14px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── 传输选项行(加密 / 校验)兜底 ─────────────────── */
+.options-row {
+  display: flex; flex-wrap: wrap; gap: 8px 16px;
+  margin-top: 12px;
+}
+.toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  cursor: pointer; user-select: none;
+  font: 500 13px var(--font-text);
+  color: var(--text-2);
+}
+.toggle input {
+  position: absolute; opacity: 0; pointer-events: none;
+}
+.toggle .switch {
+  position: relative;
+  width: 36px; height: 21px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 0.5px solid var(--separator);
+  transition: background 0.3s var(--ease-ios-spring);
+  flex-shrink: 0;
+}
+.toggle .switch::after {
+  content: "";
+  position: absolute; top: 2px; left: 2px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.3s var(--ease-ios-spring);
+}
+.toggle input:checked + .switch {
+  background: var(--ios-green);
+  border-color: transparent;
+}
+.toggle input:checked + .switch::after { transform: translateX(15px); }
+.toggle:focus-within .switch { box-shadow: 0 0 0 3px var(--accent-soft); }
 .peer-avatar {
   width: 40px; height: 40px;
   border-radius: 10px;

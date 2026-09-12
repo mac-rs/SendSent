@@ -451,6 +451,67 @@
 }
 .app.macos .btn.btn-ghost:hover { background: var(--surface-2); }
 
+/* ── Peer list (Liquid Glass cards) ────────────────────── */
+.app.macos .peer-item {
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  border-radius: 10px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  transition: background 0.18s, border-color 0.18s,
+              transform 0.18s var(--ease-macos-spring);
+}
+.app.macos .peer-item:hover { background: var(--surface-2); }
+.app.macos .peer-item:active { transform: scale(0.985); }
+.app.macos .peer-item.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.app.macos .peer-item.fade-in {
+  animation: peerIn 0.4s var(--ease-macos-spring) backwards;
+}
+@keyframes peerIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.app.macos .peer-presence { border-color: var(--surface-3); }
+
+/* ── 传输选项行:加密 / SHA-256 校验 ─────────────────── */
+.app.macos .options-row {
+  display: flex; flex-wrap: wrap; gap: 10px 24px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  border-radius: 10px;
+}
+.app.macos .toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+  font: 500 13px var(--font-text);
+  color: var(--text-2);
+}
+.app.macos .toggle .switch {
+  width: 34px; height: 20px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: 0.5px solid var(--separator);
+  transition: background 0.3s var(--ease-macos-spring);
+  flex-shrink: 0;
+}
+.app.macos .toggle .switch::after {
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.3s var(--ease-macos-spring);
+}
+.app.macos .toggle input:checked + .switch {
+  background: var(--ios-green);
+  border-color: transparent;
+}
+.app.macos .toggle input:checked + .switch::after { transform: translateX(14px); }
+
 /* ── Sidebar collapse / expand ────────────────────────── */
 .app.macos .body {
   transition: grid-template-columns 0.42s var(--ease-macos-spring);
