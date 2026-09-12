@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePeers } from "./hooks/usePeers";
 import { useTransfer } from "./hooks/useTransfer";
 import { usePlatform } from "./lib/platform";
-import { respond, splashReady } from "./lib/invoke";
+import { respond } from "./lib/invoke";
 import type { Peer } from "./lib/types";
 import {
   DevicesIcon, TransferIcon, SettingsIcon, PlusIcon, RefreshIcon,
@@ -43,17 +43,6 @@ export default function App() {
     if (theme === "auto") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", theme);
   }, [theme]);
-
-  // ── 通知 Rust 端:主窗口 React 已挂载,可以关闭 splash 并显示 ──
-  // 仅桌面端在 Tauri 上下文内有效;浏览器跑 dev server 时调用会抛错,静默忽略。
-  useEffect(() => {
-    let cancelled = false;
-    const t = window.setTimeout(() => {
-      if (cancelled) return;
-      splashReady().catch(() => { /* 浏览器或重复调用 — 静默 */ });
-    }, 220);
-    return () => { cancelled = true; window.clearTimeout(t); };
-  }, []);
 
   // ── Toast 工具 ────────────────────────────────────────────
   const showToast = (text: string, tone: "ok" | "err" = "ok") => {

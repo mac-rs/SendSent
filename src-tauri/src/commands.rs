@@ -2,9 +2,7 @@ use crate::discovery::Peer;
 use crate::state::AppState;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use tauri::{Manager, State};
-#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::State;
 use uuid::Uuid;
 
 #[tauri::command]
@@ -328,50 +326,4 @@ fn hex_val(b: u8) -> Option<u8> {
         b'A'..=b'F' => Some(b - b'A' + 10),
         _ => None,
     }
-}
-
-// ── 启动 splash screen ────────────────────────────
-// 在 setup 阶段由 lib.rs 创建独立 splash 窗口,主窗口 visible=false
-// 隐藏。前端 ready 后调用 splash_ready():淡出 splash → 关闭 → 显示主窗口。
-
-/// 前端报告"我已 ready"。关闭 splash 窗口并显示主窗口。
-/// 在主线程上同步执行,保证 close + show 顺序。
-#[tauri::command]
-pub fn splash_ready(app: tauri::AppHandle) {
-    if let Some(splash) = app.get_webview_window("splash") {
-        let _ = splash.close();
-    }
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.show();
-        let _ = main.set_focus();
-    }
-}
-
-/// 在 lib.rs setup 中调用,创建 splash 窗口(显示在 main 之上)。
-/// 仅桌面端:`maximizable`/`decorations` 等是桌面专用 API,移动端不编译。
-#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
-pub fn create_splash_window(app: &tauri::AppHandle) -> tauri::Result<()> {
-    if app.get_webview_window("splash").is_some() {
-        return Ok(());
-    }
-    let _win = WebviewWindowBuilder::new(
-        app,
-        "splash",
-        WebviewUrl::App("splash.html".into()),
-    )
-    .title("SendSent")
-    .inner_size(420.0, 320.0)
-    .min_inner_size(420.0, 320.0)
-    .resizable(false)
-    .maximizable(false)
-    .minimizable(false)
-    .closable(false)
-    .focused(true)
-    .skip_taskbar(true)
-    .decorations(false)
-    .always_on_top(true)
-    .visible(true)
-    .center()
-    .build()?;
-    Ok(())
 }
