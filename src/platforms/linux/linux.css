@@ -153,7 +153,7 @@
 .app.linux .stat {
   background: var(--glass-elev);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 12px 14px;
 }
 .app.linux .stat-label {
@@ -192,7 +192,7 @@
 .app.linux .card {
   background: var(--glass-elev);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 14px 16px;
 }
 .app.linux .btn.btn-primary {
@@ -455,7 +455,7 @@
   padding: 20px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   display: flex; flex-direction: column; gap: 14px;
   animation: pop 0.24s var(--ease-standard);
@@ -487,11 +487,12 @@
 .app.linux .modal-actions .btn { flex: 1; justify-content: center; padding: 8px 14px; }
 
 /* ── Sheet(AddDeviceSheet 独立渲染) ───────────────────── */
+/* Adwaita shows a centered dialog, not a bottom sheet. */
 .app.linux .sheet-backdrop {
   position: fixed; inset: 0; z-index: 110;
   background: rgba(0, 0, 0, 0.35);
-  display: flex; align-items: flex-end; justify-content: center;
-  padding: 0 24px 24px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
   animation: fadeIn 0.18s ease;
 }
 .app.linux .sheet {
@@ -500,10 +501,10 @@
   display: flex; flex-direction: column;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 12px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   overflow: hidden;
-  animation: sheetUp 0.26s var(--ease-standard);
+  animation: pop 0.24s var(--ease-standard);
 }
 .app.linux .sheet-handle { display: none; }
 .app.linux .sheet-header {
@@ -687,3 +688,73 @@
   color: var(--danger);
   background: var(--danger-soft);
 }
+
+/* ── Adwaita keyboard focus ────────────────────────────────── */
+.app.linux :focus-visible {
+  outline: 2px solid var(--linux-accent);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* ── Adwaita switch (44×24, accent when on) ────────────────── */
+.app.linux .toggle .switch {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: var(--surface-active);
+  border: 1px solid var(--border-strong);
+  position: relative; display: inline-block; flex: none;
+  transition: background 0.15s var(--ease-standard), border-color 0.15s var(--ease-standard);
+}
+.app.linux .toggle .switch::after {
+  content: "";
+  position: absolute; top: 1px; left: 1px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s var(--ease-standard);
+}
+.app.linux .toggle input { display: none; }
+.app.linux .toggle input:checked + .switch {
+  background: var(--linux-accent);
+  border-color: var(--linux-accent);
+}
+.app.linux .toggle input:checked + .switch::after { transform: translateX(20px); }
+
+/* ── Adwaita device rows (flat list + accent selection) ────── */
+.app.linux .peer-list { display: flex; flex-direction: column; }
+.app.linux .peer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s var(--ease-standard);
+}
+.app.linux .peer-item:hover { background: var(--surface); }
+.app.linux .peer-item.selected { background: var(--linux-accent-soft); }
+.app.linux .peer-item.selected .peer-name { color: var(--linux-accent); }
+.app.linux .peer-name { font: 600 14px var(--font-linux); color: var(--text); }
+.app.linux .peer-meta { font: 400 12px var(--font-linux); color: var(--text-2); }
+.app.linux .peer-check { border-radius: 4px; }
+
+/* ── Dropzone 子元素(Adwaita) ─────────────────────────── */
+.app.linux .dropzone-icon { color: var(--linux-accent); margin-bottom: 8px; }
+.app.linux .dropzone-title { font: 600 14px var(--font-linux); color: var(--text); }
+.app.linux .dropzone-hint { font: 400 12px var(--font-linux); color: var(--text-2); margin-top: 4px; }
+.app.linux .dropzone-actions { margin-top: 14px; }
+
+/* ── PrefsPanel / MyQrDialog(Adwaita)──────────────────── */
+.app.linux .prefs-panel { border-radius: 12px; }
+.app.linux .prefs-nav-item { border-radius: 8px; font-family: var(--font-linux); }
+.app.linux .prefs-nav-item.active { background: var(--linux-accent-soft); color: var(--linux-accent); }
+.app.linux .prefs-close { border-radius: 8px; }
+.app.linux .prefs-search { border-radius: 8px; }
+.app.linux .prefs-search:focus-within { border-color: var(--linux-accent); box-shadow: 0 0 0 3px var(--linux-accent-soft); }
+.app.linux .prefs-content-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--text-2); cursor: pointer;
+}
+.app.linux .prefs-content-close:hover { background: var(--surface); color: var(--text); }
+.app.linux .myqr-dialog { border-radius: 12px; }
+.app.linux .myqr-ip-chip { border-radius: 8px; }
+.app.linux .myqr-ip-chip.active { border-color: var(--linux-accent); color: var(--linux-accent); }

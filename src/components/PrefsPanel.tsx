@@ -21,9 +21,12 @@ const DEFAULT_PORT = 52225;
 export function PrefsPanel({
   open,
   onClose,
+  embedded = false,
 }: {
   open: boolean;
   onClose: () => void;
+  /** iOS: render inside an existing Sheet (no own backdrop / full-screen chrome) */
+  embedded?: boolean;
 }) {
   const [tab, setTab] = useState<PrefsTab>("general");
   const [q, setQ] = useState("");
@@ -68,14 +71,13 @@ export function PrefsPanel({
 
   if (!open) return null;
 
-  return (
-    <>
-      <div
-        className="prefs-backdrop"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        role="presentation"
-      >
-        <div className="prefs-panel" role="dialog" aria-modal aria-label="偏好设置">
+  const panel = (
+    <div
+      className={`prefs-panel${embedded ? " embedded" : ""}`}
+      role="dialog"
+      aria-modal
+      aria-label="偏好设置"
+    >
           <aside className="prefs-sidebar">
             <div className="prefs-sidebar-header">偏好设置</div>
             <div className="prefs-search">
@@ -195,16 +197,31 @@ export function PrefsPanel({
               )}
             </div>
           </main>
-        </div>
-      </div>
+    </div>
+  );
 
-      <MyQrDialog
-        open={qrOpen}
-        onClose={() => setQrOpen(false)}
-        identity={identity}
-        saveDir={saveDir}
-        port={DEFAULT_PORT}
-      />
+  const qr = (
+    <MyQrDialog
+      open={qrOpen}
+      onClose={() => setQrOpen(false)}
+      identity={identity}
+      saveDir={saveDir}
+      port={DEFAULT_PORT}
+    />
+  );
+
+  if (embedded) return <>{panel}{qr}</>;
+
+  return (
+    <>
+      <div
+        className="prefs-backdrop"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        role="presentation"
+      >
+        {panel}
+      </div>
+      {qr}
     </>
   );
 }

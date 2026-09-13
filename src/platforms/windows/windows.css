@@ -18,14 +18,27 @@
                    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
+/* Fluent dark Mica — switch the material tokens so every surface adapts. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --win-mica: var(--win-mica-dark);
+    --win-mica-strong: var(--win-mica-strong-dark);
+    --win-acrylic: rgba(43, 43, 43, 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  --win-mica: var(--win-mica-dark);
+  --win-mica-strong: var(--win-mica-strong-dark);
+  --win-acrylic: rgba(43, 43, 43, 0.6);
+}
+
 .app.windows.desktop {
   display: grid;
   grid-template-rows: 36px 1fr;
   height: 100vh;
   overflow: hidden;
-  background:
-    /* Win 11 desktop wallpaper fallback */
-    linear-gradient(135deg, #0078D4 0%, #5c2d91 50%, #c42b1c 100%);
+  /* Mica: a subtle tinted backdrop rather than a vivid wallpaper. */
+  background: var(--win-mica);
   color: var(--text);
   font-family: var(--font-win-text);
   -webkit-font-smoothing: antialiased;
@@ -655,21 +668,21 @@
 .app.windows .nav-item::after {
   content: "";
   position: absolute;
-  left: 6px; right: 6px; bottom: 0;
-  height: 2px;
+  left: 0; top: 50%;
+  width: 3px; height: 16px;
   background: var(--win-accent);
-  border-radius: 1px 1px 0 0;
-  transform: scaleX(0);
+  border-radius: 2px;
+  transform: translateY(-50%) scaleY(0);
   transform-origin: center;
-  transition: transform 0.32s var(--ease-ios-spring);
+  transition: transform 0.18s var(--ease-standard);
 }
 .app.windows .nav-item:hover { background: var(--surface); }
-.app.windows .nav-item:hover::after { transform: scaleX(0.5); }
+.app.windows .nav-item:hover::after { transform: translateY(-50%) scaleY(0.6); }
 .app.windows .nav-item.active {
   background: var(--win-accent-soft);
   color: var(--win-accent);
 }
-.app.windows .nav-item.active::after { transform: scaleX(1); }
+.app.windows .nav-item.active::after { transform: translateY(-50%) scaleY(1); }
 .app.windows .nav-item .nav-badge {
   margin-left: auto;
   font: 600 10px var(--font-win);
@@ -774,7 +787,7 @@
 .app.windows .stat {
   background: var(--glass-elev);
   border: 1px solid var(--glass-border);
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 12px 14px;
 }
 .app.windows .stat-label {
@@ -800,7 +813,7 @@
 .app.windows .card {
   background: var(--glass-elev);
   border: 1px solid var(--glass-border);
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 14px 16px;
 }
 .app.windows .btn.btn-primary {
@@ -826,3 +839,73 @@
   display: inline-flex; align-items: center; gap: 5px;
 }
 .app.windows .btn.btn-ghost:hover { background: var(--surface-2); }
+
+/* ── Fluent keyboard focus (FocusVisual) ───────────────────── */
+.app.windows :focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* ── WinUI ToggleSwitch (40×20, accent when on) ────────────── */
+.app.windows .toggle .switch {
+  width: 40px; height: 20px; border-radius: 10px;
+  background: var(--surface-active);
+  border: 1px solid var(--border-strong);
+  position: relative; display: inline-block; flex: none;
+  transition: background 0.15s var(--ease-standard), border-color 0.15s var(--ease-standard);
+}
+.app.windows .toggle .switch::after {
+  content: "";
+  position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s var(--ease-standard);
+}
+.app.windows .toggle input { display: none; }
+.app.windows .toggle input:checked + .switch {
+  background: var(--win-accent);
+  border-color: var(--win-accent);
+}
+.app.windows .toggle input:checked + .switch::after { transform: translateX(20px); }
+
+/* ── Fluent device rows (flat list + accent selection) ─────── */
+.app.windows .peer-list { display: flex; flex-direction: column; gap: 2px; }
+.app.windows .peer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border: 0; border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s var(--ease-standard);
+}
+.app.windows .peer-item:hover { background: var(--surface); }
+.app.windows .peer-item.selected { background: var(--win-accent-soft); }
+.app.windows .peer-item.selected .peer-name { color: var(--win-accent); }
+.app.windows .peer-name { font: 600 14px var(--font-win); color: var(--text); }
+.app.windows .peer-meta { font: 400 12px var(--font-win); color: var(--text-2); }
+.app.windows .peer-check { border-radius: 4px; }
+
+/* ── Dropzone 子元素(Fluent) ──────────────────────────── */
+.app.windows .dropzone-icon { color: var(--win-accent); margin-bottom: 8px; }
+.app.windows .dropzone-title { font: 600 14px var(--font-win); color: var(--text); }
+.app.windows .dropzone-hint { font: 400 12px var(--font-win); color: var(--text-2); margin-top: 4px; }
+.app.windows .dropzone-actions { margin-top: 14px; }
+
+/* ── PrefsPanel / MyQrDialog(Fluent)───────────────────── */
+.app.windows .prefs-panel { border-radius: 8px; }
+.app.windows .prefs-nav-item { border-radius: 4px; font-family: var(--font-win); font-size: 13px; }
+.app.windows .prefs-nav-item.active { background: var(--win-accent-soft); color: var(--win-accent); }
+.app.windows .prefs-close { border-radius: 4px; }
+.app.windows .prefs-search { border-radius: 4px; }
+.app.windows .prefs-search:focus-within { border-color: var(--win-accent); box-shadow: 0 0 0 2px var(--win-accent-soft); }
+.app.windows .prefs-content-close {
+  width: 32px; height: 32px; border-radius: 4px;
+  display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--text-2); cursor: pointer;
+}
+.app.windows .prefs-content-close:hover { background: var(--surface); color: var(--text); }
+.app.windows .myqr-dialog { border-radius: 8px; }
+.app.windows .myqr-ip-chip { border-radius: 4px; }
+.app.windows .myqr-ip-chip.active { border-color: var(--win-accent); color: var(--win-accent); }
