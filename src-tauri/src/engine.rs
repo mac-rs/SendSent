@@ -180,6 +180,11 @@ fn spawn_tasks(
             if let TransferEvent::Finished { session_id, .. } = &ev {
                 sessions.cleanup_session(*session_id).await;
             }
+            // 落库：桌面 Tauri 的 run() 会做这件事；native 引擎必须自己做，
+            // 否则 nativeHistory() 永远为空（Finished 时的 reloadHistory 会覆盖内存列表）。
+            if let TransferEvent::Recorded(record) = &ev {
+                core.history.lock().await.append(record.clone());
+            }
             let json = serde_json::to_string(&ev).unwrap_or_default();
             push_event(core, json);
         }
