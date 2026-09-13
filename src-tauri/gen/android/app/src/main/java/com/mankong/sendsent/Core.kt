@@ -30,6 +30,11 @@ class Core private constructor() {
     private val _peers = MutableStateFlow<List<Peer>>(emptyList())
     val peers: StateFlow<List<Peer>> = _peers
 
+    /** 用户手动删除(隐藏)的设备 id。 */
+    private val _hidden = MutableStateFlow<Set<String>>(emptySet())
+    val hidden: StateFlow<Set<String>> = _hidden
+    fun hide(id: String) { _hidden.value = _hidden.value + id }
+
     private val _progress = MutableStateFlow<Map<String, Progress>>(emptyMap())
     val progress: StateFlow<Map<String, Progress>> = _progress
 
@@ -72,7 +77,7 @@ class Core private constructor() {
             when (o.optString("kind")) {
                 "peer_found" -> {
                     val p = parsePeer(o.optJSONObject("peer") ?: continue)
-                    if (_peers.value.none { it.id == p.id }) { _peers.value = _peers.value + p }
+                    if (_peers.value.none { it.id == p.id }) _peers.value = _peers.value + p
                 }
                 "peer_lost" -> {
                     val id = o.optString("device_id")
@@ -105,16 +110,16 @@ class Core private constructor() {
                 }
             }
         }
-        // 兜底：每次轮询同步 peer 列表（便宜、可靠）
         runCatching { _peers.value = parsePeers(Native.nativePeers()) }
     }
 
     fun addPeer(addr: String) {
-        runCatching { Native.nativeAddPeer(addr) }.getOrNull()?.let { flash(it) } ?: flash("已添加 $addr")
+        val err = runCatching { Native.nativeAddPeer(addr) }.getOrNull()
+        flash(err ?: "已添加 $addr")
     }
     fun send(peerId: String, filesJson: String, secure: Boolean, verify: Boolean) {
         val err = runCatching { Native.nativeSend(peerId, filesJson, secure, verify) }.getOrNull()
-        if (err != null) flash(err) else flash("已发送")
+        flash(err ?: "已发送")
     }
     fun respond(accept: Boolean) {
         val sid = _request.value?.sessionId ?: return
@@ -129,13 +134,16 @@ class Core private constructor() {
         runCatching { Native.nativeClearHistory() }
         _history.value = emptyList()
     }
-    fun rename(name: String) { runCatching { Native.nativeSetDisplayName(name) }; refresh() }
+    fun rename(name: String) { runCatching { Native.nativeSetDisplayName(name) }; refresh(); flash("已保存") }
     fun setConfig(conns: Int, chunkKb: Long, splitMb: Long) {
         runCatching { Native.nativeSetConfig(conns, chunkKb, splitMb) }
         flash("已保存")
     }
     fun config(): Config? =
-        runCatching { val o = JSONObject(Native.nativeGetConfig()); Config(o.optInt("conns"), o.optLong("chunk_size") / 1024, o.optLong("split_threshold") / 1048576) }.getOrNull()
+        runCatching {
+            val o = JSONObject(Native.nativeGetConfig())
+            Config(o.optInt("conns"), o.optLong("chunk_size") / 1024, o.optLong("split_threshold") / 1048576)
+        }.getOrNull()
 
     fun qrBase64(): String? =
         runCatching { org.json.JSONTokener(Native.nativeQr(512)).nextValue() as String }.getOrNull()
