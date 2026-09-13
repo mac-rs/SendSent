@@ -3,14 +3,6 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("rust")
-}
-
-val tauriProperties = Properties().apply {
-    val propFile = file("tauri.properties")
-    if (propFile.exists()) {
-        propFile.inputStream().use { load(it) }
-    }
 }
 
 val keystoreProperties = Properties().apply {
@@ -23,14 +15,17 @@ val keystoreProperties = Properties().apply {
 android {
     compileSdk = 36
     namespace = "com.mankong.sendsent"
+
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "com.mankong.sendsent"
         minSdk = 24
         targetSdk = 36
-        versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
-        versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+        versionCode = 1
+        versionName = "0.1.0"
+        manifestPlaceholders["usesCleartextTraffic"] = "true"
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
+
     signingConfigs {
         if (keystoreProperties.isNotEmpty()) {
             create("release") {
@@ -41,17 +36,10 @@ android {
             }
         }
     }
+
     buildTypes {
         getByName("debug") {
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
-            isDebuggable = true
-            isJniDebuggable = true
             isMinifyEnabled = false
-            packaging {                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
-                jniLibs.keepDebugSymbols.add("*/armeabi-v7a/*.so")
-                jniLibs.keepDebugSymbols.add("*/x86/*.so")
-                jniLibs.keepDebugSymbols.add("*/x86_64/*.so")
-            }
         }
         getByName("release") {
             if (keystoreProperties.isNotEmpty()) {
@@ -65,27 +53,44 @@ android {
             )
         }
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
+        compose = true
         buildConfig = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
+    }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
-rust {
-    rootDirRel = "../../../"
+// 构建 Rust cdylib(arm64),产物落进 jniLibs。
+val cargoBuild = tasks.register<Exec>("cargoBuild") {
+    workingDir = file("../../..") // gen/android/app -> src-tauri
+    environment("ANDROID_HOME", System.getenv("ANDROID_HOME") ?: "")
+    environment("NDK_HOME", System.getenv("NDK_HOME") ?: "")
+    commandLine("bash", "build-android.sh", "aarch64-linux-android", "arm64-v8a")
 }
+tasks.named("preBuild") { dependsOn(cargoBuild) }
 
 dependencies {
-    implementation("androidx.webkit:webkit:1.14.0")
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.activity:activity-ktx:1.10.1")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-process:2.10.0")
+    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    implementation(composeBom)
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.4")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
 }
-
-apply(from = "tauri.build.gradle.kts")
