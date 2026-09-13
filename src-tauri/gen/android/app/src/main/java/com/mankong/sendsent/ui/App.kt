@@ -16,8 +16,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +46,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.MoreVert
@@ -55,6 +58,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -188,6 +192,7 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
     val allPeers by core.peers.collectAsState()
     val hidden by core.hidden.collectAsState()
     val progress by core.progress.collectAsState()
+    var selectionMode by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
     var secure by remember { mutableStateOf(false) }
     var verify by remember { mutableStateOf(false) }
@@ -196,20 +201,32 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
     val haptic = LocalHapticFeedback.current
 
     val peers = remember(allPeers, hidden) { allPeers.filterNot { it.id in hidden } }
+    fun exitSelection() { selectionMode = false; selected = emptySet() }
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
-            title = {
-                Column {
-                    Text("设备", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        if (peers.isEmpty()) "正在发现…" else "${peers.size} 台设备 · 同一局域网",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            navigationIcon = {
+                if (selectionMode) {
+                    IconButton({ exitSelection() }) { Icon(Icons.Default.Close, "取消选择") }
                 }
             },
-            actions = { IconButton({ showAdd = true }) { Icon(Icons.Default.Add, "添加设备") } },
+            title = {
+                if (selectionMode) {
+                    Text("已选 ${selected.size}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                } else {
+                    Column {
+                        Text("设备", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (peers.isEmpty()) "正在发现…" else "${peers.size} 台设备 · 同一局域网",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
+            actions = {
+                if (!selectionMode) IconButton({ showAdd = true }) { Icon(Icons.Default.Add, "添加设备") }
+            },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         )
 
@@ -219,52 +236,53 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
             Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
         ) {
-                item { SectionLabel("附近设备") }
-                if (peers.isEmpty()) {
-                    item { EmptyDiscovery() }
-                } else {
-                    items(peers, key = { it.id }) { p ->
-                        // Android: 仅左滑删除;详情/删除走行尾溢出菜单(不照搬 iOS 的双向滑动)。
-                        val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
-                            if (v == SwipeToDismissBoxValue.EndToStart) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                core.hide(p.id); true
-                            } else false
-                        })
-                        SwipeToDismissBox(
-                            state = dismiss,
-                            enableDismissFromStartToEnd = false,
-                            enableDismissFromEndToStart = true,
-                            backgroundContent = {
-                                if (dismiss.dismissDirection != SwipeToDismissBoxValue.Settled) {
-                                    Box(
-                                        Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp))
-                                            .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 22.dp),
-                                        contentAlignment = Alignment.CenterEnd,
-                                    ) {
-                                        Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.onErrorContainer)
-                                    }
-                                }
-                            },
-                        ) {
-                            DeviceCard(
-                                p,
-                                selected = p.id in selected,
-                                onSelect = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    selected = if (p.id in selected) selected - p.id else selected + p.id
-                                },
-                                onDetail = { detail = p },
-                                onDelete = { core.hide(p.id) },
-                            )
-                        }
-                    }
+            item { SectionLabel("附近设备") }
+            if (peers.isNotEmpty() && !selectionMode) {
+                item {
+                    Text(
+                        "点击查看详情 · 长按多选发送",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
+                    )
                 }
-                item { Spacer(Modifier.height(8.dp)) }
             }
+            if (peers.isEmpty()) {
+                item { EmptyDiscovery() }
+            } else {
+                items(peers, key = { it.id }) { p ->
+                    DeviceRow(
+                        p,
+                        selectionMode = selectionMode,
+                        checked = p.id in selected,
+                        onClick = {
+                            if (selectionMode) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                selected = if (p.id in selected) selected - p.id else selected + p.id
+                            } else {
+                                detail = p
+                            }
+                        },
+                        onLongClick = {
+                            if (!selectionMode) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                selectionMode = true
+                                selected = selected + p.id
+                            }
+                        },
+                        onDetail = { detail = p },
+                        onDelete = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            core.hide(p.id)
+                        },
+                    )
+                }
+            }
+            item { Spacer(Modifier.height(8.dp)) }
+        }
 
         AnimatedVisibility(
-            visible = selected.isNotEmpty(),
+            visible = selectionMode,
             enter = slideInVertically { it } + fadeIn(),
             exit = slideOutVertically { it } + fadeOut(),
         ) {
@@ -284,29 +302,37 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
     if (showAdd) AddDeviceSheet(core) { showAdd = false }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DeviceCard(
+private fun DeviceRow(
     p: Peer,
-    selected: Boolean,
-    onSelect: () -> Unit,
+    selectionMode: Boolean,
+    checked: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDetail: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    Card(
-        onClick = onSelect,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 0.dp else 1.dp),
-        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (checked) 0.dp else 1.dp),
     ) {
         Row(
-            Modifier.padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (selectionMode) {
+                Checkbox(checked = checked, onCheckedChange = null)
+                Spacer(Modifier.width(4.dp))
+            }
             Avatar(p, 46)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -315,38 +341,33 @@ private fun DeviceCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    color = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "${platform(p.platform)} · ${p.addrs.firstOrNull() ?: ":${p.port}"}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (checked) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (selected) {
-                Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(2.dp))
-            }
-            Box {
-                IconButton({ menu = true }) {
-                    Icon(
-                        Icons.Default.MoreVert, "更多",
-                        tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text("查看详情") },
-                        leadingIcon = { Icon(Icons.Default.MoreVert, null) },
-                        onClick = { menu = false; onDetail() },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("删除") },
-                        leadingIcon = { Icon(Icons.Default.Delete, null) },
-                        onClick = { menu = false; onDelete() },
-                    )
+            if (!selectionMode) {
+                Box {
+                    IconButton({ menu = true }) {
+                        Icon(Icons.Default.MoreVert, "更多", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("查看详情") },
+                            leadingIcon = { Icon(Icons.Default.MoreVert, null) },
+                            onClick = { menu = false; onDetail() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("删除") },
+                            leadingIcon = { Icon(Icons.Default.Delete, null) },
+                            onClick = { menu = false; onDelete() },
+                        )
+                    }
                 }
             }
         }
@@ -513,26 +534,9 @@ private fun TransfersScreen(core: Core) {
             } else {
                 LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
                     items(history, key = { it.sessionId }) { h ->
-                        val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
-                            if (v == SwipeToDismissBoxValue.EndToStart) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                core.deleteHistory(h.sessionId); true
-                            } else false
-                        })
-                        SwipeToDismissBox(
-                            state = dismiss,
-                            enableDismissFromStartToEnd = false,
-                            backgroundContent = {
-                                if (dismiss.dismissDirection != SwipeToDismissBoxValue.Settled) {
-                                    Box(
-                                        Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp))
-                                            .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 22.dp),
-                                        contentAlignment = Alignment.CenterEnd,
-                                    ) { Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.onErrorContainer) }
-                                }
-                            },
-                        ) {
-                            HistoryCard(h)
+                        HistoryCard(h) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            core.deleteHistory(h.sessionId)
                         }
                     }
                 }
@@ -574,7 +578,7 @@ private fun ActiveRow(p: Progress) {
 }
 
 @Composable
-private fun HistoryCard(h: HistoryItem) {
+private fun HistoryCard(h: HistoryItem, onDelete: () -> Unit) {
     ElevatedCard(
         Modifier.fillMaxWidth().padding(vertical = 5.dp),
         shape = RoundedCornerShape(18.dp),
@@ -613,7 +617,12 @@ private fun HistoryCard(h: HistoryItem) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Text(relative(h.endedAtMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(relative(h.endedAtMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, "删除", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+            }
         }
     }
 }
