@@ -67,17 +67,16 @@ class Core private constructor() {
     private fun pollOnce() {
         val raw = runCatching { Native.nativePollEvents() }.getOrNull() ?: return
         val arr = runCatching { JSONArray(raw) }.getOrNull() ?: return
-        var changed = false
         for (i in 0 until arr.length()) {
-            val o = arr.optJSONObject(i) ?: continue
+            val o = runCatching { JSONObject(arr.getString(i)) }.getOrNull() ?: continue
             when (o.optString("kind")) {
                 "peer_found" -> {
                     val p = parsePeer(o.optJSONObject("peer") ?: continue)
-                    if (_peers.value.none { it.id == p.id }) { _peers.value = _peers.value + p; changed = true }
+                    if (_peers.value.none { it.id == p.id }) { _peers.value = _peers.value + p }
                 }
                 "peer_lost" -> {
                     val id = o.optString("device_id")
-                    _peers.value = _peers.value.filterNot { it.id == id }; changed = true
+                    _peers.value = _peers.value.filterNot { it.id == id }
                 }
                 "progress" -> {
                     val p = Progress(
@@ -106,7 +105,8 @@ class Core private constructor() {
                 }
             }
         }
-        if (changed) { /* peers already updated */ }
+        // 兜底：每次轮询同步 peer 列表（便宜、可靠）
+        runCatching { _peers.value = parsePeers(Native.nativePeers()) }
     }
 
     fun addPeer(addr: String) {

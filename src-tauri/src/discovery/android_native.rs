@@ -15,14 +15,16 @@ pub struct AndroidNativeDiscovery {
     registry: Arc<Mutex<PeerRegistry>>,
     /// serviceName -> device_id（用于 on_service_lost 反查）
     by_name: Arc<Mutex<HashMap<String, String>>>,
+    our_id: String,
     tx: mpsc::UnboundedSender<PeerEvent>,
 }
 
 impl AndroidNativeDiscovery {
-    pub fn new(_identity: Identity, _port: u16, tx: mpsc::UnboundedSender<PeerEvent>) -> Self {
+    pub fn new(identity: Identity, _port: u16, tx: mpsc::UnboundedSender<PeerEvent>) -> Self {
         Self {
             registry: Arc::new(Mutex::new(PeerRegistry::new())),
             by_name: Arc::new(Mutex::new(HashMap::new())),
+            our_id: identity.device_id,
             tx,
         }
     }
@@ -61,6 +63,9 @@ impl Discovery for AndroidNativeDiscovery {
 
     async fn on_service(&self, sname: &str, host: &str, port: u16, txt: &HashMap<String, String>) {
         let id = txt.get("id").cloned().unwrap_or_else(|| sname.to_string());
+        if id == self.our_id {
+            return; // 忽略自己
+        }
         let name = txt.get("name").cloned().unwrap_or_else(|| sname.to_string());
         let platform = txt.get("plat").map(|p| platform_from_str(p)).unwrap_or(Platform::Unknown);
         let addr: SocketAddr = match format!("{host}:{port}").parse() {

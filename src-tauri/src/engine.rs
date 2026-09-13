@@ -67,6 +67,12 @@ pub fn init(data_dir: PathBuf, save_dir: PathBuf, port: u16, sink: Option<EventS
     if CORE.get().is_some() {
         return 0;
     }
+    #[cfg(target_os = "android")]
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_max_level(log::LevelFilter::Debug)
+            .with_tag("sendsent"),
+    );
     if std::fs::create_dir_all(&data_dir).is_err() {
         return 3;
     }
@@ -312,6 +318,7 @@ pub fn set_display_name(name: &str) -> Result<(), String> {
 
 /// Kotlin NsdManager 推来的服务（Android）。
 pub fn on_service(name: &str, host: &str, port: u16, txt_json: &str) {
+    tracing::info!("on_service {name} {host}:{port} {txt_json}");
     let Some(c) = core() else { return };
     let txt: std::collections::HashMap<String, String> = serde_json::from_str(txt_json).unwrap_or_default();
     c.runtime.block_on(c.discovery.on_service(name, host, port, &txt));
