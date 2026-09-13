@@ -4,31 +4,39 @@ pub mod transfer;
 pub mod store;
 pub mod events;
 pub mod history;
+pub mod misc;
+
+#[cfg(target_os = "ios")]
+pub mod ffi;
+
+#[cfg(feature = "tauri-shell")]
 pub mod state;
+#[cfg(feature = "tauri-shell")]
 pub mod commands;
-#[cfg(target_os = "android")]
+#[cfg(all(feature = "tauri-shell", target_os = "android"))]
 pub mod content_plugin;
-#[cfg(target_os = "android")]
+#[cfg(all(feature = "tauri-shell", target_os = "android"))]
 pub mod nsd_plugin;
 
-use std::sync::Arc;
-use tauri::{Emitter, Manager};
-use tokio::sync::mpsc;
-
-#[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
-use discovery::mdns::MdnsDiscovery;
-#[cfg(target_os = "ios")]
-use discovery::ios_bonjour::BonjourDiscovery;
-#[cfg(target_os = "android")]
-use discovery::nsd::NsdDiscovery;
-use discovery::{Discovery, PeerEvent};
-use events::{name, TransferEvent};
-use state::AppState;
-use store::{default_save_dir, load_or_create};
-use transfer::manager::SessionManager;
-
+#[cfg(feature = "tauri-shell")]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use std::sync::Arc;
+    use tauri::{Emitter, Manager};
+    use tokio::sync::mpsc;
+
+    #[cfg(all(not(target_os = "ios"), not(target_os = "android")))]
+    use discovery::mdns::MdnsDiscovery;
+    #[cfg(target_os = "ios")]
+    use discovery::ios_bonjour::BonjourDiscovery;
+    #[cfg(target_os = "android")]
+    use discovery::nsd::NsdDiscovery;
+    use discovery::{Discovery, PeerEvent};
+    use events::{name, TransferEvent};
+    use state::AppState;
+    use store::{default_save_dir, load_or_create};
+    use transfer::manager::SessionManager;
+
     // Android 上 stdout/stderr 不可见:用 android_logger 把日志输出到 logcat。
     // 启用 tracing 的 "log" feature 后,所有 tracing 事件会转发到 log crate → android_logger → logcat。
     // 桌面端仍用 fmt subscriber(终端彩色输出)。
@@ -174,7 +182,6 @@ pub fn run() {
             commands::add_peer,
             commands::send_files,
             commands::send_text,
-            commands::ios_picker::pick_files_ios,
             commands::respond,
             commands::cancel,
             commands::get_default_save_dir,
@@ -190,6 +197,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+#[cfg(feature = "tauri-shell")]
 fn hostname() -> Option<String> {
     std::env::var("HOSTNAME")
         .ok()

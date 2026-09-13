@@ -1,3 +1,5 @@
+#![cfg(feature = "tauri-shell")]
+
 use crate::discovery::Discovery;
 use crate::history::HistoryStore;
 use crate::store::{Identity, TransferConfig};

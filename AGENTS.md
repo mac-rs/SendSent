@@ -43,23 +43,20 @@ LAN auto-discovery + peer-to-peer transfer over a custom raw-TCP protocol. Desig
 - New deps: `libc`, `socket2`.
 - See `docs/superpowers/specs/2026-06-26-file-transfer-v2-speed-design.md` and `docs/superpowers/plans/2026-06-26-file-transfer-v2-speed.md`.
 
-## iOS development
+## iOS development (native SwiftUI + Rust FFI)
 
-The iOS target lives in `src-tauri/gen/apple/` (Tauri-generated Xcode project). Hard-won gotchas:
+iOS is **not** a Tauri/WebView app. The Xcode target in `src-tauri/gen/apple/` links the Rust static lib directly; the UI is native SwiftUI. Desktop/Android keep the Tauri shell. (UI land is Plan 2; `docs/superpowers/plans/2026-09-13-ios-native-swiftui.md`.)
 
-- **Init needs CocoaPods:** `brew install cocoapods`, then `pnpm tauri ios init` (regenerates the Xcode project from `gen/apple/project.yml`).
-- **Never build via Xcode GUI directly.** The "Build Rust Code" phase runs `tauri ios xcode-script`, which connects back to an IPC server that only `tauri ios dev`/`tauri ios build` start. Always run via `pnpm tauri ios dev "<sim name>"` / `pnpm tauri ios build`. (The `project.yml` build phase exports `PATH` so the phase finds `pnpm`/`cargo` regardless of how Xcode was launched.)
-- **Command args are camelCase from JS (Tauri 2):** `invoke("send_files", { peerDeviceId, files })`, not `peer_device_id`. Mismatch → "missing required key peerDeviceId".
-- **Device vs simulator:** a physical iPhone on iOS N needs a matching Xcode (e.g. iOS 27 needs Xcode 27 beta); Xcode 26.5 can't deploy to iOS 27 and silently falls back to "My Mac". The simulator runs the Mac's iOS runtime (no such constraint).
-- **Same-host port collisions (Mac app + iOS simulator together):** both bind 52225 and both start a Vite on 1420.
-  - Transfer port is configurable via `SENDSENT_PORT`; the simulator auto-uses **52226** (`cfg!(target_abi = "sim")` in `lib.rs`). Mac stays 52225.
-  - Share one Vite: run the Mac app normally (`pnpm tauri dev`), then run the simulator with `pnpm tauri ios dev "iPhone 17" -c '{"build":{"beforeDevCommand":""}}'` so it reuses the existing Vite on 1420.
-- **iOS sandbox `$HOME` is read-only** (`EROFS`). The save directory is resolved from `app.path().document_dir()` at startup and threaded through `AppState.save_dir` (not from an env var). Desktop still uses `~/Downloads/sendsent`.
-- **Signing:** `DEVELOPMENT_TEAM` is baked into `gen/apple/project.yml` (re-init preserves it). Set the team / bundle id there, not just in Xcode UI (which gets wiped on re-init).
-- **Xcode 27 / iOS 27 (beta) — two Tauri-side blockers (remove once upstream fixes land):**
-  1. **Link failure:** `swift-rs 1.0.8` (latest, pinned by Tauri) tries to globalize the `@_cdecl` Swift exports that Xcode 27 internalizes, but misses those defined in SwiftPM dependency members (`_release_object`, `_retain_object`, `_string_from_bytes`). Workaround: `gen/apple/globalize_symbols.sh` runs right after the "Build Rust Code" phase in `project.yml`/`project.pbxproj` and promotes the needed local symbols in `Externals/<arch>/<config>/libapp.a` with `llvm-objcopy` (requires `rustup component add llvm-tools`). Delete this script + the build-phase line once swift-rs/Tauri support Xcode 27.
-  2. **Launch crash on iOS 27 SDK builds:** the iOS 27 SDK traps unless the app statically declares `UIApplicationSceneManifest`. tao adopts scenes programmatically (`TaoSceneDelegate`) but the launch validator only inspects `Info.plist`, so `sendsent_iOS/Info.plist` + `project.yml` now declare a static scene config pointing at `TaoSceneDelegate` (Tauri #15719). Additionally `tao 0.35.3` over-releases that `UISceneConfiguration` and crashes (`EXC_BAD_ACCESS` in `objc_retain`); pinned to the fix via `[patch.crates-io] tao` in `Cargo.toml` (tauri-apps/tao#1245, git rev `f216350`). Remove the manifest + patch once Tauri/tao release native iOS 27 support.
-- **iPhone→Mac sending is not wired** in v1: `@tauri-apps/plugin-dialog`'s file `open()` is unsupported on iOS. iOS can only receive. Sending needs a native iOS document picker (deferred).
+- **Rust is decoupled from Tauri on iOS.** Tauri sits behind the Cargo feature `tauri-shell` (default; enabled for desktop + Android). iOS builds with `--no-default-features`, so `tauri`/`tao` are not compiled.
+  - Build the iOS lib: `cd src-tauri && cargo build --lib --target aarch64-apple-ios --no-default-features` → `target/aarch64-apple-ios/<profile>/libsendsent_lib.a`.
+  - The Xcode "Build Rust Code" phase (`gen/apple/project.yml`) runs that cargo command and copies the result to `Externals/arm64/<config>/libapp.a`.
+- **FFI surface:** `src-tauri/src/ffi.rs` (`#[cfg(target_os = "ios")]`) exposes `#[unsafe(no_mangle)] extern "C"` functions returning JSON `*mut c_char` (free with `sendsent_ios_free_string`) plus one event callback.
+  - API: `sendsent_ios_init` / `identity` / `peers` / `add_peer` / `send` / `respond` / `history` / `clear_history` / `get_transfer_config` / `set_transfer_config` / `set_display_name` / `addresses` / `qr`.
+  - Events reuse `TransferEvent` serde (internal tag `kind`: `request`/`progress`/`finished`/`recorded`) plus `{"kind":"peer_found"|"peer_lost",…}`. `progress` is throttled to 100 ms per session; terminal states always emit.
+- **Project generation:** `gen/apple/sendsent.xcodeproj` is generated from `gen/apple/project.yml` via `xcodegen generate` (run inside `gen/apple/`). Edit `project.yml`, not the pbxproj. `deploymentTarget.iOS = 17.0`; version strings and `Info.plist` keys live in `project.yml` `info.properties` (editing `Info.plist` alone is overwritten on regenerate).
+- **Device vs simulator / signing:** a physical iPhone on iOS N needs a matching Xcode; `DEVELOPMENT_TEAM` is baked into `project.yml`.
+- **Removed (Tauri/tao-only, no longer needed):** the `[patch.crates-io] tao` pin, the `TaoSceneDelegate` scene-manifest hack, `globalize_symbols.sh`, `Picker.swift`, `commands::ios_picker`, and the Tauri iOS entry (`main.mm` + `bindings/`). Sending uses SwiftUI `.fileImporter`.
+- **Status:** Plan 1 (Rust FFI + build decoupling) done. Until Plan 2 adds the SwiftUI `@main` app, the iOS app target has no entry point (only the Rust lib builds).
 
 ## Android development
 

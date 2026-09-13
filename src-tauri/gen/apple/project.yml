@@ -2,7 +2,7 @@ name: sendsent
 options:
   bundleIdPrefix: com.mankong.sendsent
   deploymentTarget:
-    iOS: 15.0
+    iOS: 17.0
 fileGroups: [../../src]
 configs:
   debug: debug
@@ -67,16 +67,6 @@ targets:
           - _sendsent._tcp
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
-        # iOS 27 SDK requires apps to adopt the UIScene lifecycle. tao (via Tauri)
-        # already does this programmatically with `TaoSceneDelegate`, but the
-        # launch-time validator only inspects the static Info.plist manifest, so
-        # declare it here or the app traps at launch (Tauri issue #15719).
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: true
-          UISceneConfigurations:
-            UIWindowSceneSessionRoleApplication:
-              - UISceneConfigurationName: Default Configuration
-                UISceneDelegateClassName: TaoSceneDelegate
     entitlements:
       path: sendsent_iOS/sendsent_iOS.entitlements
     scheme:
@@ -102,14 +92,21 @@ targets:
       - sdk: QuartzCore.framework
       - sdk: Security.framework
       - sdk: UIKit.framework
-      - sdk: WebKit.framework
     preBuildScripts:
       - script: |
-          export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"
-          pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
-          sh "${SRCROOT}/globalize_symbols.sh" "${CONFIGURATION}"
+          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
+          CONFIG_FLAG="--release"
+          PROFILE_DIR="release"
+          if [ "${CONFIGURATION}" = "debug" ]; then
+            CONFIG_FLAG=""
+            PROFILE_DIR="debug"
+          fi
+          cargo build --manifest-path "$SRCROOT/../../../Cargo.toml" \
+            --lib --target aarch64-apple-ios --no-default-features $CONFIG_FLAG
+          mkdir -p "$SRCROOT/Externals/arm64/${CONFIGURATION}"
+          cp "$SRCROOT/../../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a" \
+             "$SRCROOT/Externals/arm64/${CONFIGURATION}/libapp.a"
         name: Build Rust Code
         basedOnDependencyAnalysis: false
         outputFiles:
-          - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
