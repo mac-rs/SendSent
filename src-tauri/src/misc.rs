@@ -1,5 +1,5 @@
-// 平台无关的纯函数：本机地址枚举、percent-encoding、二维码渲染。
-// 供 Tauri commands 与 iOS FFI 共用（不依赖 tauri）。
+// 平台无关的纯函数：本机地址枚举、percent-encoding、二维码渲染、节流、fd 直读。
+// 供 Tauri commands、iOS FFI、Android JNI 共用（不依赖 tauri）。
 
 use serde::Serialize;
 
@@ -49,9 +49,9 @@ pub fn urlencoding(s: &str) -> String {
 pub fn render_qr_png(code: &qrcode::QrCode, size: u32) -> Result<Vec<u8>, String> {
     use image::{ImageBuffer, Luma};
     let modules = code.width() as u32;
-    let quiet = 4u32; // 4 模块静默区
+    let quiet = 4u32;
     let total = (modules + quiet * 2) * 10;
-    let _ = size; // 固定比例；size 仅用于限制缩放上限
+    let _ = size;
     let scale = (size as f32 / total as f32).clamp(0.5, 4.0) as u32;
     let scale = scale.max(1);
     let img_size = (modules + quiet * 2) * scale;
@@ -126,6 +126,56 @@ impl Throttle {
             }
         }
     }
+}
+
+// ── Android SAF: fd 直读 ────────────────────────────────────
+// SELinux 会拒绝按 `/proc/self/fd/<fd>` 路径 open（EACCES），但 fd 本身可读。
+// 因此把逻辑路径映射到已打开 fd，发送时 dup 该 fd 直接读。
+
+#[cfg(target_os = "android")]
+static FD_MAP: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, i32>>> =
+    std::sync::OnceLock::new();
+
+#[cfg(target_os = "android")]
+fn fd_map() -> &'static std::sync::Mutex<std::collections::HashMap<String, i32>> {
+    FD_MAP.get_or_init(Default::default)
+}
+
+/// 记录逻辑路径 -> 已打开 fd（fd 由 Kotlin 通过 PFD 保活）。
+#[cfg(target_os = "android")]
+pub fn register_fd(path: String, fd: i32) {
+    fd_map().lock().unwrap().insert(path, fd);
+}
+
+/// 打开发送源：Android 上若该路径已注册 fd，则 dup 后直接读，避免路径 open。
+pub fn open_source(path: &std::path::Path) -> std::io::Result<std::fs::File> {
+    #[cfg(target_os = "android")]
+    {
+        let key = path.to_string_lossy().to_string();
+        if let Some(fd) = fd_map().lock().unwrap().get(&key).copied() {
+            let dup = unsafe { libc::dup(fd) };
+            if dup >= 0 {
+                use std::os::unix::io::FromRawFd;
+                return Ok(unsafe { std::fs::File::from_raw_fd(dup) });
+            }
+        }
+    }
+    std::fs::File::open(path)
+}
+
+/// 取发送源大小：Android 上优先用 fd 的 fstat。
+pub fn source_len(path: &std::path::Path) -> std::io::Result<u64> {
+    #[cfg(target_os = "android")]
+    {
+        let key = path.to_string_lossy().to_string();
+        if let Some(fd) = fd_map().lock().unwrap().get(&key).copied() {
+            let mut st: libc::stat = unsafe { std::mem::zeroed() };
+            if unsafe { libc::fstat(fd, &mut st) } == 0 {
+                return Ok(st.st_size as u64);
+            }
+        }
+    }
+    Ok(std::fs::metadata(path)?.len())
 }
 
 #[cfg(test)]

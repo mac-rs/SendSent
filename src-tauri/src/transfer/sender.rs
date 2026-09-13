@@ -157,7 +157,7 @@ async fn run_sender_inner(
     if verify {
         let mut hashes: Vec<(Uuid, String)> = Vec::new();
         for (id, path) in &file_map {
-            let mut file = std::fs::File::open(path)?;
+            let mut file = crate::misc::open_source(path)?;
             let mut hasher = sha2::Sha256::new();
             let mut buf = [0u8; 64 * 1024];
             loop {
@@ -225,7 +225,7 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
 
 async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
     use std::os::unix::fs::FileExt;
-    let file = std::fs::File::open(&seg.path)?;
+    let file = crate::misc::open_source(&seg.path)?;
     let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
@@ -240,7 +240,7 @@ async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &
 
 async fn send_segment_secure(data: &mut TlsStream<TcpStream>, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
     use std::os::unix::fs::FileExt;
-    let file = std::fs::File::open(&seg.path)?;
+    let file = crate::misc::open_source(&seg.path)?;
     let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
@@ -297,7 +297,7 @@ fn walk(abs: &str, rel_prefix: &str, metas: &mut Vec<FileMeta>, map: &mut HashMa
         metas.push(FileMeta { id: Uuid::new_v4(), name: name.clone(), rel_path: rel.clone(), size: 0, kind: FileKind::Dir, hash: None });
         for entry in std::fs::read_dir(p)? { let entry = entry?; walk(&entry.path().to_string_lossy(), &rel, metas, map, total)?; }
     } else {
-        let size = std::fs::metadata(p)?.len(); let id = Uuid::new_v4();
+        let size = crate::misc::source_len(p)?; let id = Uuid::new_v4();
         map.insert(id, p.to_path_buf());
         metas.push(FileMeta { id, name, rel_path: rel, size, kind: FileKind::File, hash: None });
         *total += size;

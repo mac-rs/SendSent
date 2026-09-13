@@ -254,7 +254,10 @@ fn resolve_files(files_json: &str) -> Result<Vec<String>, String> {
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let link = dir.join(if safe.is_empty() { "file".to_string() } else { safe });
         std::os::unix::fs::symlink(format!("/proc/self/fd/{}", f.fd), &link).map_err(|e| e.to_string())?;
-        out.push(link.to_string_lossy().into_owned());
+        let link_str = link.to_string_lossy().into_owned();
+        // SELinux 拒绝按路径 open /proc/self/fd;登记 fd 供 misc::open_source 直读。
+        crate::misc::register_fd(link_str.clone(), f.fd);
+        out.push(link_str);
     }
     Ok(out)
 }

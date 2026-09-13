@@ -55,11 +55,12 @@ impl Discovery for MdnsDiscovery {
         let recv = daemon.browse(SERVICE_TYPE).map_err(|e| anyhow!("mdns browse: {e}"))?;
         let registry = self.registry.clone();
         let tx = self.tx.clone();
+        let our_id = id.device_id.clone();
         tokio::spawn(async move {
             loop {
                 match recv.recv_async().await {
                     Ok(ServiceEvent::ServiceResolved(info)) => {
-                        if let Some(ev) = handle_resolved(&registry, &info).await {
+                        if let Some(ev) = handle_resolved(&registry, &info, &our_id).await {
                             let _ = tx.send(ev);
                         }
                     }
@@ -109,9 +110,9 @@ impl Discovery for MdnsDiscovery {
     }
 }
 
-async fn handle_resolved(reg: &Arc<Mutex<PeerRegistry>>, info: &ResolvedService) -> Option<PeerEvent> {
+async fn handle_resolved(reg: &Arc<Mutex<PeerRegistry>>, info: &ResolvedService, our_id: &str) -> Option<PeerEvent> {
     let device_id = info.get_property_val_str("id")?.to_string();
-    if device_id.is_empty() { return None; }
+    if device_id.is_empty() || device_id == our_id { return None; }
     let name = info.get_property_val_str("name").unwrap_or("?").to_string();
     let platform = platform_from_str(info.get_property_val_str("plat").unwrap_or(""));
     let port: u16 = info.get_property_val_str("port")
