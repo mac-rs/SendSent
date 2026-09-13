@@ -1,16 +1,15 @@
 // 平台模块注册表
-// 5 个平台各自一个 PlatformModule,PlatformRoute 按当前平台挑一个。
+// 桌面 + Android 各一个 PlatformModule,PlatformRoute 按当前平台挑一个。
+// (iOS 已改为原生 SwiftUI,不再走 Web)
 
 import type { PlatformModule } from "./types";
 import * as macos from "./macos";
-import * as ios from "./ios";
 import * as android from "./android";
 import * as windows from "./windows";
 import * as linux from "./linux";
 
 export const platformModules: Record<string, PlatformModule> = {
   macos,
-  ios,
   android,
   windows,
   linux,

@@ -854,10 +854,10 @@ git commit -m "feat(ios): bridge core events to ffi callback with progress throt
             CONFIG_FLAG=""
             PROFILE_DIR="debug"
           fi
-          cargo build --manifest-path "$SRCROOT/../../../Cargo.toml" \
+          cargo build --manifest-path "$SRCROOT/../../Cargo.toml" \
             --lib --target aarch64-apple-ios --no-default-features $CONFIG_FLAG
           mkdir -p "$SRCROOT/Externals/arm64/${CONFIGURATION}"
-          cp "$SRCROOT/../../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a" \
+          cp "$SRCROOT/../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a" \
              "$SRCROOT/Externals/arm64/${CONFIGURATION}/libapp.a"
         name: Build Rust Code
         basedOnDependencyAnalysis: false
