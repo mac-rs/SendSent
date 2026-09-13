@@ -8,7 +8,14 @@ package com.mankong.sendsent.ui
 import android.graphics.BitmapFactory
 import android.text.format.DateUtils
 import android.util.Base64
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -49,7 +56,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +77,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -76,7 +85,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -88,9 +96,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -136,12 +147,15 @@ fun App(core: Core, onPickFiles: (String, Boolean, Boolean) -> Unit) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbar) },
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            containerColor = MaterialTheme.colorScheme.surface,
             bottomBar = {
-                NavigationBar {
-                    NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Default.Wifi, null) }, label = { Text("设备") })
-                    NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.AutoMirrored.Filled.Send, null) }, label = { Text("传输") })
-                    NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Default.Person, null) }, label = { Text("我的") })
-                    NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Default.Settings, null) }, label = { Text("设置") })
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
+                    NavigationBar(containerColor = Color.Transparent) {
+                        NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Default.Wifi, null) }, label = { Text("设备") })
+                        NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.AutoMirrored.Filled.Send, null) }, label = { Text("传输") })
+                        NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Default.Person, null) }, label = { Text("我的") })
+                        NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Default.Settings, null) }, label = { Text("设置") })
+                    }
                 }
             },
         ) { pad ->
@@ -158,6 +172,16 @@ fun App(core: Core, onPickFiles: (String, Boolean, Boolean) -> Unit) {
 }
 
 @Composable
+private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier = modifier.padding(start = 4.dp, top = 12.dp, bottom = 6.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) -> Unit) {
     val allPeers by core.peers.collectAsState()
     val hidden by core.hidden.collectAsState()
@@ -167,94 +191,96 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
     var verify by remember { mutableStateOf(false) }
     var showAdd by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<Peer?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     val peers = remember(allPeers, hidden) { allPeers.filterNot { it.id in hidden } }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("设备") }, actions = {
-            IconButton({ showAdd = true }) { Icon(Icons.Default.Add, "添加") }
-        })
+        TopAppBar(
+            title = {
+                Column {
+                    Text("设备", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (peers.isEmpty()) "正在发现…" else "${peers.size} 台设备 · 同一局域网",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            actions = { IconButton({ showAdd = true }) { Icon(Icons.Default.Add, "添加设备") } },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        )
 
         progress.values.firstOrNull()?.let { ActiveBanner(it) }
 
-        if (peers.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Wifi, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline)
-                    Spacer(Modifier.height(8.dp))
-                    Text("正在发现附近设备…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        } else {
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
-                items(peers, key = { it.id }) { p ->
-                    val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
-                        when (v) {
-                            SwipeToDismissBoxValue.EndToStart -> { core.hide(p.id); true }
-                            SwipeToDismissBoxValue.StartToEnd -> { detail = p; false }
-                            else -> false
-                        }
-                    })
-                    SwipeToDismissBox(
-                        state = dismiss,
-                        enableDismissFromStartToEnd = true,
-                        enableDismissFromEndToStart = true,
-                        backgroundContent = {
-                            val d = dismiss.dismissDirection
-                            if (d != SwipeToDismissBoxValue.Settled) {
-                                val start = d == SwipeToDismissBoxValue.StartToEnd
-                                Box(
-                                    Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))
-                                        .background(if (start) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.errorContainer)
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = if (start) Alignment.CenterStart else Alignment.CenterEnd,
-                                ) {
-                                    Icon(
-                                        if (start) Icons.Default.MoreVert else Icons.Default.Delete,
-                                        if (start) "详情" else "删除",
-                                    )
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        ) {
+                item { SectionLabel(if (peers.isEmpty()) "附近设备" else "附近设备 · ${peers.size}") }
+                if (peers.isEmpty()) {
+                    item { EmptyDiscovery() }
+                } else {
+                    items(peers, key = { it.id }) { p ->
+                        val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
+                            when (v) {
+                                SwipeToDismissBoxValue.EndToStart -> {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    core.hide(p.id); true
                                 }
+                                SwipeToDismissBoxValue.StartToEnd -> { detail = p; false }
+                                else -> false
                             }
-                        },
-                    ) {
-                        DeviceCard(p, selected = p.id in selected) {
-                            selected = if (p.id in selected) selected - p.id else selected + p.id
+                        })
+                        SwipeToDismissBox(
+                            state = dismiss,
+                            enableDismissFromStartToEnd = true,
+                            enableDismissFromEndToStart = true,
+                            backgroundContent = {
+                                val d = dismiss.dismissDirection
+                                if (d != SwipeToDismissBoxValue.Settled) {
+                                    val start = d == SwipeToDismissBoxValue.StartToEnd
+                                    Box(
+                                        Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp))
+                                            .background(if (start) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.errorContainer)
+                                            .padding(horizontal = 22.dp),
+                                        contentAlignment = if (start) Alignment.CenterStart else Alignment.CenterEnd,
+                                    ) {
+                                        Icon(
+                                            if (start) Icons.Default.MoreVert else Icons.Default.Delete,
+                                            if (start) "详情" else "删除",
+                                            tint = if (start) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                                        )
+                                    }
+                                }
+                            },
+                        ) {
+                            DeviceCard(p, selected = p.id in selected) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                selected = if (p.id in selected) selected - p.id else selected + p.id
+                            }
                         }
                     }
                 }
+                item { Spacer(Modifier.height(8.dp)) }
             }
-        }
 
-        if (selected.isNotEmpty()) {
-            Surface(tonalElevation = 3.dp) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("加密传输", Modifier.weight(1f))
-                        Switch(secure, { secure = it })
-                        Spacer(Modifier.width(12.dp))
-                        Text("SHA-256", Modifier.weight(1f))
-                        Switch(verify, { verify = it })
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Button(
-                        onClick = { onPickFiles(selected.first(), secure, verify) },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("选择文件发送", style = MaterialTheme.typography.titleMedium)
-                    }
-                }
-            }
+        AnimatedVisibility(
+            visible = selected.isNotEmpty(),
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut(),
+        ) {
+            SendBar(
+                secure = secure, verify = verify,
+                onSecure = { secure = it }, onVerify = { verify = it },
+                onSend = { onPickFiles(selected.first(), secure, verify) },
+            )
         }
     }
 
     detail?.let { p ->
         val sheet = rememberModalBottomSheetState()
-        ModalBottomSheet(onDismissRequest = { detail = null }, sheetState = sheet) {
-            PeerDetail(p)
-        }
+        ModalBottomSheet(onDismissRequest = { detail = null }, sheetState = sheet) { PeerDetail(p) }
     }
 
     if (showAdd) AddDeviceSheet(core) { showAdd = false }
@@ -263,46 +289,121 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
 @Composable
 private fun DeviceCard(p: Peer, selected: Boolean, onClick: () -> Unit) {
     Card(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 0.dp else 1.dp),
+        border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(p, 44)
-            Spacer(Modifier.width(12.dp))
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Avatar(p, 46)
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(p.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    p.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     "${platform(p.platform)} · ${p.addrs.firstOrNull() ?: ":${p.port}"}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (selected) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+            if (selected) {
+                Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }
 
 @Composable
+private fun SendBar(secure: Boolean, verify: Boolean, onSecure: (Boolean) -> Unit, onVerify: (Boolean) -> Unit, onSend: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        tonalElevation = 3.dp,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ToggleChip("加密传输", secure, onSecure, Modifier.weight(1f))
+                Spacer(Modifier.width(10.dp))
+                ToggleChip("SHA-256", verify, onVerify, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(14.dp))
+            Button(
+                onClick = onSend,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Send, null)
+                Spacer(Modifier.width(8.dp))
+                Text("选择文件发送", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToggleChip(label: String, checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = if (checked) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+    ) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Switch(checked, onChange)
+        }
+    }
+}
+
+@Composable
+private fun EmptyDiscovery() {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 64.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(88.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Wifi, null, Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("正在发现附近设备…", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "确保设备在同一局域网，或点右上角 + 手动添加",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun PeerDetail(p: Peer) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 36.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Avatar(p, 56)
-            Spacer(Modifier.width(14.dp))
+            Avatar(p, 64)
+            Spacer(Modifier.width(16.dp))
             Column {
-                Text(p.name, style = MaterialTheme.typography.titleLarge)
+                Text(p.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                 Text(platform(p.platform), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Divider()
-        Spacer(Modifier.height(12.dp))
-        p.addrs.forEach { addr ->
-            DetailRow("地址", addr)
-        }
+        Spacer(Modifier.height(20.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(8.dp))
+        p.addrs.forEach { addr -> DetailRow("地址", addr) }
         DetailRow("端口", "${p.port}")
         DetailRow("设备 ID", p.id)
     }
@@ -310,31 +411,39 @@ private fun PeerDetail(p: Peer) {
 
 @Composable
 private fun DetailRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Text(label, Modifier.width(84.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(label, Modifier.width(88.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, modifier = Modifier.weight(1f), fontFamily = FontFamily.Monospace)
     }
 }
 
 @Composable
 private fun ActiveBanner(p: Progress) {
-    Card(Modifier.fillMaxWidth().padding(12.dp), shape = RoundedCornerShape(16.dp)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+    val animated by animateFloatAsState(p.fraction, label = "frac")
+    ElevatedCard(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(
-                progress = { p.fraction },
-                modifier = Modifier.size(40.dp),
+                progress = { animated },
+                modifier = Modifier.size(44.dp),
                 strokeWidth = 4.dp,
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
             )
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("正在发送", style = MaterialTheme.typography.titleSmall)
+                Text("正在发送", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(2.dp))
                 Text(
                     "${size(p.speedBps)}/s · ${size(p.bytesDone)} / ${size(p.bytesTotal)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 )
             }
-            Text("${(p.fraction * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+            Text("${(p.fraction * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -344,26 +453,60 @@ private fun TransfersScreen(core: Core) {
     val active by core.progress.collectAsState()
     val history by core.history.collectAsState()
     var t by remember { mutableIntStateOf(0) }
+    val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("传输") }, actions = {
-            if (t == 1 && history.isNotEmpty()) {
-                IconButton({ core.clearHistory() }) { Icon(Icons.Default.Delete, "清空") }
-            }
-        })
-        TabRow(t) {
-            Tab(selected = t == 0, onClick = { t = 0 }, text = { Text("进行中") })
-            Tab(selected = t == 1, onClick = { t = 1 }, text = { Text("历史") })
+        TopAppBar(
+            title = { Text("传输", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
+            actions = {
+                if (history.isNotEmpty()) {
+                    IconButton({ core.clearHistory() }) { Icon(Icons.Default.Delete, "清空") }
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        )
+        TabRow(t, containerColor = Color.Transparent, divider = {}) {
+            Tab(t == 0, { t = 0 }, text = { Text("进行中") })
+            Tab(t == 1, { t = 1 }, text = { Text("历史") })
         }
+        Spacer(Modifier.height(8.dp))
         if (t == 0) {
-            if (active.isEmpty()) EmptyState("暂无进行中的传输")
-            else LazyColumn(contentPadding = PaddingValues(12.dp)) {
-                items(active.values.toList(), key = { it.sessionId }) { ActiveRow(it) }
+            if (active.isEmpty()) {
+                Empty("暂无进行中的传输")
+            } else {
+                LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                    items(active.values.toList(), key = { it.sessionId }) { ActiveRow(it) }
+                }
             }
         } else {
-            if (history.isEmpty()) EmptyState("暂无历史记录")
-            else LazyColumn(contentPadding = PaddingValues(vertical = 6.dp)) {
-                items(history, key = { it.sessionId }) { h -> HistoryRow(h) { core.deleteHistory(h.sessionId) } }
+            if (history.isEmpty()) {
+                Empty("暂无历史记录")
+            } else {
+                LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                    items(history, key = { it.sessionId }) { h ->
+                        val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
+                            if (v == SwipeToDismissBoxValue.EndToStart) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                core.deleteHistory(h.sessionId); true
+                            } else false
+                        })
+                        SwipeToDismissBox(
+                            state = dismiss,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent = {
+                                if (dismiss.dismissDirection != SwipeToDismissBoxValue.Settled) {
+                                    Box(
+                                        Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp))
+                                            .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 22.dp),
+                                        contentAlignment = Alignment.CenterEnd,
+                                    ) { Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.onErrorContainer) }
+                                }
+                            },
+                        ) {
+                            HistoryCard(h)
+                        }
+                    }
+                }
             }
         }
     }
@@ -371,65 +514,78 @@ private fun TransfersScreen(core: Core) {
 
 @Composable
 private fun ActiveRow(p: Progress) {
-    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(14.dp)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(progress = { p.fraction }, modifier = Modifier.size(38.dp), strokeWidth = 4.dp)
-            Spacer(Modifier.width(14.dp))
+    val animated by animateFloatAsState(p.fraction, label = "rowFrac")
+    ElevatedCard(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(
+                progress = { animated },
+                modifier = Modifier.size(42.dp),
+                strokeWidth = 4.dp,
+                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+            )
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     if (p.filesTotal > 1) "发送 ${p.filesDone}/${p.filesTotal} 个文件" else "正在发送",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
                     "${size(p.speedBps)}/s · ${size(p.bytesDone)} / ${size(p.bytesTotal)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text("${(p.fraction * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+            Text("${(p.fraction * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
 @Composable
-private fun HistoryRow(h: HistoryItem, onDelete: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun HistoryCard(h: HistoryItem) {
+    ElevatedCard(
+        Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        shape = RoundedCornerShape(18.dp),
     ) {
-        Icon(
-            if (h.status == "completed") Icons.Default.Check else Icons.Default.Error,
-            null,
-            tint = when (h.status) {
-                "completed" -> Color(0xFF34C759)
-                "rejected" -> Color(0xFFFF9500)
-                "cancelled" -> Color(0xFF8E8E93)
-                else -> Color(0xFFFF3B30)
-            },
-            modifier = Modifier.size(28.dp),
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                if (h.fileCount > 1) "${h.firstFile} 等 ${h.fileCount} 个文件" else h.firstFile,
-                style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(statusColor(h.status).copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(
-                    if (h.direction == "send") Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                    null, Modifier.size(13.dp),
-                    tint = if (h.direction == "send") Color(0xFF0A84FF) else Color(0xFF34C759),
-                )
-                Spacer(Modifier.width(3.dp))
-                Text(
-                    "${if (h.direction == "send") "发送" else "接收"} · ${h.peerName} · ${size(h.bytes)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (h.status == "completed") Icons.Default.Check else Icons.Default.Error,
+                    null, Modifier.size(22.dp), tint = statusColor(h.status),
                 )
             }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (h.fileCount > 1) "${h.firstFile} 等 ${h.fileCount} 个文件" else h.firstFile,
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        if (h.direction == "send") Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        null, Modifier.size(13.dp),
+                        tint = if (h.direction == "send") Color(0xFF0A84FF) else Color(0xFF34C759),
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        "${if (h.direction == "send") "发送" else "接收"} · ${h.peerName} · ${size(h.bytes)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(relative(h.endedAtMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
-        Text(relative(h.endedAtMs), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-        IconButton(onDelete) { Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.outline) }
     }
 }
 
@@ -447,47 +603,62 @@ private fun ProfileScreen(core: Core) {
 
     LazyColumn(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item {
-            Text("我的", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
-        }
-        item {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    Modifier.size(76.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        (identity?.name ?: "?").take(1).uppercase(),
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(identity?.name ?: "未命名", style = MaterialTheme.typography.headlineSmall)
-                Text("端口 52225", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Box(
+                Modifier.size(80.dp).clip(CircleShape)
+                    .background(Brush.linearGradient(listOf(Color(0xFF0A84FF), Color(0xFF5E5CE6)))),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    (identity?.name ?: "?").take(1).uppercase(),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = Color.White, fontWeight = FontWeight.SemiBold,
+                )
             }
+            Spacer(Modifier.height(10.dp))
+            Text(identity?.name ?: "未命名", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text("端口 52225", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         }
         item {
             if (bmp != null) {
-                Card(Modifier.fillMaxWidth().padding(top = 16.dp), shape = RoundedCornerShape(16.dp)) {
-                    Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Image(bmp.asImageBitmap(), null, Modifier.size(220.dp).clip(RoundedCornerShape(10.dp)).background(Color.White))
-                        Spacer(Modifier.height(10.dp))
-                        Text("让对方在 SendSent 里扫码，即可连接", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ElevatedCard(
+                    Modifier.fillMaxWidth().padding(top = 20.dp),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(
+                            bmp.asImageBitmap(), null,
+                            Modifier.size(220.dp).clip(RoundedCornerShape(12.dp)).background(Color.White),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "让对方在 SendSent 里扫码，即可连接",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
         }
         item {
-            Text("本机 IP", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 20.dp, bottom = 6.dp))
+            Text(
+                "本机 IP",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 8.dp),
+            )
         }
         items(addresses) { a ->
-            Card(Modifier.fillMaxWidth().padding(vertical = 3.dp), shape = RoundedCornerShape(12.dp)) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Wifi, null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(12.dp))
+            ElevatedCard(Modifier.fillMaxWidth().padding(vertical = 4.dp), shape = RoundedCornerShape(16.dp)) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Default.Wifi, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer) }
+                    Spacer(Modifier.width(14.dp))
                     Text("${a.ip}:52225", fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
                     Text(a.iface, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
@@ -507,27 +678,46 @@ private fun SettingsScreen(core: Core) {
 
     LazyColumn(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(20.dp),
     ) {
         item {
-            Text("设置", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
+            Text("本机", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(64.dp).clip(RoundedCornerShape(18.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF0A84FF), Color(0xFF5E5CE6)))),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        (identity?.name ?: "?").take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White, fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(identity?.name ?: "未命名", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("端口 52225 · ${platform(identity?.platform ?: "")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(name, { name = it }, label = { Text("显示名称") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp))
+            Spacer(Modifier.height(10.dp))
+            Button({ core.rename(name) }, Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp)) { Text("保存名称") }
         }
         item {
-            Text("本机", style = MaterialTheme.typography.labelLarge)
-            Spacer(Modifier.height(6.dp))
-            OutlinedTextField(name, { name = it }, label = { Text("显示名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            Button({ core.rename(name) }, Modifier.fillMaxWidth()) { Text("保存名称") }
-        }
-        item {
-            Text("传输参数", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 20.dp, bottom = 6.dp))
-        }
-        item { Stepper("并发连接数", conns) { conns = it } }
-        item { Stepper("数据块 (KB)", chunk) { chunk = it } }
-        item { Stepper("分片阈值 (MB)", split) { split = it } }
-        item {
-            Spacer(Modifier.height(8.dp))
-            Button({ core.setConfig(conns.toInt(), chunk, split) }, Modifier.fillMaxWidth()) { Text("保存参数") }
+            Text("传输参数", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 28.dp, bottom = 6.dp))
+            ElevatedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    Stepper("并发连接数", conns) { conns = it }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Stepper("数据块 (KB)", chunk) { chunk = it }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Stepper("分片阈值 (MB)", split) { split = it }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Button({ core.setConfig(conns.toInt(), chunk, split) }, Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(14.dp)) { Text("保存参数") }
         }
     }
 }
@@ -535,15 +725,29 @@ private fun SettingsScreen(core: Core) {
 @Composable
 private fun Stepper(label: String, value: Long, onChange: (Long) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("$label：$value")
-        Row {
-            OutlinedButton({ onChange((value - 1).coerceAtLeast(0)) }) { Text("−") }
-            Spacer(Modifier.width(8.dp))
-            OutlinedButton({ onChange(value + 1) }) { Text("+") }
+        Text(label)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FilledTonalStep("−") { onChange((value - 1).coerceAtLeast(0)) }
+            Text("$value", Modifier.width(64.dp), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            FilledTonalStep("+") { onChange(value + 1) }
+        }
+    }
+}
+
+@Composable
+private fun FilledTonalStep(text: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(36.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(text, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
@@ -572,23 +776,26 @@ private fun AddDeviceSheet(core: Core, onClose: () -> Unit) {
 
     val sheet = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onClose, sheetState = sheet) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp)) {
-            Text("添加设备", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(12.dp))
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 36.dp)) {
+            Text("添加设备", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 addr, { addr = it },
                 label = { Text("IP:port") },
+                placeholder = { Text("192.168.1.5:52225") },
                 singleLine = true,
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Button(
                 { core.addPeer(addr.trim()); onClose() },
                 enabled = addr.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
             ) { Text("添加") }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton({ scanning = true }, Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton({ scanning = true }, Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp)) {
                 Icon(Icons.Default.QrCode, null); Spacer(Modifier.width(8.dp)); Text("扫码添加")
             }
         }
@@ -597,31 +804,47 @@ private fun AddDeviceSheet(core: Core, onClose: () -> Unit) {
 
 @Composable
 private fun Avatar(p: Peer, size: Int) {
-    val color = when (p.platform) {
-        "ios" -> Color(0xFF0A84FF)
-        "android" -> Color(0xFF34C759)
-        "windows" -> Color(0xFF0078D4)
-        "linux" -> Color(0xFFFF9500)
-        else -> Color(0xFF8E8E93)
-    }
+    val c = platformColor(p.platform)
     Box(
-        Modifier.size(size.dp).clip(RoundedCornerShape((size / 4).dp)).background(color),
+        Modifier.size(size.dp).clip(RoundedCornerShape((size / 4).dp))
+            .background(Brush.linearGradient(listOf(c, c.copy(alpha = 0.72f)))),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             p.name.take(1).uppercase(),
             color = Color.White,
             fontWeight = FontWeight.SemiBold,
-            style = MaterialTheme.typography.titleMedium,
+            style = if (size >= 56) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
         )
     }
 }
 
 @Composable
-private fun EmptyState(text: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+private fun Empty(text: String) {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Box(
+            Modifier.size(80.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.AutoMirrored.Filled.Send, null, Modifier.size(34.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Spacer(Modifier.height(14.dp))
         Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+private fun platformColor(p: String): Color = when (p) {
+    "ios" -> Color(0xFF0A84FF)
+    "android" -> Color(0xFF34C759)
+    "windows" -> Color(0xFF0078D4)
+    "linux" -> Color(0xFFFF9500)
+    "macos" -> Color(0xFF636366)
+    else -> Color(0xFF8E8E93)
+}
+
+private fun statusColor(status: String): Color = when (status) {
+    "completed" -> Color(0xFF34C759)
+    "rejected" -> Color(0xFFFF9500)
+    "cancelled" -> Color(0xFF8E8E93)
+    else -> Color(0xFFFF3B30)
 }
 
 private fun parseAddr(s: String): String? {
