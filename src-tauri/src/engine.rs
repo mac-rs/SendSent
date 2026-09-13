@@ -68,11 +68,16 @@ pub fn init(data_dir: PathBuf, save_dir: PathBuf, port: u16, sink: Option<EventS
         return 0;
     }
     #[cfg(target_os = "android")]
-    android_logger::init_once(
-        android_logger::Config::default()
-            .with_max_level(log::LevelFilter::Debug)
-            .with_tag("sendsent"),
-    );
+    {
+        android_logger::init_once(
+            android_logger::Config::default()
+                .with_max_level(log::LevelFilter::Debug)
+                .with_tag("sendsent"),
+        );
+        std::panic::set_hook(Box::new(|info| {
+            log::error!("RUST PANIC: {info}");
+        }));
+    }
     if std::fs::create_dir_all(&data_dir).is_err() {
         return 3;
     }

@@ -19,6 +19,22 @@ fn err(env: &mut JNIEnv, msg: impl Into<String>) -> jstring {
     js(env, serde_json::json!({ "error": msg.into() }).to_string())
 }
 
+/// 捕获 Rust panic，避免跨 FFI abort，并记录原因。
+fn safe<R>(fallback: R, f: impl FnOnce() -> R) -> R {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+        Ok(r) => r,
+        Err(e) => {
+            let msg = e
+                .downcast_ref::<&str>()
+                .map(|s| s.to_string())
+                .or_else(|| e.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "panic".to_string());
+            log::error!("RUST PANIC in jni: {msg}");
+            fallback
+        }
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeInit(
     mut env: JNIEnv,
@@ -118,13 +134,15 @@ pub extern "system" fn Java_com_mankong_sendsent_Native_nativeSend(
     secure: jboolean,
     verify: jboolean,
 ) -> jstring {
-    let (Some(p), Some(f)) = (s_arg(&mut env, &peer), s_arg(&mut env, &files)) else {
-        return err(&mut env, "bad args");
-    };
-    match engine::send(&p, &f, secure != 0, verify != 0) {
-        Ok(s) => js(&mut env, s),
-        Err(e) => err(&mut env, e),
-    }
+    safe(std::ptr::null_mut(), || {
+        let (Some(p), Some(f)) = (s_arg(&mut env, &peer), s_arg(&mut env, &files)) else {
+            return err(&mut env, "bad args");
+        };
+        match engine::send(&p, &f, secure != 0, verify != 0) {
+            Ok(s) => js(&mut env, s),
+            Err(e) => err(&mut env, e),
+        }
+    })
 }
 
 #[unsafe(no_mangle)]
@@ -134,11 +152,13 @@ pub extern "system" fn Java_com_mankong_sendsent_Native_nativeRespond(
     sid: JString,
     accept: jboolean,
 ) -> jstring {
-    let Some(s) = s_arg(&mut env, &sid) else { return err(&mut env, "bad sid") };
-    match engine::respond(&s, accept != 0) {
-        Ok(()) => std::ptr::null_mut(),
-        Err(e) => err(&mut env, e),
-    }
+    safe(std::ptr::null_mut(), || {
+        let Some(s) = s_arg(&mut env, &sid) else { return err(&mut env, "bad sid") };
+        match engine::respond(&s, accept != 0) {
+            Ok(()) => std::ptr::null_mut(),
+            Err(e) => err(&mut env, e),
+        }
+    })
 }
 
 #[unsafe(no_mangle)]
@@ -197,12 +217,14 @@ pub extern "system" fn Java_com_mankong_sendsent_Native_nativeOnService(
     port: jint,
     txt: JString,
 ) {
-    let (Some(n), Some(h), Some(t)) =
-        (s_arg(&mut env, &name), s_arg(&mut env, &host), s_arg(&mut env, &txt))
-    else {
-        return;
-    };
-    engine::on_service(&n, &h, port as u16, &t);
+    safe((), || {
+        let (Some(n), Some(h), Some(t)) =
+            (s_arg(&mut env, &name), s_arg(&mut env, &host), s_arg(&mut env, &txt))
+        else {
+            return;
+        };
+        engine::on_service(&n, &h, port as u16, &t);
+    })
 }
 
 #[unsafe(no_mangle)]
