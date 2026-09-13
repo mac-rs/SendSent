@@ -40,7 +40,8 @@
     },
     "macOS": {
       "entitlements": "Entitlements.plist",
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "7FEA3AD4E758C6123AA187F9593DE6A1D8344289"
     },
     "icon": [
       "icons/32x32.png",
