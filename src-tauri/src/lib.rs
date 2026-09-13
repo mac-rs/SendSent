@@ -5,9 +5,12 @@ pub mod store;
 pub mod events;
 pub mod history;
 pub mod misc;
+pub mod engine;
 
 #[cfg(target_os = "ios")]
 pub mod ffi;
+#[cfg(target_os = "android")]
+pub mod jni_bridge;
 
 #[cfg(feature = "tauri-shell")]
 pub mod state;

@@ -3645,6 +3645,7 @@ dependencies = [
  "get_if_addrs",
  "hex",
  "image",
+ "jni",
  "libc",
  "log",
  "mdns-sd",

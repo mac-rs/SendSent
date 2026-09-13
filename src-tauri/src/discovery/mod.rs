@@ -2,6 +2,8 @@ pub mod mdns;
 #[cfg(target_os = "ios")]
 pub mod ios_bonjour;
 #[cfg(target_os = "android")]
+pub mod android_native;
+#[cfg(all(target_os = "android", feature = "tauri-shell"))]
 pub mod nsd;
 
 use async_trait::async_trait;
@@ -60,6 +62,20 @@ pub trait Discovery: Send + Sync {
     async fn set_display_name(&self, name: &str) -> anyhow::Result<()>;
     /// 手动添加一个 peer(绕过 mDNS,用于输入 IP:port 或主动探测)
     async fn add_manual_peer(&self, addr: std::net::SocketAddr) -> anyhow::Result<()>;
+    /// Android: Kotlin NsdManager 解析到服务后推来。默认 no-op。
+    async fn on_service(
+        &self,
+        name: &str,
+        host: &str,
+        port: u16,
+        txt: &std::collections::HashMap<String, String>,
+    ) {
+        let _ = (name, host, port, txt);
+    }
+    /// Android: NsdManager 报告服务丢失。默认 no-op。
+    async fn on_service_lost(&self, name: &str) {
+        let _ = name;
+    }
 }
 
 #[derive(Default)]
