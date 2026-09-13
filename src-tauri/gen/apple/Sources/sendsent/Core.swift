@@ -22,6 +22,13 @@ final class Core: ObservableObject {
     @Published var addresses: [MyAddress] = []
     @Published var toast: String?
     @Published var ready = false
+    /// 用户手动删除(隐藏)的设备。保留在 peers 里但不出现在列表,
+    /// 这样 mDNS 重新广播也不会把它顶回来;重启后清空。
+    @Published var hidden: Set<String> = []
+
+    var visiblePeers: [Peer] {
+        peers.filter { !hidden.contains($0.device_id) }
+    }
 
     let port: UInt16 = 52225
     let saveDir: URL
@@ -120,8 +127,22 @@ final class Core: ObservableObject {
         catch { flash("添加失败: \(error.localizedDescription)") }
     }
 
+    func hide(_ peer: Peer) {
+        hidden.insert(peer.device_id)
+        flash("已删除 \(peer.name)")
+    }
+
     func clearHistory() {
         do { try ffiClearHistory(); history = [] } catch { flash("清空失败") }
+    }
+
+    func deleteHistory(_ id: String) {
+        do {
+            try ffiDeleteHistory(sessionId: id)
+            history.removeAll { $0.session_id == id }
+        } catch {
+            flash("删除失败")
+        }
     }
 
     func rename(_ name: String) {

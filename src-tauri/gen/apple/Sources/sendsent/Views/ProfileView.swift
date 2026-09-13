@@ -16,7 +16,7 @@ struct ProfileView: View {
                         .frame(width: 76, height: 76)
                         .background(Color(.secondarySystemBackground), in: Circle())
                     Text(core.identity?.name ?? "未命名").font(.title2.bold())
-                    Text("端口 \(core.port, specifier: "%d")").font(.footnote).foregroundStyle(.secondary)
+                    Text(verbatim: "端口 \(core.port)").font(.footnote).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
@@ -48,7 +48,7 @@ struct ProfileView: View {
                 Section("本机 IP") {
                     ForEach(core.addresses) { a in
                         HStack {
-                            Text("\(a.ip):\(core.port, specifier: "%d")").font(.body.monospaced())
+                            Text(verbatim: "\(a.ip):\(core.port)").font(.body.monospaced())
                             Spacer()
                             Text(a.interface).foregroundStyle(.secondary)
                         }

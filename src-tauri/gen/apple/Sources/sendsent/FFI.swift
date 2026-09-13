@@ -24,6 +24,8 @@ func sendsent_ios_respond(_ sessionId: UnsafePointer<CChar>?, _ accept: Bool) ->
 func sendsent_ios_history() -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_clear_history")
 func sendsent_ios_clear_history() -> UnsafeMutablePointer<CChar>?
+@_silgen_name("sendsent_ios_delete_history")
+func sendsent_ios_delete_history(_ sessionId: UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_get_transfer_config")
 func sendsent_ios_get_transfer_config() -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_set_transfer_config")
@@ -87,6 +89,9 @@ func ffiRespond(sessionId: String, accept: Bool) throws {
     try sessionId.withCString { try throwIfError(sendsent_ios_respond($0, accept)) }
 }
 func ffiClearHistory() throws { try throwIfError(sendsent_ios_clear_history()) }
+func ffiDeleteHistory(sessionId: String) throws {
+    try sessionId.withCString { try throwIfError(sendsent_ios_delete_history($0)) }
+}
 func ffiSetConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) throws {
     try throwIfError(sendsent_ios_set_transfer_config(conns, chunkKb, splitMb))
 }

@@ -123,6 +123,12 @@ impl HistoryStore {
         self.persist();
     }
 
+    /// 删除单条记录(按 session_id)。
+    pub fn remove(&mut self, session_id: &str) {
+        self.records.retain(|r| r.session_id != session_id);
+        self.persist();
+    }
+
     fn persist(&self) {
         match serde_json::to_string_pretty(&self.records) {
             Ok(s) => {
@@ -184,6 +190,19 @@ mod tests {
         store.clear();
         assert!(store.list().is_empty());
         assert!(HistoryStore::load(&dir).list().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn remove_deletes_and_persists() {
+        let dir = tmp_dir();
+        let mut store = HistoryStore::load(&dir);
+        store.append(rec("one"));
+        store.append(rec("two"));
+        store.remove("one");
+        assert_eq!(store.list().len(), 1);
+        assert_eq!(store.list()[0].session_id, "two");
+        assert_eq!(HistoryStore::load(&dir).list().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

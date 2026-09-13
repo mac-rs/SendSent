@@ -244,6 +244,14 @@ pub extern "C" fn sendsent_ios_clear_history() -> *mut c_char {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn sendsent_ios_delete_history(session_id: *const c_char) -> *mut c_char {
+    let Some(c) = core() else { return err("not initialized") };
+    let sid = match unsafe { cstr(session_id) } { Ok(s) => s, Err(e) => return err(e) };
+    c.runtime.block_on(async { c.history.lock().await.remove(&sid) });
+    std::ptr::null_mut()
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn sendsent_ios_get_transfer_config() -> *mut c_char {
     match core() {
         Some(c) => to_c(serde_json::to_string(&*c.config.lock().unwrap()).unwrap()),
