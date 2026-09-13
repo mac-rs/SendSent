@@ -58,10 +58,17 @@ iOS is **not** a Tauri/WebView app. The Xcode target in `src-tauri/gen/apple/` l
 - **Removed (Tauri/tao-only, no longer needed):** the `[patch.crates-io] tao` pin, the `TaoSceneDelegate` scene-manifest hack, `globalize_symbols.sh`, `Picker.swift`, `commands::ios_picker`, and the Tauri iOS entry (`main.mm` + `bindings/`). Sending uses SwiftUI `.fileImporter`.
 - **Status:** Plan 1 (Rust FFI + build decoupling) done. Until Plan 2 adds the SwiftUI `@main` app, the iOS app target has no entry point (only the Rust lib builds).
 
-## Android development
+## Android development (native Kotlin/Compose + Rust JNI)
 
-- **Init:** `pnpm tauri android init` (generates `gen/android/`). Prerequisites: Android SDK (API 34+), NDK 27, Java 21, Rust Android targets (`rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`).
-- **Env:** `ANDROID_HOME` and `NDK_HOME` must be set. The NDK clang must be in `PATH` and `CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER` set to the NDK's `aarch64-linux-android21-clang` for `cargo build` to work standalone. The real build goes through `pnpm tauri android build` (Gradle), which handles the linker internally.
-- **Build lib only:** `cargo build --lib --target aarch64-linux-android` (the binary crate `main.rs` won't compile for Android — that's expected; only the lib is used).
-- **Permissions:** `INTERNET` for networking, `ACCESS_NETWORK_STATE`/`ACCESS_WIFI_STATE` for mDNS. The NDK ships with `mdns-sd` (pure Rust) so no special multicast permissions needed.
-- **File picker:** `@tauri-apps/plugin-dialog` `open()` works on Android (unlike iOS), so Android can both send and receive files natively. No custom picker needed.
+Android is **not** a Tauri/WebView app. The UI is native Kotlin + Jetpack Compose (Material 3); the Rust core is loaded as `libsendsent_lib.so` and called via JNI. Desktop keeps the Tauri shell.
+
+- **Rust is decoupled from Tauri on Android too.** Tauri sits behind the `tauri-shell` feature (default; desktop only now). Android native builds with `--no-default-features`.
+- **Build the `.so`:** `src-tauri/build-android.sh [<rust-target> <abi>]` (default `aarch64-linux-android arm64-v8a`). It sets the NDK linker env and copies the result into `gen/android/app/src/main/jniLibs/<abi>/`. Gradle invokes it via the `cargoBuild` task before `preBuild`.
+  - `./gradlew assembleDebug` from `src-tauri/gen/android` (needs `ANDROID_HOME`/`NDK_HOME`).
+- **JNI surface:** `src-tauri/src/jni_bridge.rs` exports `Java_com_mankong_sendsent_Native_*` (JSON strings) over the shared `src-tauri/src/engine.rs`. Kotlin declarations live in `Native.kt`.
+- **Discovery is Kotlin-driven:** `NsdBridge.kt` owns `NsdManager` and pushes resolved services to Rust via `Native.nativeOnService` → `discovery::android_native`. Rust cannot use raw `mdns-sd` on Android (SELinux denies the netlink/multicast path). Events flow back to Kotlin via a queue polled with `Native.nativePollEvents` (100 ms).
+- **Files use SAF:** `SafPicker.kt` opens `content://` via `ParcelFileDescriptor` and passes `[{"fd","name"}]` to Rust, which reads `/proc/self/fd/<fd>` (zero-copy).
+- **Tauri Android is removed:** `gen/android` no longer uses `tauri.settings.gradle`, `buildSrc` (rust plugin), `NsdPlugin.kt`/`ContentPlugin.kt`, or the `generated/` Wry classes. **Do not run `pnpm tauri android init`** — it would regenerate the Tauri setup and overwrite the native project.
+- **Permissions:** `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CAMERA` (QR scan via CameraX + ZXing); `usesCleartextTraffic=true` (LAN plaintext TCP).
+- **Known:** iOS suspends the app in the background, so its Bonjour advertisement stops — the phone must be foregrounded to be discovered.
+- **Status:** Plans 1+2 done (engine/JNI/bridges/build + Compose UI). Web `AndroidApp.tsx`/`android.css` are no longer packaged.

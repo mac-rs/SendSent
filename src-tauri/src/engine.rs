@@ -167,10 +167,10 @@ fn spawn_tasks(
     core.runtime.spawn(async move {
         let mut throttle = crate::misc::Throttle::new(std::time::Duration::from_millis(100));
         while let Some(ev) = trx.recv().await {
-            if let TransferEvent::Progress { session_id, .. } = &ev {
-                if !throttle.allow_at(*session_id, std::time::Instant::now()) {
-                    continue;
-                }
+            if let TransferEvent::Progress { session_id, .. } = &ev
+                && !throttle.allow_at(*session_id, std::time::Instant::now())
+            {
+                continue;
             }
             if let TransferEvent::Finished { session_id, .. } = &ev {
                 sessions.cleanup_session(*session_id).await;
