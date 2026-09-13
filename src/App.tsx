@@ -14,13 +14,13 @@ import { respond } from "./lib/invoke";
 import type { Peer } from "./lib/types";
 import {
   DevicesIcon, TransferIcon, SettingsIcon, PlusIcon, RefreshIcon,
-  SunIcon, MoonIcon, AutoIcon,
+  SunIcon, MoonIcon, AutoIcon, PersonIcon,
 } from "./components/Icons";
 import type { CommandItem } from "./components/CommandPalette";
 import { platformModules } from "./platforms";
 import type { AppTab, ThemePref, PlatformAppProps } from "./platforms";
 
-const TAB_ORDER: AppTab[] = ["devices", "transfers", "settings"];
+const TAB_ORDER: AppTab[] = ["devices", "transfers", "profile", "settings"];
 
 export default function App() {
   const { request, progress, history, clearHistory, clearRequest } = useTransfer();
@@ -28,7 +28,13 @@ export default function App() {
   const { peers, refreshing, refresh: refreshPeers } = usePeers();
 
   // ── 路由状态 ──────────────────────────────────────────────
-  const [tab, setTab] = useState<AppTab>("devices");
+  const initialTab = ((): AppTab => {
+    const h = (typeof window !== "undefined" ? window.location.hash.replace("#", "") : "");
+    return (["devices", "transfers", "profile", "settings"] as string[]).includes(h)
+      ? (h as AppTab)
+      : "devices";
+  })();
+  const [tab, setTab] = useState<AppTab>(initialTab);
   const [theme, setTheme] = useState<ThemePref>("auto");
   const [selected, setSelected] = useState<Peer[]>([]);
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -75,7 +81,8 @@ export default function App() {
       }
       if (key === "1") { e.preventDefault(); setTab("devices"); return; }
       if (key === "2") { e.preventDefault(); setTab("transfers"); return; }
-      if (key === "3") { e.preventDefault(); setTab("settings"); return; }
+      if (key === "3") { e.preventDefault(); setTab("profile"); return; }
+      if (key === "4") { e.preventDefault(); setTab("settings"); return; }
       if (key === "[") { e.preventDefault();
         setTab((t) => TAB_ORDER[Math.max(TAB_ORDER.indexOf(t) - 1, 0)]); return; }
       if (key === "]") { e.preventDefault();
@@ -95,8 +102,11 @@ export default function App() {
     { id: "tab.transfers", group: "导航", label: "切换到「传输」", hint: "查看进行中 / 已完成的传输",
       keywords: ["transfer", "传输", "tab"], shortcut: "⌘2", action: () => setTab("transfers"),
       icon: <TransferIcon size={14} /> },
+    { id: "tab.profile", group: "导航", label: "切换到「我的」", hint: "本机设备与二维码",
+      keywords: ["profile", "me", "我的", "二维码", "tab"], shortcut: "⌘3", action: () => setTab("profile"),
+      icon: <PersonIcon size={14} /> },
     { id: "tab.settings", group: "导航", label: "切换到「设置」", hint: "配置应用偏好",
-      keywords: ["settings", "prefs", "设置", "tab"], shortcut: "⌘3", action: () => setTab("settings"),
+      keywords: ["settings", "prefs", "设置", "tab"], shortcut: "⌘4", action: () => setTab("settings"),
       icon: <SettingsIcon size={14} /> },
     { id: "refresh", group: "设备", label: "刷新设备列表", hint: "重新 mDNS 扫描",
       keywords: ["refresh", "scan", "刷新", "扫描"], shortcut: "⌘R",
@@ -126,6 +136,9 @@ export default function App() {
         : [...c, p]
     );
 
+  const selectOnly = (p: Peer) => setSelected([p]);
+  const clearSelection = () => setSelected([]);
+
   // ── 平台路由 ──────────────────────────────────────────────
   const platformMod = platformModules[platform] ?? platformModules.macos;
   const PlatformApp = platformMod.App;
@@ -136,6 +149,7 @@ export default function App() {
     platform,
     layout,
     peers, selected, togglePeer,
+    selectOnly, clearSelection,
     refreshing, refresh: async () => { await refreshPeers(); return peers.length; },
     progress, history, request,
     prefsOpen, setPrefsOpen, addSheetOpen, setAddSheetOpen,

@@ -1249,3 +1249,247 @@
   color: var(--danger);
   background: var(--danger-soft);
 }
+
+/* ============================================================
+   雷达(附近) — 与移动端一致的居中雷达
+   ============================================================ */
+.app.macos .radar {
+  position: relative;
+  width: min(460px, 56vh);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+.app.macos .radar-rings {
+  position: absolute; left: 50%; top: 44%;
+  width: 66%; height: 66%;
+  transform: translate(-50%, -50%);
+}
+.app.macos .radar-rings .ring {
+  position: absolute; inset: 0;
+  border: 1px solid var(--separator);
+  border-radius: 50%;
+}
+.app.macos .radar-rings .ring.r2 { inset: 12%; border-style: dashed; }
+.app.macos .radar-rings .ring.r3 { inset: 24%; }
+.app.macos .radar-sweep {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(99, 102, 241, 0.20), transparent 32%);
+  animation: radarSpin 6s linear infinite;
+}
+@keyframes radarSpin { to { transform: rotate(360deg); } }
+.app.macos .radar-pulse {
+  position: absolute; left: 50%; top: 50%;
+  width: 52%; height: 52%;
+  border: 1.5px solid rgba(99, 102, 241, 0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: radarPulse 3.4s ease-out infinite;
+}
+@keyframes radarPulse {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+}
+.app.macos .radar-me {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+}
+.app.macos .radar-me-avatar {
+  width: 76px; height: 76px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font: 600 28px var(--font-display);
+  background: linear-gradient(150deg, #a5b4fc, #4f46e5);
+  box-shadow: 0 0 48px 6px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.app.macos .radar-pill {
+  font: 500 12px var(--font-text);
+  color: var(--text-2);
+  background: var(--surface);
+  padding: 2px 10px; border-radius: 999px;
+  border: 0.5px solid var(--separator);
+}
+.app.macos .radar-node {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 0; background: transparent; cursor: pointer; padding: 0;
+}
+.app.macos .radar-avatar {
+  position: relative;
+  width: 58px; height: 58px; border-radius: 16px;
+  display: grid; place-items: center;
+  color: #fff; font: 600 22px var(--font-display);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 16px rgba(0, 0, 0, 0.18);
+  transition: transform 0.28s var(--ease-macos-spring), box-shadow 0.28s;
+}
+.app.macos .radar-node:hover .radar-avatar { transform: translateY(-2px) scale(1.04); }
+.app.macos .radar-node.selected .radar-avatar {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px rgba(99, 102, 241, 0.6), 0 10px 24px rgba(79, 70, 229, 0.4);
+}
+.app.macos .radar-avatar.ios     { background: linear-gradient(150deg, #4f9bff, #0a84ff); }
+.app.macos .radar-avatar.macos   { background: linear-gradient(150deg, #a78bfa, #7c3aed); }
+.app.macos .radar-avatar.android { background: linear-gradient(150deg, #6ee7b7, #059669); }
+.app.macos .radar-avatar.windows { background: linear-gradient(150deg, #38bdf8, #0078d4); }
+.app.macos .radar-avatar.linux   { background: linear-gradient(150deg, #fbbf24, #d97706); }
+.app.macos .radar-avatar.unknown { background: linear-gradient(150deg, #cbd5e1, #64748b); }
+.app.macos .radar-badge {
+  position: absolute; left: -4px; bottom: -4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface);
+  color: var(--text-2);
+  border: 0.5px solid var(--separator);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.app.macos .radar-online {
+  position: absolute; right: -3px; bottom: -3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ios-green, #34c759);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.app.macos .radar-name {
+  max-width: 104px;
+  font: 500 12px var(--font-text);
+  color: var(--text-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app.macos .radar-node.selected .radar-name { color: var(--text); font-weight: 600; }
+.app.macos .radar-hint {
+  text-align: center;
+  font: 400 13px var(--font-text);
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+
+/* ── 传输筛选 ─────────────────────────────────────────── */
+.app.macos .filter-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--separator);
+  border-radius: 10px;
+}
+.app.macos .filter-bar-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 11px var(--font-text);
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.app.macos .filter-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.app.macos .filter-chip {
+  border: 0.5px solid var(--separator);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 500 12px var(--font-text);
+  padding: 4px 11px; border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.app.macos .filter-chip:hover { background: var(--surface-3); color: var(--text); }
+.app.macos .filter-chip.active {
+  background: var(--ios-blue, #0a84ff);
+  border-color: transparent;
+  color: #fff;
+}
+.app.macos .filter-sep { width: 1px; height: 18px; background: var(--separator); margin: 0 4px; }
+
+/* ── 历史分天 ─────────────────────────────────────────── */
+.app.macos .history-day { display: flex; flex-direction: column; gap: 10px; }
+.app.macos .history-day + .history-day { margin-top: 6px; }
+.app.macos .day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font: 600 11px var(--font-text);
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 6px 2px 0;
+}
+
+/* ── 我的(海报) ──────────────────────────────────────── */
+.app.macos .profile {
+  max-width: 560px; margin: 0 auto;
+  display: flex; flex-direction: column;
+  padding: 8px 4px 40px;
+}
+.app.macos .profile-label { font: 500 13px var(--font-text); color: var(--text-3); }
+.app.macos .profile-name {
+  font: 700 30px var(--font-display); letter-spacing: -0.02em;
+  margin: 4px 0 0; color: var(--text);
+}
+.app.macos .profile-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+  font: 400 13px var(--font-text);
+  color: var(--text-2);
+}
+.app.macos .profile-status .dot.online {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ios-green, #34c759);
+  box-shadow: 0 0 6px var(--ios-green, #34c759);
+}
+.app.macos .profile-qr-wrap {
+  position: relative; align-self: center;
+  margin: 30px 0 0;
+  display: grid; place-items: center;
+}
+.app.macos .profile-qr-glow {
+  position: absolute; width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.30), transparent 66%);
+  pointer-events: none;
+}
+.app.macos .profile-qr {
+  position: relative;
+  width: 196px; height: 196px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 30px;
+  image-rendering: pixelated;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.45);
+}
+.app.macos .profile-qr.placeholder {
+  display: grid; place-items: center;
+  font: 400 12px var(--font-text); color: #999;
+  box-shadow: none;
+}
+.app.macos .profile-qr-caption {
+  text-align: center;
+  font: 400 12px var(--font-text);
+  color: var(--text-3);
+  margin: 14px 0 8px;
+}
+.app.macos .profile-section {
+  margin-top: 22px;
+  font: 600 11px var(--font-text);
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.app.macos .profile-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 11px 2px;
+  border-top: 0.5px solid var(--separator);
+  font: 400 14px var(--font-text);
+  color: var(--text);
+}
+.app.macos .profile-row .mono { font-family: var(--font-mono); }
+
+/* ── 设置分组 ─────────────────────────────────────────── */
+.app.macos .settings-group { display: flex; flex-direction: column; gap: 8px; }
+.app.macos .settings-group-label {
+  font: 600 11px var(--font-text);
+  color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 0 2px;
+}
+.app.macos .settings-card {
+  background: var(--glass-elev);
+  border: 0.5px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+.app.macos .settings-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.app.macos .settings-row-label { font: 500 13px var(--font-text); color: var(--text); }
+.app.macos .segmented.sm .seg-btn { padding: 4px 12px; font-size: 12px; }

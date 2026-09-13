@@ -195,6 +195,29 @@ function HistoryRow({ r }: { r: HistoryRecord }) {
 // 长按阈值 (ms) - 接近 iOS 标准 (0.5s)
 const LONG_PRESS_MS = 520;
 
+function dayLabel(ms: number): string {
+  const d = new Date(ms);
+  const now = new Date();
+  const same = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const y = new Date(now);
+  y.setDate(now.getDate() - 1);
+  if (same(d, now)) return "今天";
+  if (same(d, y)) return "昨天";
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+function groupByDay(items: HistoryRecord[]): { label: string; items: HistoryRecord[] }[] {
+  const out: { label: string; items: HistoryRecord[] }[] = [];
+  for (const r of items) {
+    const label = dayLabel(r.ended_at_ms);
+    const last = out[out.length - 1];
+    if (last && last.label === label) last.items.push(r);
+    else out.push({ label, items: [r] });
+  }
+  return out;
+}
+
 export function TransferHistory({
   items,
   onClear,
@@ -279,7 +302,15 @@ export function TransferHistory({
           <button className="btn btn-ghost" onClick={onClear}>清空记录</button>
         )}
       </div>
-      {items.map((r) => <HistoryRow key={r.session_id} r={r} />)}
+      {groupByDay(items).map((g) => (
+        <div className="history-day" key={g.label}>
+          <div className="day-header">
+            <span>{g.label}</span>
+            <span className="dim">{g.items.length} 项</span>
+          </div>
+          {g.items.map((r) => <HistoryRow key={r.session_id} r={r} />)}
+        </div>
+      ))}
 
       {confirming && (
         <div className="history-confirm-backdrop" onClick={() => setConfirming(false)}>

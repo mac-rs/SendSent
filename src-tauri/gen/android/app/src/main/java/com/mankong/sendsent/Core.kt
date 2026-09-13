@@ -146,7 +146,7 @@ class Core private constructor() {
         }.getOrNull()
 
     fun qrBase64(): String? =
-        runCatching { org.json.JSONTokener(Native.nativeQr(512)).nextValue() as String }.getOrNull()
+        runCatching { org.json.JSONTokener(Native.nativeQr(1024)).nextValue() as String }.getOrNull()
 
     fun flash(msg: String) { _toast.value = msg }
     fun clearToast() { _toast.value = null }

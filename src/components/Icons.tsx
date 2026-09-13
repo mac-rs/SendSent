@@ -43,6 +43,19 @@ export const SettingsIcon = (p: IconProps) => (
   </svg>
 );
 
+export const PersonIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="8" r="3.5" />
+    <path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" />
+  </svg>
+);
+
+export const FunnelIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 5h16l-6 7.2V19l-4-2v-4.8z" />
+  </svg>
+);
+
 export const PlusIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M12 5v14M5 12h14" />

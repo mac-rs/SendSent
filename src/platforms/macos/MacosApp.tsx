@@ -5,24 +5,29 @@
 //   · 主区:大标题 hero + searchbar + stat strip + device grid + 传输卡片
 //   · 右下 floating dock(FAB 式 quick actions)
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { PlatformAppProps } from "../types";
 import { PeerList } from "../../components/PeerList";
+import { Radar } from "../../components/Radar";
 import { FilePicker } from "../../components/FilePicker";
 import { TransferProgress, TransferHistory } from "../../components/TransferProgress";
 import { IncomingRequest } from "../../components/IncomingRequest";
 import { AddDeviceSheet } from "../../components/AddDeviceSheet";
 import { PrefsPanel } from "../../components/PrefsPanel";
 import { CommandPalette } from "../../components/CommandPalette";
+import { ProfilePage } from "../../components/ProfilePage";
+import { TransferConfigEditor } from "../../components/TransferConfigEditor";
+import { SettingsForm } from "../../components/SettingsForm";
 import {
   DevicesIcon, TransferIcon, SettingsIcon, SearchIcon, PlusIcon,
-  RefreshIcon, QrCodeIcon, ScanIcon,
+  RefreshIcon, QrCodeIcon, ScanIcon, PersonIcon, FunnelIcon,
   SunIcon, MoonIcon,
 } from "../../components/Icons";
 
 export function MacosApp(props: PlatformAppProps) {
   const {
-    tab, setTab, theme, setTheme, peers, selected, togglePeer, refreshing, refresh,
+    tab, setTab, theme, setTheme, peers, selected, togglePeer, selectOnly, clearSelection,
+    refreshing, refresh,
     progress, history, request, prefsOpen, setPrefsOpen, addSheetOpen, setAddSheetOpen,
     commands, cmdOpen, setCmdOpen, sidebarCollapsed, setSidebarCollapsed,
     clearHistory, clearRequest, respond, toast,
@@ -31,9 +36,21 @@ export function MacosApp(props: PlatformAppProps) {
   const transfers = Object.values(progress);
   const activeCount = transfers.filter((t) => !t.done).length;
 
+  const [tDir, setTDir] = useState<"all" | "sent" | "recv">("all");
+  const [tStatus, setTStatus] = useState<"all" | "done" | "failed">("all");
+  const filteredHistory = useMemo(
+    () => history.filter((h) => {
+      const d = tDir === "all" || (tDir === "sent" ? h.direction === "send" : h.direction === "recv");
+      const s = tStatus === "all" || (tStatus === "done" ? h.status === "completed" : h.status !== "completed");
+      return d && s;
+    }),
+    [history, tDir, tStatus],
+  );
+
   const navItems = useMemo(() => [
-    { id: "devices" as const, label: "设备", icon: DevicesIcon, badge: peers.length },
+    { id: "devices" as const, label: "附近", icon: DevicesIcon, badge: peers.length },
     { id: "transfers" as const, label: "传输", icon: TransferIcon, badge: activeCount || undefined },
+    { id: "profile" as const, label: "我的", icon: PersonIcon },
     { id: "settings" as const, label: "设置", icon: SettingsIcon },
   ], [peers.length, activeCount]);
 
@@ -171,34 +188,29 @@ export function MacosApp(props: PlatformAppProps) {
           {tab === "devices" && (
             <>
               <div className="hero">
-                <h1 className="hero-title">设备</h1>
+                <h1 className="hero-title">附近</h1>
                 <p className="hero-sub">
                   {peers.length === 0
-                    ? "正在发现附近的局域网设备…"
-                    : `已发现 ${peers.length} 台设备 · ${selected.length} 台已选择`}
+                    ? "正在同一局域网里寻找…"
+                    : `同一局域网 · 找到 ${peers.length} 台设备`}
                 </p>
-                <div className="searchbar">
-                  <SearchIcon size={13} />
-                  <input placeholder="搜索设备、文件…" />
-                  <span className="kbd">⌘F</span>
-                </div>
               </div>
-              <div className="stats">
-                <div className="stat">
-                  <div className="stat-label">本机 IP</div>
-                  <div className="stat-value">{peers[0]?.addrs[0] ?? "—"}</div>
-                </div>
-                <div className="stat">
-                  <div className="stat-label">在线设备</div>
-                  <div className="stat-value">{peers.length}</div>
-                </div>
-                <div className="stat">
-                  <div className="stat-label">活跃传输</div>
-                  <div className="stat-value">{activeCount}</div>
-                </div>
+              <Radar
+                peers={peers}
+                meName="我"
+                selectedId={selected[0]?.device_id}
+                onSelect={selectOnly}
+                onDeselect={clearSelection}
+              />
+              {selected.length > 0 ? (
+                <FilePicker peers={selected} />
+              ) : (
+                <p className="radar-hint">点按设备选择,再选择文件发送</p>
+              )}
+              <div className="section-title">
+                <h2>全部设备</h2>
               </div>
               <PeerList peers={peers} selected={selected} onToggle={togglePeer} />
-              <FilePicker peers={selected} />
             </>
           )}
 
@@ -213,23 +225,73 @@ export function MacosApp(props: PlatformAppProps) {
               <TransferProgress items={transfers} />
               <div className="section-title">
                 <h2>历史</h2>
-                {history.length > 0 && (
-                  <button className="btn btn-ghost" onClick={clearHistory}>清空记录</button>
-                )}
               </div>
-              <TransferHistory items={history} onClear={clearHistory} />
+              <div className="filter-bar">
+                <span className="filter-bar-label"><FunnelIcon size={13} />筛选</span>
+                <div className="filter-chips">
+                  {([["all", "全部"], ["sent", "发送"], ["recv", "接收"]] as const).map(([v, l]) => (
+                    <button
+                      key={v}
+                      className={`filter-chip${tDir === v ? " active" : ""}`}
+                      onClick={() => setTDir(v)}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                  <span className="filter-sep" />
+                  {([["all", "全部"], ["done", "完成"], ["failed", "失败"]] as const).map(([v, l]) => (
+                    <button
+                      key={v}
+                      className={`filter-chip${tStatus === v ? " active" : ""}`}
+                      onClick={() => setTStatus(v)}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <TransferHistory items={filteredHistory} onClear={clearHistory} />
             </>
           )}
+
+          {tab === "profile" && <ProfilePage />}
 
           {tab === "settings" && (
             <>
               <div className="hero">
                 <h1 className="hero-title">设置</h1>
-                <p className="hero-sub">管理应用偏好与传输配置</p>
+                <p className="hero-sub">外观、传输与关于</p>
               </div>
-              <button className="btn btn-primary" onClick={() => setPrefsOpen(true)}>
-                打开偏好面板
-              </button>
+
+              <div className="settings-group">
+                <div className="settings-group-label">外观</div>
+                <div className="settings-card">
+                  <div className="settings-row">
+                    <span className="settings-row-label">主题</span>
+                    <div className="segmented sm">
+                      {(["auto", "light", "dark"] as const).map((v) => (
+                        <button
+                          key={v}
+                          className={`seg-btn${theme === v ? " active" : ""}`}
+                          onClick={() => setTheme(v)}
+                        >
+                          {v === "auto" ? "跟随系统" : v === "light" ? "浅色" : "深色"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <div className="settings-group-label">传输参数</div>
+                <div className="settings-card"><TransferConfigEditor /></div>
+              </div>
+
+              <div className="settings-group">
+                <div className="settings-group-label">关于</div>
+                <div className="settings-card"><SettingsForm /></div>
+              </div>
             </>
           )}
         </main>

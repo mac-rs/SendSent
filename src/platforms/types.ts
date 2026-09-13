@@ -10,7 +10,7 @@ import type { HistoryRecord } from "../lib/types";
 import type { CommandItem } from "../components/CommandPalette";
 
 export type ThemePref = "auto" | "light" | "dark";
-export type AppTab = "devices" | "transfers" | "settings";
+export type AppTab = "devices" | "transfers" | "profile" | "settings";
 
 // 平台 App 接收的全部状态(由 App.tsx 集中管理,平台层只读)
 export interface PlatformAppProps {
@@ -26,6 +26,8 @@ export interface PlatformAppProps {
   peers: Peer[];
   selected: Peer[];
   togglePeer: (p: Peer) => void;
+  selectOnly: (p: Peer) => void;
+  clearSelection: () => void;
   refreshing: boolean;
   refresh: () => Promise<number>;
   progress: Record<string, ProgressView>;

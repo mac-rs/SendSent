@@ -162,7 +162,7 @@ final class Core: ObservableObject {
 
     // MARK: - 查询
 
-    func qrBase64() -> String? { try? ffiQr() }
+    func qrBase64() -> String? { try? ffiQr(size: 1024) }
 
     func history(for peer: Peer) -> [HistoryRecord] {
         history.filter { $0.peer_name == peer.name }
