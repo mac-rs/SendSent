@@ -76,18 +76,18 @@ final class Core: ObservableObject {
             if let e = try? JSONDecoder().decode(PeerLostEvent.self, from: data) {
                 peers.removeAll { $0.device_id == e.device_id }
             }
-        case "request":
+        case "Request":
             request = try? JSONDecoder().decode(TransferRequest.self, from: data)
-        case "progress":
+        case "Progress":
             if let e = try? JSONDecoder().decode(TransferProgress.self, from: data) {
                 progress[e.session_id] = e
             }
-        case "finished":
+        case "Finished":
             if let e = try? JSONDecoder().decode(TransferFinished.self, from: data) {
                 progress.removeValue(forKey: e.session_id)
                 reloadHistory()
             }
-        case "recorded":
+        case "Recorded":
             if let e = try? JSONDecoder().decode(HistoryRecord.self, from: data) {
                 history.removeAll { $0.session_id == e.session_id }
                 history.insert(e, at: 0)

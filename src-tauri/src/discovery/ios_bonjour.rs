@@ -54,8 +54,9 @@ impl Discovery for BonjourDiscovery {
 
         let registry = self.registry.clone();
         let tx = self.tx.clone();
+        let our_id = self.identity.device_id.clone();
         std::thread::spawn(move || {
-            if let Err(e) = run_browser(registry, tx) {
+            if let Err(e) = run_browser(registry, tx, our_id) {
                 tracing::error!("ios bonjour browse stopped: {e}");
             }
         });
@@ -120,7 +121,11 @@ fn run_service(id: Identity, port: u16) -> Result<()> {
 }
 
 /// Browses for peers and feeds resolved/removed services into the registry.
-fn run_browser(registry: Arc<Mutex<PeerRegistry>>, tx: mpsc::UnboundedSender<PeerEvent>) -> Result<()> {
+fn run_browser(
+    registry: Arc<Mutex<PeerRegistry>>,
+    tx: mpsc::UnboundedSender<PeerEvent>,
+    our_id: String,
+) -> Result<()> {
     let mut browser = MdnsBrowser::new(service_type()?);
     let reg = registry.clone();
     let txc = tx.clone();
@@ -128,6 +133,9 @@ fn run_browser(registry: Arc<Mutex<PeerRegistry>>, tx: mpsc::UnboundedSender<Pee
         move |result: zeroconf::Result<BrowserEvent>, _ctx: Option<Arc<dyn Any + Send + Sync>>| match result {
             Ok(BrowserEvent::Add(sd)) => {
                 if let Some(peer) = peer_from_discovery(&sd) {
+                    if peer.device_id == our_id {
+                        return;
+                    }
                     let mut r = reg.lock().expect("registry lock");
                     if let Some(ev) = r.upsert(Instant::now(), peer) {
                         let _ = txc.send(ev);

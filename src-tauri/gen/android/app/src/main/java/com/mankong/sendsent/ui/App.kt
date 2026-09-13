@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -50,7 +52,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -67,6 +68,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -169,7 +171,7 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
     val peers = remember(allPeers, hidden) { allPeers.filterNot { it.id in hidden } }
 
     Column(Modifier.fillMaxSize()) {
-        LargeTopAppBar(title = { Text("设备") }, actions = {
+        TopAppBar(title = { Text("设备") }, actions = {
             IconButton({ showAdd = true }) { Icon(Icons.Default.Add, "添加") }
         })
 
@@ -344,7 +346,7 @@ private fun TransfersScreen(core: Core) {
     var t by remember { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize()) {
-        LargeTopAppBar(title = { Text("传输") }, actions = {
+        TopAppBar(title = { Text("传输") }, actions = {
             if (t == 1 && history.isNotEmpty()) {
                 IconButton({ core.clearHistory() }) { Icon(Icons.Default.Delete, "清空") }
             }
@@ -443,7 +445,13 @@ private fun ProfileScreen(core: Core) {
         }
     }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+    LazyColumn(
+        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        item {
+            Text("我的", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
+        }
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
@@ -497,7 +505,13 @@ private fun SettingsScreen(core: Core) {
     var chunk by remember { mutableLongStateOf(cfg?.chunkKb ?: 1024) }
     var split by remember { mutableLongStateOf(cfg?.splitMb ?: 8) }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+    LazyColumn(
+        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars),
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        item {
+            Text("设置", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
+        }
         item {
             Text("本机", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(6.dp))

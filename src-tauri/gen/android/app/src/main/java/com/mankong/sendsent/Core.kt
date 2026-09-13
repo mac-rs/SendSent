@@ -83,22 +83,7 @@ class Core private constructor() {
                     val id = o.optString("device_id")
                     _peers.value = _peers.value.filterNot { it.id == id }
                 }
-                "progress" -> {
-                    val p = Progress(
-                        o.getString("session_id"),
-                        o.optLong("bytes_done"), o.optLong("bytes_total"),
-                        o.optLong("files_done"), o.optLong("files_total"), o.optLong("speed_bps"),
-                    )
-                    _progress.value = _progress.value + (p.sessionId to p)
-                }
-                "finished" -> {
-                    _progress.value = _progress.value - o.optString("session_id")
-                    _history.value = parseHistory(Native.nativeHistory())
-                }
-                "recorded" -> {
-                    _history.value = listOf(parseRecord(o)) + _history.value.filterNot { it.sessionId == o.optString("session_id") }
-                }
-                "request" -> {
+                "Request" -> {
                     val sender = o.optJSONObject("sender")
                     val manifest = o.optJSONObject("manifest")
                     _request.value = RequestInfo(
@@ -107,6 +92,21 @@ class Core private constructor() {
                         manifest?.optLong("total_count") ?: 0,
                         manifest?.optLong("total_size") ?: 0,
                     )
+                }
+                "Progress" -> {
+                    val p = Progress(
+                        o.getString("session_id"),
+                        o.optLong("bytes_done"), o.optLong("bytes_total"),
+                        o.optLong("files_done"), o.optLong("files_total"), o.optLong("speed_bps"),
+                    )
+                    _progress.value = _progress.value + (p.sessionId to p)
+                }
+                "Finished" -> {
+                    _progress.value = _progress.value - o.optString("session_id")
+                    _history.value = parseHistory(Native.nativeHistory())
+                }
+                "Recorded" -> {
+                    _history.value = listOf(parseRecord(o)) + _history.value.filterNot { it.sessionId == o.optString("session_id") }
                 }
             }
         }
