@@ -215,6 +215,8 @@ pub fn send(peer_id: &str, files_json: &str, secure: bool, verify: bool) -> Resu
     let peers = c.runtime.block_on(c.discovery.peers());
     let peer = peers.into_iter().find(|p| p.device_id == peer_id).ok_or("peer not found")?;
     let cfg = c.config.lock().unwrap().clone();
+    // start_send 内部会 tokio::spawn,必须在 runtime 上下文里调用。
+    let _guard = c.runtime.enter();
     c.sessions
         .start_send(peer, files, cfg, secure, verify)
         .map(|id| serde_json::json!({ "session_id": id.to_string() }).to_string())
