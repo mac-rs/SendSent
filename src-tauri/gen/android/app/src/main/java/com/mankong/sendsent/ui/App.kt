@@ -56,6 +56,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -222,43 +224,39 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
                     item { EmptyDiscovery() }
                 } else {
                     items(peers, key = { it.id }) { p ->
+                        // Android: 仅左滑删除;详情/删除走行尾溢出菜单(不照搬 iOS 的双向滑动)。
                         val dismiss = rememberSwipeToDismissBoxState(confirmValueChange = { v ->
-                            when (v) {
-                                SwipeToDismissBoxValue.EndToStart -> {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    core.hide(p.id); true
-                                }
-                                SwipeToDismissBoxValue.StartToEnd -> { detail = p; false }
-                                else -> false
-                            }
+                            if (v == SwipeToDismissBoxValue.EndToStart) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                core.hide(p.id); true
+                            } else false
                         })
                         SwipeToDismissBox(
                             state = dismiss,
-                            enableDismissFromStartToEnd = true,
+                            enableDismissFromStartToEnd = false,
                             enableDismissFromEndToStart = true,
                             backgroundContent = {
-                                val d = dismiss.dismissDirection
-                                if (d != SwipeToDismissBoxValue.Settled) {
-                                    val start = d == SwipeToDismissBoxValue.StartToEnd
+                                if (dismiss.dismissDirection != SwipeToDismissBoxValue.Settled) {
                                     Box(
                                         Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(18.dp))
-                                            .background(if (start) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.errorContainer)
-                                            .padding(horizontal = 22.dp),
-                                        contentAlignment = if (start) Alignment.CenterStart else Alignment.CenterEnd,
+                                            .background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 22.dp),
+                                        contentAlignment = Alignment.CenterEnd,
                                     ) {
-                                        Icon(
-                                            if (start) Icons.Default.MoreVert else Icons.Default.Delete,
-                                            if (start) "详情" else "删除",
-                                            tint = if (start) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onErrorContainer,
-                                        )
+                                        Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.onErrorContainer)
                                     }
                                 }
                             },
                         ) {
-                            DeviceCard(p, selected = p.id in selected) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                selected = if (p.id in selected) selected - p.id else selected + p.id
-                            }
+                            DeviceCard(
+                                p,
+                                selected = p.id in selected,
+                                onSelect = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    selected = if (p.id in selected) selected - p.id else selected + p.id
+                                },
+                                onDetail = { detail = p },
+                                onDelete = { core.hide(p.id) },
+                            )
                         }
                     }
                 }
@@ -287,9 +285,16 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
 }
 
 @Composable
-private fun DeviceCard(p: Peer, selected: Boolean, onClick: () -> Unit) {
+private fun DeviceCard(
+    p: Peer,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    onDetail: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
     Card(
-        onClick = onClick,
+        onClick = onSelect,
         modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
@@ -298,7 +303,10 @@ private fun DeviceCard(p: Peer, selected: Boolean, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 0.dp else 1.dp),
         border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Avatar(p, 46)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -319,6 +327,27 @@ private fun DeviceCard(p: Peer, selected: Boolean, onClick: () -> Unit) {
             }
             if (selected) {
                 Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(2.dp))
+            }
+            Box {
+                IconButton({ menu = true }) {
+                    Icon(
+                        Icons.Default.MoreVert, "更多",
+                        tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text("查看详情") },
+                        leadingIcon = { Icon(Icons.Default.MoreVert, null) },
+                        onClick = { menu = false; onDetail() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("删除") },
+                        leadingIcon = { Icon(Icons.Default.Delete, null) },
+                        onClick = { menu = false; onDelete() },
+                    )
+                }
             }
         }
     }
