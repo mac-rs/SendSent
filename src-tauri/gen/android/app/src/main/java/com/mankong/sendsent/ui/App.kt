@@ -217,7 +217,7 @@ private fun DevicesScreen(core: Core, onPickFiles: (String, Boolean, Boolean) ->
             Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
         ) {
-                item { SectionLabel(if (peers.isEmpty()) "附近设备" else "附近设备 · ${peers.size}") }
+                item { SectionLabel("附近设备") }
                 if (peers.isEmpty()) {
                     item { EmptyDiscovery() }
                 } else {
@@ -459,7 +459,7 @@ private fun TransfersScreen(core: Core) {
         TopAppBar(
             title = { Text("传输", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
             actions = {
-                if (history.isNotEmpty()) {
+                if (t == 1 && history.isNotEmpty()) {
                     IconButton({ core.clearHistory() }) { Icon(Icons.Default.Delete, "清空") }
                 }
             },
