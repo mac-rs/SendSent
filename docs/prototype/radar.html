@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SendSent · 雷达原型</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  @keyframes rspulse { 0% { transform: translate(-50%,-50%) scale(.6); opacity: .5 } 100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0 } }
+  @keyframes rspin   { to { transform: rotate(360deg) } }
+  @keyframes floaty  { 0%,100% { transform: translate(-50%,-50%) } 50% { transform: translate(-50%,-56%) } }
+  .rspulse { animation: rspulse 3.6s ease-out infinite }
+  .rspin   { animation: rspin 80s linear infinite }
+  .sweep   { animation: rspin 6s linear infinite }
+  .floaty  { animation: floaty 5s ease-in-out infinite }
+</style>
+</head>
+<body class="min-h-screen bg-[#0a0b0e] flex flex-wrap items-center justify-center gap-16 p-10">
+
+  <!-- ===================== 雷达首页 ===================== -->
+  <div class="relative" style="width:393px;height:852px">
+    <div class="absolute inset-0 rounded-[3.4rem] bg-black"
+         style="box-shadow:0 50px 100px rgba(0,0,0,.7), 0 0 0 11px #16171c, 0 0 0 12.5px #33353d"></div>
+
+    <div class="absolute inset-[12px] rounded-[2.6rem] overflow-hidden bg-[#08090f]">
+
+      <!-- 环境光 -->
+      <div class="absolute inset-0" style="background:
+        radial-gradient(900px 520px at 50% -8%, rgba(99,102,241,.22), transparent 62%),
+        radial-gradient(520px 380px at 12% 78%, rgba(56,189,248,.12), transparent 70%),
+        radial-gradient(420px 360px at 96% 60%, rgba(168,85,247,.10), transparent 72%)"></div>
+      <div class="absolute inset-0 opacity-[.03]"
+           style="background-image:linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px);background-size:44px 44px"></div>
+
+      <!-- 灵动岛 -->
+      <div class="absolute left-1/2 -translate-x-1/2 top-[11px] z-30 w-[126px] h-[37px] rounded-full bg-black"></div>
+
+      <!-- 状态栏 -->
+      <div class="relative z-20 flex items-center justify-between px-8 pt-[18px]">
+        <span class="text-[16px] font-semibold text-white tracking-tight">21:10</span>
+        <div class="flex items-center gap-1.5 text-white">
+          <i data-lucide="wifi" class="w-[18px] h-[18px]"></i>
+          <div class="flex items-center gap-0.5">
+            <div class="w-[22px] h-[11px] rounded-[3px] border border-white/50 p-[1.5px]">
+              <div class="h-full w-[78%] rounded-[1px] bg-white"></div>
+            </div>
+            <div class="w-[1.5px] h-[4px] rounded-r bg-white/50"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 标题 -->
+      <div class="relative z-10 px-6 pt-7">
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-[30px] leading-none font-semibold text-white" style="letter-spacing:-.024em">附近</h1>
+            <p class="mt-2.5 text-[13px] text-white/45 tracking-tight">同一局域网 · 找到 2 台设备</p>
+          </div>
+          <button class="mt-0.5 w-10 h-10 rounded-full flex items-center justify-center"
+                  style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09)">
+            <i data-lucide="plus" class="w-[19px] h-[19px] text-white/85"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 雷达(居中:我为核心,设备环绕) -->
+      <div class="relative z-[5] mx-auto" style="width:360px;height:410px;margin-top:6px">
+
+        <!-- 柔光 -->
+        <div class="absolute rounded-full" style="left:50%;top:198px;width:410px;height:410px;transform:translate(-50%,-50%);background:radial-gradient(circle, rgba(99,102,241,.19), transparent 65%)"></div>
+
+        <!-- 同心圆 -->
+        <div class="absolute rounded-full" style="left:50%;top:198px;width:352px;height:352px;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.09)"></div>
+        <div class="absolute rounded-full rspin" style="left:50%;top:198px;width:274px;height:274px;transform:translate(-50%,-50%);border:1px dashed rgba(255,255,255,.11)"></div>
+        <div class="absolute rounded-full" style="left:50%;top:198px;width:188px;height:188px;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.085)"></div>
+
+        <!-- 扫描 -->
+        <div class="absolute rounded-full overflow-hidden" style="left:50%;top:198px;width:352px;height:352px;transform:translate(-50%,-50%)">
+          <div class="absolute inset-0 sweep" style="background:conic-gradient(from 0deg, rgba(129,140,248,.18), transparent 36%)"></div>
+        </div>
+
+        <!-- 脉冲 -->
+        <div class="absolute rounded-full rspulse" style="left:50%;top:198px;width:138px;height:138px;border:1.5px solid rgba(129,140,248,.5)"></div>
+
+        <!-- 设备 1(左上) -->
+        <div class="absolute floaty" style="left:74px;top:94px">
+          <div class="flex flex-col items-center">
+            <div class="relative">
+              <div class="w-[68px] h-[68px] rounded-full flex items-center justify-center text-white text-[24px] font-semibold"
+                   style="background:linear-gradient(150deg,#a78bfa,#7c3aed);box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 12px 26px rgba(124,58,237,.45), 0 0 0 3px rgba(124,58,237,.16)">M</div>
+              <div class="absolute bottom-0 right-0 w-[16px] h-[16px] rounded-full bg-[#34d399] ring-[3px] ring-[#0b0c13]"></div>
+            </div>
+            <span class="mt-2 px-2.5 py-1 rounded-full text-[12px] font-medium text-white/85 whitespace-nowrap"
+                  style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07)">mankong-mac</span>
+          </div>
+        </div>
+
+        <!-- 设备 2(右上) -->
+        <div class="absolute floaty" style="left:286px;top:94px;animation-delay:-2.5s">
+          <div class="flex flex-col items-center">
+            <div class="relative">
+              <div class="w-[68px] h-[68px] rounded-full flex items-center justify-center text-white text-[24px] font-semibold"
+                   style="background:linear-gradient(150deg,#6ee7b7,#059669);box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 12px 26px rgba(5,150,105,.45), 0 0 0 3px rgba(5,150,105,.16)">O</div>
+              <div class="absolute bottom-0 right-0 w-[16px] h-[16px] rounded-full bg-[#34d399] ring-[3px] ring-[#0b0c13]"></div>
+            </div>
+            <span class="mt-2 px-2.5 py-1 rounded-full text-[12px] font-medium text-white/85 whitespace-nowrap"
+                  style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07)">OnePlus 13</span>
+          </div>
+        </div>
+
+        <!-- 我(中心) -->
+        <div class="absolute" style="left:180px;top:198px;transform:translate(-50%,-50%)">
+          <div class="flex flex-col items-center">
+            <div class="relative">
+              <div class="absolute inset-0 rounded-full" style="box-shadow:0 0 60px 8px rgba(99,102,241,.45)"></div>
+              <div class="relative w-[86px] h-[86px] rounded-full flex items-center justify-center text-white text-[32px] font-semibold"
+                   style="background:linear-gradient(150deg,#a5b4fc,#6366f1 45%,#4338ca);box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 0 0 1px rgba(255,255,255,.10)">I</div>
+            </div>
+            <span class="mt-2.5 px-2.5 py-0.5 rounded-full text-[12px] font-medium text-white/70 tracking-tight"
+                  style="background:rgba(255,255,255,.05)">我 · iPhone</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部:已选设备 + 发送 + 传输设置 -->
+      <div class="absolute left-0 right-0 z-20 px-4" style="bottom:104px">
+        <div class="rounded-[26px] p-4"
+             style="background:rgba(30,32,42,.72);backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 40px rgba(0,0,0,.45)">
+
+          <!-- 设备行 -->
+          <div class="flex items-center gap-3.5">
+            <div class="relative">
+              <div class="w-[46px] h-[46px] rounded-full flex items-center justify-center text-white text-[18px] font-semibold"
+                   style="background:linear-gradient(150deg,#a78bfa,#7c3aed);box-shadow:0 0 0 2.5px rgba(124,58,237,.22)">M</div>
+              <div class="absolute bottom-0 right-0 w-[13px] h-[13px] rounded-full bg-[#34d399] ring-[3px] ring-[#1e202a]"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[15px] font-semibold text-white tracking-tight truncate">mankong-mac</div>
+              <div class="text-[12px] text-white/45 tracking-tight">macOS · 已选择</div>
+            </div>
+            <button class="h-[42px] px-4 rounded-full flex items-center gap-1.5 text-white text-[14px] font-semibold"
+                    style="background:linear-gradient(180deg,#6366f1,#4f46e5);box-shadow:0 8px 20px rgba(79,70,229,.45), inset 0 1px 0 rgba(255,255,255,.25)">
+              <i data-lucide="send" class="w-[15px] h-[15px]"></i> 发送文件
+            </button>
+          </div>
+
+          <div class="my-3.5 h-px" style="background:rgba(255,255,255,.07)"></div>
+
+          <!-- 传输设置 -->
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center justify-between h-[40px] px-3 rounded-[14px]"
+                 style="background:rgba(99,102,241,.16);border:1px solid rgba(99,102,241,.32)">
+              <span class="flex items-center gap-1.5 text-[13px] font-medium" style="color:#c7d2fe">
+                <i data-lucide="lock" class="w-[14px] h-[14px]"></i>加密传输
+              </span>
+              <div class="w-[38px] h-[22px] rounded-full relative" style="background:linear-gradient(180deg,#6366f1,#4f46e5)">
+                <div class="absolute top-[2px] right-[2px] w-[18px] h-[18px] rounded-full bg-white" style="box-shadow:0 1px 2px rgba(0,0,0,.4)"></div>
+              </div>
+            </div>
+            <div class="flex-1 flex items-center justify-between h-[40px] px-3 rounded-[14px]"
+                 style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+              <span class="flex items-center gap-1.5 text-[13px] font-medium text-white/70">
+                <i data-lucide="shield-check" class="w-[14px] h-[14px]"></i>SHA-256
+              </span>
+              <div class="w-[38px] h-[22px] rounded-full relative" style="background:rgba(255,255,255,.16)">
+                <div class="absolute top-[2px] left-[2px] w-[18px] h-[18px] rounded-full bg-white" style="box-shadow:0 1px 2px rgba(0,0,0,.4)"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="absolute left-0 right-0 bottom-0 z-20 h-[104px] pt-2.5"
+           style="background:linear-gradient(180deg, rgba(8,9,15,.35), rgba(8,9,15,.92) 42%);backdrop-filter:blur(26px);border-top:1px solid rgba(255,255,255,.06)">
+        <div class="flex items-start justify-around px-6">
+          <div class="flex flex-col items-center gap-1 w-[64px]">
+            <i data-lucide="radar" class="w-[23px] h-[23px] text-[#8b8dff]"></i>
+            <span class="text-[10px] font-semibold text-[#8b8dff] tracking-tight">附近</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 w-[64px]">
+            <i data-lucide="arrow-left-right" class="w-[23px] h-[23px] text-white/45"></i>
+            <span class="text-[10px] font-medium text-white/45 tracking-tight">传输</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 w-[64px]">
+            <i data-lucide="circle-user-round" class="w-[23px] h-[23px] text-white/45"></i>
+            <span class="text-[10px] font-medium text-white/45 tracking-tight">我的</span>
+          </div>
+          <div class="flex flex-col items-center gap-1 w-[64px]">
+            <i data-lucide="settings" class="w-[23px] h-[23px] text-white/45"></i>
+            <span class="text-[10px] font-medium text-white/45 tracking-tight">设置</span>
+          </div>
+        </div>
+        <div class="mx-auto mt-2 w-[134px] h-[5px] rounded-full bg-white/85"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

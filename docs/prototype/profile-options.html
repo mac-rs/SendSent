@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SendSent · 我的 · 两方案</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-[#0a0b0e] flex flex-wrap items-start justify-center gap-14 p-10">
+
+  <!-- ================= 方案 A:列表式,二维码做成入口 ================= -->
+  <div class="flex flex-col items-center gap-4">
+    <span class="text-[13px] font-semibold text-white/70 tracking-tight">方案 A · 列表式 / 二维码作入口</span>
+    <div class="relative" style="width:393px;height:852px">
+      <div class="absolute inset-0 rounded-[3.4rem] bg-black" style="box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 0 11px #16171c,0 0 0 12.5px #33353d"></div>
+      <div class="absolute inset-[12px] rounded-[2.6rem] overflow-hidden bg-[#08090f]">
+        <div class="absolute inset-0" style="background:radial-gradient(900px 520px at 50% -12%, rgba(99,102,241,.20), transparent 62%)"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 top-[11px] z-30 w-[126px] h-[37px] rounded-full bg-black"></div>
+
+        <div class="relative z-20 flex items-center justify-between px-8 pt-[18px]">
+          <span class="text-[16px] font-semibold text-white tracking-tight">21:10</span>
+          <div class="flex items-center gap-1.5 text-white">
+            <i data-lucide="wifi" class="w-[18px] h-[18px]"></i>
+            <div class="flex items-center gap-0.5">
+              <div class="w-[22px] h-[11px] rounded-[3px] border border-white/50 p-[1.5px]"><div class="h-full w-[78%] rounded-[1px] bg-white"></div></div>
+              <div class="w-[1.5px] h-[4px] rounded-r bg-white/50"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 flex items-start justify-between px-6 pt-7">
+          <h1 class="text-[30px] leading-none font-semibold text-white" style="letter-spacing:-.024em">我的</h1>
+          <button class="mt-0.5 w-10 h-10 rounded-full flex items-center justify-center" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09)">
+            <i data-lucide="pencil" class="w-[17px] h-[17px] text-white/85"></i>
+          </button>
+        </div>
+
+        <!-- 身份卡 -->
+        <div class="relative z-10 mx-4 mt-5 rounded-[22px] p-4 flex items-center gap-4" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+          <div class="relative shrink-0">
+            <div class="w-[58px] h-[58px] rounded-full flex items-center justify-center text-white text-[24px] font-semibold" style="background:linear-gradient(150deg,#a5b4fc,#6366f1 45%,#4338ca);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)">I</div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[18px] font-semibold text-white tracking-tight truncate">iPhone</div>
+            <div class="mt-0.5 text-[12px] text-white/45 tracking-tight">iOS · 端口 52,225</div>
+          </div>
+          <div class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-full shrink-0" style="background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.28)">
+            <span class="w-[6px] h-[6px] rounded-full bg-[#34d399]"></span>
+            <span class="text-[11px] font-medium text-[#6ee7b7] tracking-tight">可被发现</span>
+          </div>
+        </div>
+
+        <!-- 二维码入口 -->
+        <div class="relative z-10 mx-4 mt-4 rounded-[22px] p-3.5 flex items-center gap-3.5" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+          <div class="p-1.5 rounded-[14px] bg-white shrink-0"><div id="qra" class="relative w-[54px] h-[54px]"></div></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[15px] font-semibold text-white tracking-tight">我的二维码</div>
+            <div class="mt-0.5 text-[12px] text-white/45 tracking-tight">让对方扫码连接这台设备</div>
+          </div>
+          <i data-lucide="chevron-right" class="w-[18px] h-[18px] text-white/35"></i>
+        </div>
+
+        <!-- 本机地址 -->
+        <div class="relative z-10 px-6 mt-6 mb-2 flex items-center justify-between">
+          <span class="text-[12px] font-semibold text-white/40 tracking-tight">本机地址</span>
+          <span class="text-[12px] text-white/30 tracking-tight">2 个网卡</span>
+        </div>
+        <div class="relative z-10 mx-4 rounded-[20px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0" style="background:rgba(99,102,241,.16)"><i data-lucide="wifi" class="w-[16px] h-[16px] text-[#a5b4fc]"></i></div>
+            <span class="flex-1 text-[14px] text-white tracking-tight" style="font-family:ui-monospace,Menlo,monospace">192.168.1.3:52225</span>
+            <span class="text-[12px] text-white/35 tracking-tight">en0</span>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0" style="background:rgba(56,189,248,.16)"><i data-lucide="signal" class="w-[16px] h-[16px] text-[#7dd3fc]"></i></div>
+            <span class="flex-1 text-[14px] text-white tracking-tight" style="font-family:ui-monospace,Menlo,monospace">10.22.230.99:52225</span>
+            <span class="text-[12px] text-white/35 tracking-tight">pdp_ip0</span>
+          </div>
+        </div>
+
+        <!-- 关于 -->
+        <div class="relative z-10 px-6 mt-5 mb-2"><span class="text-[12px] font-semibold text-white/40 tracking-tight">关于</span></div>
+        <div class="relative z-10 mx-4 rounded-[20px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between px-4 py-3">
+            <span class="text-[14px] text-white/70 tracking-tight">设备 ID</span>
+            <span class="text-[12px] text-white/40 tracking-tight" style="font-family:ui-monospace,Menlo,monospace">9F3A·C21B·7D04·E8A6</span>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center justify-between px-4 py-3">
+            <span class="text-[14px] text-white/70 tracking-tight">版本</span>
+            <span class="text-[13px] text-white/40 tracking-tight">0.1.0</span>
+          </div>
+        </div>
+
+        <div class="absolute left-0 right-0 bottom-0 z-20 h-[104px] pt-2.5" style="background:linear-gradient(180deg,rgba(8,9,15,.35),rgba(8,9,15,.92) 42%);backdrop-filter:blur(26px);border-top:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-start justify-around px-6">
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="radar" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">附近</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="arrow-left-right" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">传输</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="circle-user-round" class="w-[23px] h-[23px] text-[#8b8dff]"></i><span class="text-[10px] font-semibold text-[#8b8dff]">我的</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="settings" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">设置</span></div>
+          </div>
+          <div class="mx-auto mt-2 w-[134px] h-[5px] rounded-full bg-white/85"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 方案 B:居中,二维码为主体 ================= -->
+  <div class="flex flex-col items-center gap-4">
+    <span class="text-[13px] font-semibold text-white/70 tracking-tight">方案 B · 居中 / 二维码为主体</span>
+    <div class="relative" style="width:393px;height:852px">
+      <div class="absolute inset-0 rounded-[3.4rem] bg-black" style="box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 0 11px #16171c,0 0 0 12.5px #33353d"></div>
+      <div class="absolute inset-[12px] rounded-[2.6rem] overflow-hidden bg-[#08090f]">
+        <div class="absolute inset-0" style="background:radial-gradient(900px 520px at 50% -12%, rgba(99,102,241,.20), transparent 62%)"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 top-[11px] z-30 w-[126px] h-[37px] rounded-full bg-black"></div>
+
+        <div class="relative z-20 flex items-center justify-between px-8 pt-[18px]">
+          <span class="text-[16px] font-semibold text-white tracking-tight">21:10</span>
+          <div class="flex items-center gap-1.5 text-white">
+            <i data-lucide="wifi" class="w-[18px] h-[18px]"></i>
+            <div class="flex items-center gap-0.5">
+              <div class="w-[22px] h-[11px] rounded-[3px] border border-white/50 p-[1.5px]"><div class="h-full w-[78%] rounded-[1px] bg-white"></div></div>
+              <div class="w-[1.5px] h-[4px] rounded-r bg-white/50"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 flex items-start justify-between px-6 pt-7">
+          <h1 class="text-[30px] leading-none font-semibold text-white" style="letter-spacing:-.024em">我的</h1>
+          <button class="mt-0.5 w-10 h-10 rounded-full flex items-center justify-center" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09)">
+            <i data-lucide="pencil" class="w-[17px] h-[17px] text-white/85"></i>
+          </button>
+        </div>
+
+        <div class="relative z-10 mt-5 flex flex-col items-center">
+          <div class="relative">
+            <div class="absolute -inset-3 rounded-full" style="background:radial-gradient(circle, rgba(99,102,241,.42), transparent 70%)"></div>
+            <div class="relative w-[80px] h-[80px] rounded-full flex items-center justify-center text-white text-[31px] font-semibold" style="background:linear-gradient(150deg,#a5b4fc,#6366f1 45%,#4338ca);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 0 1px rgba(255,255,255,.12)">I</div>
+          </div>
+          <div class="mt-3.5 text-[22px] font-semibold text-white tracking-tight">iPhone</div>
+          <div class="mt-1 text-[13px] text-white/45 tracking-tight">iOS · 端口 52,225</div>
+          <div class="mt-3 inline-flex items-center gap-1.5 h-[28px] px-3 rounded-full" style="background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.28)">
+            <span class="w-[6px] h-[6px] rounded-full bg-[#34d399]"></span>
+            <span class="text-[12px] font-medium text-[#6ee7b7] tracking-tight">可被发现</span>
+          </div>
+        </div>
+
+        <div class="relative z-10 mx-auto mt-5 rounded-[28px] p-4" style="width:188px;height:188px;background:#fff;box-shadow:0 18px 40px rgba(0,0,0,.45)">
+          <div id="qrb" class="relative w-full h-full"></div>
+        </div>
+        <p class="relative z-10 mt-3 text-center text-[12px] text-white/45 tracking-tight">让对方在 SendSent 里扫码,即可添加这台设备</p>
+
+        <div class="relative z-10 px-6 mt-5 mb-2 flex items-center justify-between">
+          <span class="text-[12px] font-semibold text-white/40 tracking-tight">本机地址</span>
+          <span class="text-[12px] text-white/30 tracking-tight">2 个网卡</span>
+        </div>
+        <div class="relative z-10 mx-4 rounded-[20px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0" style="background:rgba(99,102,241,.16)"><i data-lucide="wifi" class="w-[16px] h-[16px] text-[#a5b4fc]"></i></div>
+            <span class="flex-1 text-[14px] text-white tracking-tight" style="font-family:ui-monospace,Menlo,monospace">192.168.1.3:52225</span>
+            <span class="text-[12px] text-white/35 tracking-tight">en0</span>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center gap-3 px-4 py-3">
+            <div class="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0" style="background:rgba(56,189,248,.16)"><i data-lucide="signal" class="w-[16px] h-[16px] text-[#7dd3fc]"></i></div>
+            <span class="flex-1 text-[14px] text-white tracking-tight" style="font-family:ui-monospace,Menlo,monospace">10.22.230.99:52225</span>
+            <span class="text-[12px] text-white/35 tracking-tight">pdp_ip0</span>
+          </div>
+        </div>
+
+        <div class="absolute left-0 right-0 bottom-0 z-20 h-[104px] pt-2.5" style="background:linear-gradient(180deg,rgba(8,9,15,.35),rgba(8,9,15,.92) 42%);backdrop-filter:blur(26px);border-top:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-start justify-around px-6">
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="radar" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">附近</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="arrow-left-right" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">传输</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="circle-user-round" class="w-[23px] h-[23px] text-[#8b8dff]"></i><span class="text-[10px] font-semibold text-[#8b8dff]">我的</span></div>
+            <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="settings" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">设置</span></div>
+          </div>
+          <div class="mx-auto mt-2 w-[134px] h-[5px] rounded-full bg-white/85"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    function makeQR(el, n, seed0) {
+      if (!el) return;
+      var seed = seed0;
+      function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+      function finderVal(x, y) {
+        function block(ox, oy) {
+          var dx = x - ox, dy = y - oy;
+          if (dx < 0 || dy < 0 || dx > 6 || dy > 6) return null;
+          var r = Math.max(Math.abs(dx - 3), Math.abs(dy - 3));
+          return (r === 3 || r <= 1) ? 1 : 0;
+        }
+        if (x < 7 && y < 7) return block(0, 0);
+        if (x >= n - 7 && y < 7) return block(n - 7, 0);
+        if (x < 7 && y >= n - 7) return block(0, n - 7);
+        return null;
+      }
+      function inFinder(x, y) { return (x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8); }
+      function alignVal(x, y) {
+        var ox = n - 9, oy = n - 9, dx = x - ox, dy = y - oy;
+        if (dx < 0 || dy < 0 || dx > 4 || dy > 4) return null;
+        var r = Math.max(Math.abs(dx - 2), Math.abs(dy - 2));
+        return (r === 2 || r === 0) ? 1 : 0;
+      }
+      var out = '';
+      for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+        var on, fv = finderVal(x, y);
+        if (fv !== null) on = fv;
+        else if (inFinder(x, y)) on = 0;
+        else if (x === 6 || y === 6) on = ((x + y) % 2 === 0) ? 1 : 0;
+        else { var av = alignVal(x, y); on = (av !== null) ? av : (rnd() > 0.5 ? 1 : 0); }
+        if (on) out += '<i style="position:absolute;left:' + (x * 100 / n) + '%;top:' + (y * 100 / n) +
+          '%;width:' + (100 / n) + '%;height:' + (100 / n) + '%;background:#0b0b0f;border-radius:1.5px"></i>';
+      }
+      el.innerHTML = out;
+    }
+    makeQR(document.getElementById('qra'), 21, 1234567);
+    makeQR(document.getElementById('qrb'), 25, 987654321);
+  </script>
+</body>
+</html>

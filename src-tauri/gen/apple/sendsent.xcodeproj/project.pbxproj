@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04F6B55E468EA6E9D1791E1A /* RadarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398C6003138ED328F96C439F /* RadarView.swift */; };
 		077DC70A6293FECBB0BD9F5D /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0C2F71FCC1D5F53EE1598F /* ScanView.swift */; };
 		0A10606FEDC8A3AC34E11994 /* TransfersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E281F04264AF8F074CB780 /* TransfersView.swift */; };
 		213772DDBB841D27173C86D5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CD8C3EE6F7F5C19E840EEB2 /* Models.swift */; };
@@ -18,10 +19,11 @@
 		6D09CD92509535C224878B1A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */; };
 		6D40E87B3CCA0AF741A55B0E /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E0A22040321247735DB2562 /* Metal.framework */; };
 		7C3635FCD63A606676BC0DC3 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CA0E559FEFE091A08C4A1992 /* libapp.a */; };
-		8EFE66F37C40A26CDEAE62B3 /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B8F01BC716548AA20C457E /* DevicesView.swift */; };
 		9DFA41D3D219485B9D108EE4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */; };
+		A0522C263BE7E9F61E1696C5 /* ReceivingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFDDBFA9C0A3DBB6600C009 /* ReceivingSheet.swift */; };
 		A1EBA88933EE3F61133C2449 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = D7BF76FB360CC259A1176633 /* assets */; };
 		A9C4DF11DC241666C4BD2852 /* FFI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C215B2AB0925B68F48F37B6 /* FFI.swift */; };
+		B850043CB0259363EE37F4C4 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5188CFD7026B239F233E49C /* DesignSystem.swift */; };
 		C8E22A448C59D43A1DF964FF /* AddDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D90D35901929BB6BF065C39D /* AddDeviceView.swift */; };
 		D557DC6EF6FF1BCC20D07D0D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */; };
 		DA9AEDD8872001FB37C2800B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 265C19806FF3532C8675691E /* UIKit.framework */; };
@@ -31,6 +33,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00376281AD694F4760B490A0 /* jni_bridge.rs */ = {isa = PBXFileReference; path = jni_bridge.rs; sourceTree = "<group>"; };
 		026CA925026A4579542DEB51 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		061BB850E11EF6F1E597A446 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		0AECF19F8D969246F50DBA91 /* commands.rs */ = {isa = PBXFileReference; path = commands.rs; sourceTree = "<group>"; };
@@ -38,13 +41,16 @@
 		1B91AD453E36BF4C34FA5842 /* messages.rs */ = {isa = PBXFileReference; path = messages.rs; sourceTree = "<group>"; };
 		1E0A22040321247735DB2562 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		20BC257BB5DBE566AA9A2D81 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		2138D120558F4FC313754090 /* engine.rs */ = {isa = PBXFileReference; path = engine.rs; sourceTree = "<group>"; };
 		226857F460500E6E72BCB4D1 /* ffi.rs */ = {isa = PBXFileReference; path = ffi.rs; sourceTree = "<group>"; };
 		260C85D16C549550E9873ED8 /* sendsent_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = sendsent_iOS.entitlements; sourceTree = "<group>"; };
 		265C19806FF3532C8675691E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		284A3474A3B6EF6D1BBD01FB /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		2EFDDBFA9C0A3DBB6600C009 /* ReceivingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReceivingSheet.swift; sourceTree = "<group>"; };
 		2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		306373041925AAB8AF4BD5AC /* Core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
 		31D4D18BF39330FA16551638 /* misc.rs */ = {isa = PBXFileReference; path = misc.rs; sourceTree = "<group>"; };
+		398C6003138ED328F96C439F /* RadarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadarView.swift; sourceTree = "<group>"; };
 		3A6B303F2CF4887B73709D0F /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		3B867F86F2182F07B9609E50 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		412B1DABBFF788BC85FB390E /* sock.rs */ = {isa = PBXFileReference; path = sock.rs; sourceTree = "<group>"; };
@@ -58,6 +64,7 @@
 		766E3244BC252E98F1C1AC18 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		873307874EB32A52E3F17C52 /* tls.rs */ = {isa = PBXFileReference; path = tls.rs; sourceTree = "<group>"; };
+		9101F19239550C40C1A19A60 /* android_native.rs */ = {isa = PBXFileReference; path = android_native.rs; sourceTree = "<group>"; };
 		924016E152A4DA0BE0CB2CA1 /* SendSentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSentApp.swift; sourceTree = "<group>"; };
 		9C215B2AB0925B68F48F37B6 /* FFI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFI.swift; sourceTree = "<group>"; };
 		A2E07440CCD630B040403E6C /* history.rs */ = {isa = PBXFileReference; path = history.rs; sourceTree = "<group>"; };
@@ -65,7 +72,7 @@
 		B2F6900C0A8029D29D5DBD43 /* atomic.rs */ = {isa = PBXFileReference; path = atomic.rs; sourceTree = "<group>"; };
 		BA22C1D0558468D31C012F59 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C2E281F04264AF8F074CB780 /* TransfersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersView.swift; sourceTree = "<group>"; };
-		C5B8F01BC716548AA20C457E /* DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesView.swift; sourceTree = "<group>"; };
+		C5188CFD7026B239F233E49C /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		C702FFBF0ECDFBCB6D8F5B69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C936BC218229D7EC1613B25C /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
 		CA0E559FEFE091A08C4A1992 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
@@ -107,9 +114,11 @@
 			children = (
 				0AECF19F8D969246F50DBA91 /* commands.rs */,
 				AE185840CB01CF575A210FCB /* content_plugin.rs */,
+				2138D120558F4FC313754090 /* engine.rs */,
 				D6A2760527F6C0671C2FD570 /* events.rs */,
 				226857F460500E6E72BCB4D1 /* ffi.rs */,
 				A2E07440CCD630B040403E6C /* history.rs */,
+				00376281AD694F4760B490A0 /* jni_bridge.rs */,
 				284A3474A3B6EF6D1BBD01FB /* lib.rs */,
 				766E3244BC252E98F1C1AC18 /* main.rs */,
 				31D4D18BF39330FA16551638 /* misc.rs */,
@@ -211,8 +220,10 @@
 			isa = PBXGroup;
 			children = (
 				D90D35901929BB6BF065C39D /* AddDeviceView.swift */,
-				C5B8F01BC716548AA20C457E /* DevicesView.swift */,
+				C5188CFD7026B239F233E49C /* DesignSystem.swift */,
 				061BB850E11EF6F1E597A446 /* ProfileView.swift */,
+				398C6003138ED328F96C439F /* RadarView.swift */,
+				2EFDDBFA9C0A3DBB6600C009 /* ReceivingSheet.swift */,
 				DB0C2F71FCC1D5F53EE1598F /* ScanView.swift */,
 				BA22C1D0558468D31C012F59 /* SettingsView.swift */,
 				C2E281F04264AF8F074CB780 /* TransfersView.swift */,
@@ -223,6 +234,7 @@
 		E1958243974920C3FFEA59FB /* discovery */ = {
 			isa = PBXGroup;
 			children = (
+				9101F19239550C40C1A19A60 /* android_native.rs */,
 				19C04582A1DC60AFD273C517 /* ios_bonjour.rs */,
 				DA6174F7B78939CDE9F5D32A /* mdns.rs */,
 				7343C2FC1BFDD7A2A2BB4877 /* mod.rs */,
@@ -341,10 +353,12 @@
 			files = (
 				C8E22A448C59D43A1DF964FF /* AddDeviceView.swift in Sources */,
 				ED8968B3645BB682EB25B4AD /* Core.swift in Sources */,
-				8EFE66F37C40A26CDEAE62B3 /* DevicesView.swift in Sources */,
+				B850043CB0259363EE37F4C4 /* DesignSystem.swift in Sources */,
 				A9C4DF11DC241666C4BD2852 /* FFI.swift in Sources */,
 				213772DDBB841D27173C86D5 /* Models.swift in Sources */,
 				E7FA72BD208294DCC6AB913A /* ProfileView.swift in Sources */,
+				04F6B55E468EA6E9D1791E1A /* RadarView.swift in Sources */,
+				A0522C263BE7E9F61E1696C5 /* ReceivingSheet.swift in Sources */,
 				077DC70A6293FECBB0BD9F5D /* ScanView.swift in Sources */,
 				60E096AE0003CAEB765F7459 /* SendSentApp.swift in Sources */,
 				58DE1152B15E575B6D8E3740 /* SettingsView.swift in Sources */,

@@ -106,12 +106,17 @@ final class Core: ObservableObject {
     }
 
     func send(peer: Peer, files: [URL], secure: Bool, verify: Bool) {
+        var accessed: [URL] = []
+        for u in files where u.startAccessingSecurityScopedResource() { accessed.append(u) }
         let paths = files.map(\.path)
         do {
             _ = try ffiSend(peerId: peer.device_id, files: paths, secure: secure, verify: verify)
             flash("已发送到 \(peer.name)")
         } catch {
             flash("发送失败: \(error.localizedDescription)")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+            accessed.forEach { $0.stopAccessingSecurityScopedResource() }
         }
     }
 
@@ -153,5 +158,13 @@ final class Core: ObservableObject {
     func setConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) {
         do { try ffiSetConfig(conns: conns, chunkKb: chunkKb, splitMb: splitMb); flash("已保存") }
         catch { flash("保存失败: \(error.localizedDescription)") }
+    }
+
+    // MARK: - 查询
+
+    func qrBase64() -> String? { try? ffiQr() }
+
+    func history(for peer: Peer) -> [HistoryRecord] {
+        history.filter { $0.peer_name == peer.name }
     }
 }

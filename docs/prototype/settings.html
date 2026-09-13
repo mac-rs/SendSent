@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SendSent · 设置</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-[#0a0b0e] flex flex-wrap items-center justify-center gap-16 p-10">
+
+  <div class="relative" style="width:393px;height:852px">
+    <div class="absolute inset-0 rounded-[3.4rem] bg-black"
+         style="box-shadow:0 50px 100px rgba(0,0,0,.7),0 0 0 11px #16171c,0 0 0 12.5px #33353d"></div>
+
+    <div class="absolute inset-[12px] rounded-[2.6rem] overflow-hidden bg-[#08090f]">
+
+      <div class="absolute inset-0" style="background:radial-gradient(760px 460px at 50% -12%, rgba(99,102,241,.16), transparent 62%)"></div>
+      <div class="absolute inset-0 opacity-[.03]"
+           style="background-image:linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px);background-size:44px 44px"></div>
+
+      <div class="absolute left-1/2 -translate-x-1/2 top-[11px] z-30 w-[126px] h-[37px] rounded-full bg-black"></div>
+
+      <!-- 状态栏 -->
+      <div class="relative z-20 flex items-center justify-between px-8 pt-[18px]">
+        <span class="text-[16px] font-semibold text-white tracking-tight">21:10</span>
+        <div class="flex items-center gap-1.5 text-white">
+          <i data-lucide="wifi" class="w-[18px] h-[18px]"></i>
+          <div class="flex items-center gap-0.5">
+            <div class="w-[22px] h-[11px] rounded-[3px] border border-white/50 p-[1.5px]"><div class="h-full w-[78%] rounded-[1px] bg-white"></div></div>
+            <div class="w-[1.5px] h-[4px] rounded-r bg-white/50"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 标题 -->
+      <div class="relative z-10 px-6 pt-7">
+        <h1 class="text-[32px] leading-none font-semibold text-white" style="letter-spacing:-.03em">设置</h1>
+      </div>
+
+      <!-- 本机 -->
+      <div class="relative z-10 mt-5 px-4">
+        <div class="px-2 mb-1.5 text-[12px] font-semibold text-white/35 tracking-tight">本机</div>
+        <div class="rounded-[18px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between h-[48px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">显示名称</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[14px] text-white/40 tracking-tight">iPhone</span>
+              <i data-lucide="chevron-right" class="w-[16px] h-[16px] text-white/25"></i>
+            </div>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center justify-between h-[48px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">端口</span>
+            <span class="text-[14px] text-white/40 tracking-tight" style="font-family:ui-monospace,Menlo,monospace">52,225</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 外观 -->
+      <div class="relative z-10 mt-5 px-4">
+        <div class="px-2 mb-1.5 text-[12px] font-semibold text-white/35 tracking-tight">外观</div>
+        <div class="rounded-[18px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between h-[54px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">主题</span>
+            <div class="flex items-center rounded-full p-[3px] shrink-0" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)">
+              <button class="h-[30px] px-3 rounded-full text-[13px] font-medium text-white/45 tracking-tight">跟随系统</button>
+              <button class="h-[30px] px-3 rounded-full text-[13px] font-medium text-white/45 tracking-tight">浅色</button>
+              <button class="h-[30px] px-3 rounded-full text-[13px] font-semibold text-white tracking-tight" style="background:rgba(255,255,255,.15);box-shadow:0 1px 2px rgba(0,0,0,.3)">深色</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 传输 -->
+      <div class="relative z-10 mt-5 px-4">
+        <div class="px-2 mb-1.5 text-[12px] font-semibold text-white/35 tracking-tight">传输</div>
+        <div class="rounded-[18px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between h-[52px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">并发连接数</span>
+            <div class="flex items-center rounded-full overflow-hidden shrink-0" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)">
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="minus" class="w-[15px] h-[15px] text-white/60"></i></button>
+              <span class="w-[62px] h-8 flex items-center justify-center text-[14px] font-medium text-white tabular-nums" style="border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)">16</span>
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="plus" class="w-[15px] h-[15px] text-white/60"></i></button>
+            </div>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center justify-between h-[52px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">数据块</span>
+            <div class="flex items-center rounded-full overflow-hidden shrink-0" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)">
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="minus" class="w-[15px] h-[15px] text-white/60"></i></button>
+              <span class="w-[62px] h-8 flex items-center justify-center text-[14px] font-medium text-white tabular-nums" style="border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)">1024 KB</span>
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="plus" class="w-[15px] h-[15px] text-white/60"></i></button>
+            </div>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center justify-between h-[52px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">分片阈值</span>
+            <div class="flex items-center rounded-full overflow-hidden shrink-0" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)">
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="minus" class="w-[15px] h-[15px] text-white/60"></i></button>
+              <span class="w-[62px] h-8 flex items-center justify-center text-[14px] font-medium text-white tabular-nums" style="border-left:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.08)">8 MB</span>
+              <button class="w-9 h-8 flex items-center justify-center"><i data-lucide="plus" class="w-[15px] h-[15px] text-white/60"></i></button>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 px-2 text-[11px] leading-relaxed text-white/30 tracking-tight">
+          连接越多越快、占用越高;超过阈值的文件会切段并行传输。
+        </p>
+      </div>
+
+      <!-- 关于 -->
+      <div class="relative z-10 mt-5 px-4">
+        <div class="px-2 mb-1.5 text-[12px] font-semibold text-white/35 tracking-tight">关于</div>
+        <div class="rounded-[18px] overflow-hidden" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)">
+          <div class="flex items-center justify-between h-[48px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">版本</span>
+            <span class="text-[14px] text-white/40 tracking-tight">0.1.0</span>
+          </div>
+          <div class="h-px mx-4" style="background:rgba(255,255,255,.06)"></div>
+          <div class="flex items-center justify-between h-[48px] px-4">
+            <span class="text-[14px] text-white/90 tracking-tight">技术栈</span>
+            <span class="text-[14px] text-white/40 tracking-tight">Rust + SwiftUI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="absolute left-0 right-0 bottom-0 z-20 h-[104px] pt-2.5"
+           style="background:linear-gradient(180deg,rgba(8,9,15,.35),rgba(8,9,15,.92) 42%);backdrop-filter:blur(26px);border-top:1px solid rgba(255,255,255,.06)">
+        <div class="flex items-start justify-around px-6">
+          <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="radar" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">附近</span></div>
+          <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="arrow-left-right" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">传输</span></div>
+          <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="circle-user-round" class="w-[23px] h-[23px] text-white/45"></i><span class="text-[10px] font-medium text-white/45">我的</span></div>
+          <div class="flex flex-col items-center gap-1 w-[64px]"><i data-lucide="settings" class="w-[23px] h-[23px] text-[#8b8dff]"></i><span class="text-[10px] font-semibold text-[#8b8dff]">设置</span></div>
+        </div>
+        <div class="mx-auto mt-2 w-[134px] h-[5px] rounded-full bg-white/85"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
