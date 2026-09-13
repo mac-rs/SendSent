@@ -32,7 +32,6 @@ targets:
     sources:
       - path: Sources
       - path: Assets.xcassets
-      - path: Externals
       - path: sendsent_iOS
       - path: assets
         buildPhase: resources
@@ -58,6 +57,7 @@ targets:
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
         NSLocalNetworkUsageDescription: SendSent needs local network access to discover nearby devices and transfer files.
+        NSCameraUsageDescription: SendSent uses the camera to scan a device QR code.
         CFBundleDisplayName: SendSent
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
@@ -101,10 +101,10 @@ targets:
             CONFIG_FLAG=""
             PROFILE_DIR="debug"
           fi
-          cargo build --manifest-path "$SRCROOT/../../../Cargo.toml" \
+          cargo build --manifest-path "$SRCROOT/../../Cargo.toml" \
             --lib --target aarch64-apple-ios --no-default-features $CONFIG_FLAG
           mkdir -p "$SRCROOT/Externals/arm64/${CONFIGURATION}"
-          cp "$SRCROOT/../../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a" \
+          cp "$SRCROOT/../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a" \
              "$SRCROOT/Externals/arm64/${CONFIGURATION}/libapp.a"
         name: Build Rust Code
         basedOnDependencyAnalysis: false

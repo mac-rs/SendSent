@@ -7,23 +7,32 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		020188B276C2E88B822A1D28 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = C995177DD39488AB0F0CD9D7 /* libapp.a */; };
-		2E48CAFB3B9D80A81FFA55D0 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = 5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */; };
+		077DC70A6293FECBB0BD9F5D /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0C2F71FCC1D5F53EE1598F /* ScanView.swift */; };
+		0A10606FEDC8A3AC34E11994 /* TransfersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E281F04264AF8F074CB780 /* TransfersView.swift */; };
+		213772DDBB841D27173C86D5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CD8C3EE6F7F5C19E840EEB2 /* Models.swift */; };
 		2FB7724DC932C071EF745CB8 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20BC257BB5DBE566AA9A2D81 /* MetalKit.framework */; };
 		43D805E4D72356B0D6DC9074 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBE460BE249E2A044EF92F4A /* CoreGraphics.framework */; };
+		58DE1152B15E575B6D8E3740 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA22C1D0558468D31C012F59 /* SettingsView.swift */; };
+		60E096AE0003CAEB765F7459 /* SendSentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924016E152A4DA0BE0CB2CA1 /* SendSentApp.swift */; };
 		6BAB60DBFA0EEA710D7402B5 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B867F86F2182F07B9609E50 /* QuartzCore.framework */; };
 		6D09CD92509535C224878B1A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */; };
 		6D40E87B3CCA0AF741A55B0E /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1E0A22040321247735DB2562 /* Metal.framework */; };
 		7C3635FCD63A606676BC0DC3 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CA0E559FEFE091A08C4A1992 /* libapp.a */; };
+		8EFE66F37C40A26CDEAE62B3 /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B8F01BC716548AA20C457E /* DevicesView.swift */; };
 		9DFA41D3D219485B9D108EE4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */; };
 		A1EBA88933EE3F61133C2449 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = D7BF76FB360CC259A1176633 /* assets */; };
+		A9C4DF11DC241666C4BD2852 /* FFI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C215B2AB0925B68F48F37B6 /* FFI.swift */; };
+		C8E22A448C59D43A1DF964FF /* AddDeviceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D90D35901929BB6BF065C39D /* AddDeviceView.swift */; };
 		D557DC6EF6FF1BCC20D07D0D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */; };
 		DA9AEDD8872001FB37C2800B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 265C19806FF3532C8675691E /* UIKit.framework */; };
+		E7FA72BD208294DCC6AB913A /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061BB850E11EF6F1E597A446 /* ProfileView.swift */; };
 		E850DE7B9670E259C872CD50 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D4B2853F5F50226745AC0279 /* Security.framework */; };
+		ED8968B3645BB682EB25B4AD /* Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 306373041925AAB8AF4BD5AC /* Core.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		026CA925026A4579542DEB51 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
+		061BB850E11EF6F1E597A446 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		0AECF19F8D969246F50DBA91 /* commands.rs */ = {isa = PBXFileReference; path = commands.rs; sourceTree = "<group>"; };
 		19C04582A1DC60AFD273C517 /* ios_bonjour.rs */ = {isa = PBXFileReference; path = ios_bonjour.rs; sourceTree = "<group>"; };
 		1B91AD453E36BF4C34FA5842 /* messages.rs */ = {isa = PBXFileReference; path = messages.rs; sourceTree = "<group>"; };
@@ -34,13 +43,14 @@
 		265C19806FF3532C8675691E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		284A3474A3B6EF6D1BBD01FB /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		306373041925AAB8AF4BD5AC /* Core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core.swift; sourceTree = "<group>"; };
 		31D4D18BF39330FA16551638 /* misc.rs */ = {isa = PBXFileReference; path = misc.rs; sourceTree = "<group>"; };
 		3A6B303F2CF4887B73709D0F /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		3B867F86F2182F07B9609E50 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		412B1DABBFF788BC85FB390E /* sock.rs */ = {isa = PBXFileReference; path = sock.rs; sourceTree = "<group>"; };
 		48E25B2587B9333D68902218 /* nsd.rs */ = {isa = PBXFileReference; path = nsd.rs; sourceTree = "<group>"; };
 		4AC1A16F2418E5D9DBA9A6CC /* receiver.rs */ = {isa = PBXFileReference; path = receiver.rs; sourceTree = "<group>"; };
-		5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		5CD8C3EE6F7F5C19E840EEB2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		6788B35519196DCE9021FED5 /* manager.rs */ = {isa = PBXFileReference; path = manager.rs; sourceTree = "<group>"; };
 		6CD78E3F0466A9A12D20B8BF /* meter.rs */ = {isa = PBXFileReference; path = meter.rs; sourceTree = "<group>"; };
 		6F4CF2C28B5262EFFC768311 /* sendsent_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = sendsent_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,18 +58,24 @@
 		766E3244BC252E98F1C1AC18 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		873307874EB32A52E3F17C52 /* tls.rs */ = {isa = PBXFileReference; path = tls.rs; sourceTree = "<group>"; };
+		924016E152A4DA0BE0CB2CA1 /* SendSentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendSentApp.swift; sourceTree = "<group>"; };
+		9C215B2AB0925B68F48F37B6 /* FFI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFI.swift; sourceTree = "<group>"; };
 		A2E07440CCD630B040403E6C /* history.rs */ = {isa = PBXFileReference; path = history.rs; sourceTree = "<group>"; };
 		AE185840CB01CF575A210FCB /* content_plugin.rs */ = {isa = PBXFileReference; path = content_plugin.rs; sourceTree = "<group>"; };
 		B2F6900C0A8029D29D5DBD43 /* atomic.rs */ = {isa = PBXFileReference; path = atomic.rs; sourceTree = "<group>"; };
+		BA22C1D0558468D31C012F59 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C2E281F04264AF8F074CB780 /* TransfersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersView.swift; sourceTree = "<group>"; };
+		C5B8F01BC716548AA20C457E /* DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesView.swift; sourceTree = "<group>"; };
 		C702FFBF0ECDFBCB6D8F5B69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C936BC218229D7EC1613B25C /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
-		C995177DD39488AB0F0CD9D7 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		CA0E559FEFE091A08C4A1992 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		D3ACBB9B2AFF155E983AA74C /* frame.rs */ = {isa = PBXFileReference; path = frame.rs; sourceTree = "<group>"; };
 		D4B2853F5F50226745AC0279 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		D6A2760527F6C0671C2FD570 /* events.rs */ = {isa = PBXFileReference; path = events.rs; sourceTree = "<group>"; };
 		D7BF76FB360CC259A1176633 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		D90D35901929BB6BF065C39D /* AddDeviceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceView.swift; sourceTree = "<group>"; };
 		DA6174F7B78939CDE9F5D32A /* mdns.rs */ = {isa = PBXFileReference; path = mdns.rs; sourceTree = "<group>"; };
+		DB0C2F71FCC1D5F53EE1598F /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
 		E9676AE7832822080820C040 /* sender.rs */ = {isa = PBXFileReference; path = sender.rs; sourceTree = "<group>"; };
 		EBE460BE249E2A044EF92F4A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		F85687777017A11A4F93112D /* nsd_plugin.rs */ = {isa = PBXFileReference; path = nsd_plugin.rs; sourceTree = "<group>"; };
@@ -138,20 +154,16 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		56D133D526FF614428813884 /* Externals */ = {
+		52334F8A9C30D123C005C320 /* sendsent */ = {
 			isa = PBXGroup;
 			children = (
-				A18C5FC8475115AC19E90451 /* arm64 */,
+				306373041925AAB8AF4BD5AC /* Core.swift */,
+				9C215B2AB0925B68F48F37B6 /* FFI.swift */,
+				5CD8C3EE6F7F5C19E840EEB2 /* Models.swift */,
+				924016E152A4DA0BE0CB2CA1 /* SendSentApp.swift */,
+				C5FEE60DC336EDA3516C9989 /* Views */,
 			);
-			path = Externals;
-			sourceTree = "<group>";
-		};
-		5DB36D490A5451C079078A64 /* debug */ = {
-			isa = PBXGroup;
-			children = (
-				C995177DD39488AB0F0CD9D7 /* libapp.a */,
-			);
-			path = debug;
+			path = sendsent;
 			sourceTree = "<group>";
 		};
 		6003330EB2F60BAE8AFE75E0 /* proto */ = {
@@ -172,18 +184,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A18C5FC8475115AC19E90451 /* arm64 */ = {
-			isa = PBXGroup;
-			children = (
-				5DB36D490A5451C079078A64 /* debug */,
-				CFD1B19E03EC3C4E91F5BD5C /* release */,
-			);
-			path = arm64;
-			sourceTree = "<group>";
-		};
 		A81BA0FAD3F8799460697C69 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				52334F8A9C30D123C005C320 /* sendsent */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -195,7 +199,6 @@
 				2FD4A5C0BFA233A09BAB150E /* Assets.xcassets */,
 				83187192FCD408755B9ACD4E /* LaunchScreen.storyboard */,
 				F9384FBD819D60A6DE91EAC1 /* PrivacyInfo.xcprivacy */,
-				56D133D526FF614428813884 /* Externals */,
 				EB5500B0C5F6BFFE3F20BAA1 /* sendsent_iOS */,
 				A81BA0FAD3F8799460697C69 /* Sources */,
 				214E8A34568CF760992085F2 /* src */,
@@ -204,12 +207,17 @@
 			);
 			sourceTree = "<group>";
 		};
-		CFD1B19E03EC3C4E91F5BD5C /* release */ = {
+		C5FEE60DC336EDA3516C9989 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				5F8F8CEF6BEBA9EA367C4E51 /* libapp.a */,
+				D90D35901929BB6BF065C39D /* AddDeviceView.swift */,
+				C5B8F01BC716548AA20C457E /* DevicesView.swift */,
+				061BB850E11EF6F1E597A446 /* ProfileView.swift */,
+				DB0C2F71FCC1D5F53EE1598F /* ScanView.swift */,
+				BA22C1D0558468D31C012F59 /* SettingsView.swift */,
+				C2E281F04264AF8F074CB780 /* TransfersView.swift */,
 			);
-			path = release;
+			path = Views;
 			sourceTree = "<group>";
 		};
 		E1958243974920C3FFEA59FB /* discovery */ = {
@@ -230,13 +238,6 @@
 				260C85D16C549550E9873ED8 /* sendsent_iOS.entitlements */,
 			);
 			path = sendsent_iOS;
-			sourceTree = "<group>";
-		};
-		"TEMP_410B74C7-8E89-40C2-B712-9A382187B272" /* x86_64 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = x86_64;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -305,8 +306,6 @@
 				6D09CD92509535C224878B1A /* LaunchScreen.storyboard in Resources */,
 				9DFA41D3D219485B9D108EE4 /* PrivacyInfo.xcprivacy in Resources */,
 				A1EBA88933EE3F61133C2449 /* assets in Resources */,
-				2E48CAFB3B9D80A81FFA55D0 /* libapp.a in Resources */,
-				020188B276C2E88B822A1D28 /* libapp.a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,7 +330,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:$PATH\"\nCONFIG_FLAG=\"--release\"\nPROFILE_DIR=\"release\"\nif [ \"${CONFIGURATION}\" = \"debug\" ]; then\n  CONFIG_FLAG=\"\"\n  PROFILE_DIR=\"debug\"\nfi\ncargo build --manifest-path \"$SRCROOT/../../../Cargo.toml\" \\\n  --lib --target aarch64-apple-ios --no-default-features $CONFIG_FLAG\nmkdir -p \"$SRCROOT/Externals/arm64/${CONFIGURATION}\"\ncp \"$SRCROOT/../../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a\" \\\n   \"$SRCROOT/Externals/arm64/${CONFIGURATION}/libapp.a\"\n";
+			shellScript = "export PATH=\"$HOME/.cargo/bin:/opt/homebrew/bin:$PATH\"\nCONFIG_FLAG=\"--release\"\nPROFILE_DIR=\"release\"\nif [ \"${CONFIGURATION}\" = \"debug\" ]; then\n  CONFIG_FLAG=\"\"\n  PROFILE_DIR=\"debug\"\nfi\ncargo build --manifest-path \"$SRCROOT/../../Cargo.toml\" \\\n  --lib --target aarch64-apple-ios --no-default-features $CONFIG_FLAG\nmkdir -p \"$SRCROOT/Externals/arm64/${CONFIGURATION}\"\ncp \"$SRCROOT/../../target/aarch64-apple-ios/${PROFILE_DIR}/libsendsent_lib.a\" \\\n   \"$SRCROOT/Externals/arm64/${CONFIGURATION}/libapp.a\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -340,6 +339,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C8E22A448C59D43A1DF964FF /* AddDeviceView.swift in Sources */,
+				ED8968B3645BB682EB25B4AD /* Core.swift in Sources */,
+				8EFE66F37C40A26CDEAE62B3 /* DevicesView.swift in Sources */,
+				A9C4DF11DC241666C4BD2852 /* FFI.swift in Sources */,
+				213772DDBB841D27173C86D5 /* Models.swift in Sources */,
+				E7FA72BD208294DCC6AB913A /* ProfileView.swift in Sources */,
+				077DC70A6293FECBB0BD9F5D /* ScanView.swift in Sources */,
+				60E096AE0003CAEB765F7459 /* SendSentApp.swift in Sources */,
+				58DE1152B15E575B6D8E3740 /* SettingsView.swift in Sources */,
+				0A10606FEDC8A3AC34E11994 /* TransfersView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -372,7 +381,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mankong.sendsent;
-				PRODUCT_NAME = sendsent;
+				PRODUCT_NAME = "sendsent";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -468,7 +477,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.mankong.sendsent;
-				PRODUCT_NAME = sendsent;
+				PRODUCT_NAME = "sendsent";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
