@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import UniformTypeIdentifiers
 
 /// AirDrop 式雷达:我居中,附近设备环绕;点选后在底部发送并设置加密/校验。
@@ -7,6 +8,8 @@ struct RadarView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var selected: Peer?
     @State private var showImporter = false
+    @State private var showPhotoPicker = false
+    @State private var photoItems: [PhotosPickerItem] = []
     @State private var showAdd = false
     @State private var secure = false
     @State private var verify = false
@@ -42,6 +45,16 @@ struct RadarView: View {
             }
         }
         .sheet(isPresented: $showAdd) { NavigationStack { AddDeviceView() } }
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $photoItems,
+            maxSelectionCount: 30,
+            matching: .any(of: [.images, .videos])
+        )
+        .onChange(of: photoItems) { _, items in
+            guard !items.isEmpty else { return }
+            Task { await sendPhotos(items) }
+        }
         .onAppear { pulse = true; spin = true }
         .onChange(of: peers) { _, new in
             if let s = selected, !new.contains(where: { $0.device_id == s.device_id }) { selected = nil }
@@ -207,7 +220,14 @@ struct RadarView: View {
                             .font(Type.caption()).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: DS.Spacing.xs)
-                    Button { showImporter = true } label: {
+                    Menu {
+                        Button { showImporter = true } label: {
+                            Label("从「文件」选择", systemImage: "folder")
+                        }
+                        Button { showPhotoPicker = true } label: {
+                            Label("从相册选择", systemImage: "photo.on.rectangle")
+                        }
+                    } label: {
                         Label("发送文件", systemImage: "paperplane.fill")
                             .font(Type.calloutEm())
                             .foregroundStyle(.white)
@@ -266,6 +286,24 @@ struct RadarView: View {
             .strokeBorder(isOn.wrappedValue ? Color.indigo.opacity(0.30) : Color.ssCardBorder, lineWidth: 0.5))
         .contentShape(Rectangle())
         .onTapGesture { withAnimation(DS.Anim.quick) { isOn.wrappedValue.toggle() } }
+    }
+
+    /// 相册选择 → 写入临时文件 → 发送(PhotosPicker 跨进程选择,不需要相册权限)。
+    private func sendPhotos(_ items: [PhotosPickerItem]) async {
+        guard let peer = selected else { photoItems = []; return }
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("sendsent-photos", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        var urls: [URL] = []
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            let ext = item.supportedContentTypes.first?.preferredFilenameExtension ?? "dat"
+            let url = dir.appendingPathComponent("\(UUID().uuidString).\(ext)")
+            if (try? data.write(to: url)) != nil { urls.append(url) }
+        }
+        photoItems = []
+        if !urls.isEmpty {
+            core.send(peer: peer, files: urls, secure: secure, verify: verify)
+        }
     }
 }
 
