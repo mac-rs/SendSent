@@ -261,6 +261,7 @@ private fun RadarScreen(core: Core, onPickFiles: (String, Boolean, Boolean) -> U
             RadarField(
                 peers = peers,
                 initial = (identity?.name ?: "我").take(1).uppercase(),
+                mePlatform = platform(identity?.platform ?: "android"),
                 selected = selected,
                 onSelect = { selected = it },
                 onDeselect = { selected = null },
@@ -281,6 +282,7 @@ private fun RadarScreen(core: Core, onPickFiles: (String, Boolean, Boolean) -> U
 private fun RadarField(
     peers: List<Peer>,
     initial: String,
+    mePlatform: String,
     selected: Peer?,
     onSelect: (Peer) -> Unit,
     onDeselect: () -> Unit,
@@ -341,7 +343,7 @@ private fun RadarField(
                 IntOffset((center.x - half).roundToInt(), (center.y - half).roundToInt())
             },
             contentAlignment = Alignment.TopCenter,
-        ) { MeNode(initial) }
+        ) { MeNode(initial, mePlatform) }
 
         peers.forEachIndexed { i, p ->
             val a = angleFor(i, peers.size)
@@ -360,7 +362,7 @@ private fun RadarField(
 }
 
 @Composable
-private fun MeNode(initial: String) {
+private fun MeNode(initial: String, platformLabel: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier.size(80.dp).clip(CircleShape)
@@ -369,14 +371,19 @@ private fun MeNode(initial: String) {
         ) {
             Text(initial, color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest) {
-            Text(
-                "我 · 本机",
-                Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Box(
+                Modifier.height(22.dp).padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "我 · $platformLabel",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }

@@ -60,6 +60,10 @@ pub trait Discovery: Send + Sync {
     async fn start(&self) -> anyhow::Result<()>;
     async fn peers(&self) -> Vec<Peer>;
     async fn set_display_name(&self, name: &str) -> anyhow::Result<()>;
+    /// 重新广播自己。iOS 从后台回前台后 Bonjour 注册会失效,需要重注册。默认 no-op。
+    async fn reannounce(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
     /// 手动添加一个 peer(绕过 mDNS,用于输入 IP:port 或主动探测)
     async fn add_manual_peer(&self, addr: std::net::SocketAddr) -> anyhow::Result<()>;
     /// Android: Kotlin NsdManager 解析到服务后推来。默认 no-op。

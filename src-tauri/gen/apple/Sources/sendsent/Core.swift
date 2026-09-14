@@ -155,6 +155,12 @@ final class Core: ObservableObject {
         catch { flash("改名失败: \(error.localizedDescription)") }
     }
 
+    /// 从后台回到前台:重新广播,让其它设备重新发现本机。
+    func reactivate() {
+        try? ffiReactivate()
+        reloadPeers()
+    }
+
     func setConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) {
         do { try ffiSetConfig(conns: conns, chunkKb: chunkKb, splitMb: splitMb); flash("已保存") }
         catch { flash("保存失败: \(error.localizedDescription)") }

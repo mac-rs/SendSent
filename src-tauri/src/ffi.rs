@@ -179,3 +179,9 @@ pub extern "C" fn sendsent_ios_set_display_name(name: *const c_char) -> *mut c_c
     };
     ffi_try(engine::set_display_name(&n))
 }
+
+/// 从后台回到前台后调用:重新广播自身,让其它设备重新发现本机。
+#[unsafe(no_mangle)]
+pub extern "C" fn sendsent_ios_reactivate() -> *mut c_char {
+    ffi_try(engine::reactivate())
+}

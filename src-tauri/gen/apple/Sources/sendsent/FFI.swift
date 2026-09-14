@@ -32,6 +32,8 @@ func sendsent_ios_get_transfer_config() -> UnsafeMutablePointer<CChar>?
 func sendsent_ios_set_transfer_config(_ conns: UInt32, _ chunkKb: UInt64, _ splitMb: UInt64) -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_set_display_name")
 func sendsent_ios_set_display_name(_ name: UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
+@_silgen_name("sendsent_ios_reactivate")
+func sendsent_ios_reactivate() -> UnsafeMutablePointer<CChar>?
 
 enum FFIError: Error, LocalizedError {
     case message(String)
@@ -98,3 +100,4 @@ func ffiSetConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) throws {
 func ffiSetDisplayName(_ name: String) throws {
     try name.withCString { try throwIfError(sendsent_ios_set_display_name($0)) }
 }
+func ffiReactivate() throws { try throwIfError(sendsent_ios_reactivate()) }

@@ -81,6 +81,12 @@ impl Discovery for BonjourDiscovery {
         Ok(())
     }
 
+    async fn reannounce(&self) -> Result<()> {
+        // 回前台:Bonjour 注册在后台会被系统停掉,递增 generation 触发重注册。
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
     async fn add_manual_peer(&self, addr: SocketAddr) -> Result<()> {
         let id = format!("manual-{}", uuid::Uuid::new_v4());
         let p = Peer {

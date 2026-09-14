@@ -4,6 +4,7 @@ import SwiftUI
 struct SendSentApp: App {
     @StateObject private var core = Core.shared
     @AppStorage("appTheme") private var themeRaw = AppTheme.dark.rawValue
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         if let t = ProcessInfo.processInfo.environment["SS_THEME"], AppTheme(rawValue: t) != nil {
@@ -16,6 +17,10 @@ struct SendSentApp: App {
             RootView()
                 .environmentObject(core)
                 .preferredColorScheme(AppTheme(rawValue: themeRaw)?.colorScheme)
+                // iOS 进后台会停掉 Bonjour 广播;回前台时重新注册,否则要重启才能被再次发现。
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { core.reactivate() }
+                }
         }
     }
 }

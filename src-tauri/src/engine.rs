@@ -331,6 +331,12 @@ pub fn set_display_name(name: &str) -> Result<(), String> {
     c.runtime.block_on(c.discovery.set_display_name(name)).map_err(|e| e.to_string())
 }
 
+/// iOS 从后台回前台后重新广播自身(iOS 会停掉后台的 Bonjour 注册)。其它平台 no-op。
+pub fn reactivate() -> Result<(), String> {
+    let Some(c) = core() else { return Ok(()) };
+    c.runtime.block_on(c.discovery.reannounce()).map_err(|e| e.to_string())
+}
+
 /// Kotlin NsdManager 推来的服务（Android）。
 pub fn on_service(name: &str, host: &str, port: u16, txt_json: &str) {
     tracing::info!("on_service {name} {host}:{port} {txt_json}");
