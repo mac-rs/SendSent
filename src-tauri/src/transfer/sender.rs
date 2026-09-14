@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio_rustls::client::TlsStream;
@@ -274,7 +274,18 @@ async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, don
             .connect("sendsent".try_into().unwrap(), data).await
             .map_err(|e| anyhow!("data TLS: {e}"))?;
         for seg in bucket { send_segment_secure(&mut tls, seg, chunk, done).await?; }
+        // 关键:TLS 1.3 服务端握手后会发 NewSessionTicket 等记录。发送端若从不读取
+        // 对端数据就直接关闭 socket,内核会发 RST,接收端会丢弃已缓冲的应用数据
+        // (表现为收到 0 字节)。这里先发 close_notify,再把对端记录读到 EOF,
+        // 让连接优雅关闭(发 FIN 而非 RST)。
         let _ = tls.shutdown().await;
+        let mut sink = [0u8; 4096];
+        loop {
+            match tls.read(&mut sink).await {
+                Ok(0) | Err(_) => break,
+                Ok(_) => continue,
+            }
+        }
     } else {
         for seg in bucket { send_segment(&mut data, seg, chunk, done).await?; }
         let _ = data.shutdown().await;

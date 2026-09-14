@@ -6,10 +6,26 @@ use tauri::State;
 use uuid::Uuid;
 
 #[tauri::command]
-pub fn get_identity(state: State<'_, AppState>) -> crate::store::Identity { state.identity.clone() }
+pub fn get_identity(state: State<'_, AppState>) -> crate::store::Identity {
+    state.identity.lock().unwrap().clone()
+}
 
 #[tauri::command]
-pub async fn set_display_name(_state: State<'_, AppState>, _name: String) -> Result<(), String> { Ok(()) }
+pub async fn set_display_name(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let name = name.trim().to_string();
+    if name.is_empty() {
+        return Err("名称不能为空".into());
+    }
+    {
+        let mut id = state.identity.lock().map_err(|e| e.to_string())?;
+        id.name = name.clone();
+        if let Ok(s) = serde_json::to_string_pretty(&*id) {
+            let _ = std::fs::write(state.identity_dir.join("identity.json"), s);
+        }
+    }
+    // 让广播也用新名字,其他设备无需重启即可看到。
+    state.discovery.set_display_name(&name).await.map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 pub async fn list_peers(state: State<'_, AppState>) -> Result<Vec<Peer>, String> {
@@ -154,8 +170,9 @@ pub fn get_my_addresses() -> Result<Vec<crate::misc::MyAddress>, String> {
 /// - `ip`: 可选 — 显式指定要写入 payload 的 IP;默认取枚举出来的第一个
 #[tauri::command]
 pub fn get_my_qr(state: State<'_, AppState>, size: Option<u32>, ip: Option<String>) -> Result<String, String> {
+    let name = state.identity.lock().map_err(|e| e.to_string())?.name.clone();
     crate::misc::my_qr_base64(
-        &state.identity.name,
+        &name,
         state.port,
         &state.save_dir.to_string_lossy(),
         size,

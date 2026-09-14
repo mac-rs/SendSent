@@ -13,6 +13,7 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use std::any::Any;
 use std::net::SocketAddr;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
@@ -27,15 +28,20 @@ pub struct BonjourDiscovery {
     registry: Arc<Mutex<PeerRegistry>>,
     tx: mpsc::UnboundedSender<PeerEvent>,
     identity: Identity,
+    name: Arc<Mutex<String>>,
+    generation: Arc<AtomicU64>,
     port: u16,
 }
 
 impl BonjourDiscovery {
     pub fn new(identity: Identity, port: u16, tx: mpsc::UnboundedSender<PeerEvent>) -> Self {
+        let name = Arc::new(Mutex::new(identity.name.clone()));
         Self {
             registry: Arc::new(Mutex::new(PeerRegistry::new())),
             tx,
             identity,
+            name,
+            generation: Arc::new(AtomicU64::new(0)),
             port,
         }
     }
@@ -46,8 +52,10 @@ impl Discovery for BonjourDiscovery {
     async fn start(&self) -> Result<()> {
         let identity = self.identity.clone();
         let port = self.port;
+        let name = self.name.clone();
+        let generation = self.generation.clone();
         std::thread::spawn(move || {
-            if let Err(e) = run_service(identity, port) {
+            if let Err(e) = run_service(identity, port, name, generation) {
                 tracing::error!("ios bonjour register stopped: {e}");
             }
         });
@@ -67,7 +75,11 @@ impl Discovery for BonjourDiscovery {
         self.registry.lock().expect("registry lock").list()
     }
 
-    async fn set_display_name(&self, _name: &str) -> Result<()> { Ok(()) }
+    async fn set_display_name(&self, name: &str) -> Result<()> {
+        *self.name.lock().expect("name lock") = name.to_string();
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
 
     async fn add_manual_peer(&self, addr: SocketAddr) -> Result<()> {
         let id = format!("manual-{}", uuid::Uuid::new_v4());
@@ -88,35 +100,48 @@ fn service_type() -> Result<ServiceType> {
 }
 
 /// Registers (advertises) this device, then drives the Bonjour event loop.
-fn run_service(id: Identity, port: u16) -> Result<()> {
-    let mut service = MdnsService::new(service_type()?, port);
-    service.set_name(&id.name);
-
-    let mut txt = TxtRecord::new();
-    txt.insert("v", "1").map_err(|e| anyhow!("txt v: {e}"))?;
-    txt.insert("id", &id.device_id).map_err(|e| anyhow!("txt id: {e}"))?;
-    txt.insert("name", &id.name).map_err(|e| anyhow!("txt name: {e}"))?;
-    txt.insert("plat", &id.platform).map_err(|e| anyhow!("txt plat: {e}"))?;
-    let port_s = port.to_string();
-    txt.insert("port", &port_s).map_err(|e| anyhow!("txt port: {e}"))?;
-    if let Some(ip) = crate::discovery::primary_ipv4() {
-        let ip_s = ip.to_string();
-        txt.insert("ip", &ip_s).map_err(|e| anyhow!("txt ip: {e}"))?;
-    }
-    service.set_txt_record(txt);
-
-    service.set_registered_callback(Box::new(
-        |result: zeroconf::Result<zeroconf::ServiceRegistration>, _ctx: Option<Arc<dyn Any + Send + Sync>>| {
-            match result {
-                Ok(reg) => tracing::info!("ios bonjour registered as {}", reg.name()),
-                Err(e) => tracing::error!("ios bonjour register callback: {e}"),
-            }
-        },
-    ));
-
-    let event_loop = service.register().map_err(|e| anyhow!("register: {e}"))?;
+/// Re-registers with a new name when `generation` changes (display-name edit).
+fn run_service(
+    id: Identity,
+    port: u16,
+    name: Arc<Mutex<String>>,
+    generation: Arc<AtomicU64>,
+) -> Result<()> {
     loop {
-        event_loop.poll(POLL_INTERVAL).map_err(|e| anyhow!("register poll: {e}"))?;
+        let my_gen = generation.load(Ordering::SeqCst);
+        let display = name.lock().expect("name lock").clone();
+
+        let mut service = MdnsService::new(service_type()?, port);
+        service.set_name(&display);
+
+        let mut txt = TxtRecord::new();
+        txt.insert("v", "1").map_err(|e| anyhow!("txt v: {e}"))?;
+        txt.insert("id", &id.device_id).map_err(|e| anyhow!("txt id: {e}"))?;
+        txt.insert("name", &display).map_err(|e| anyhow!("txt name: {e}"))?;
+        txt.insert("plat", &id.platform).map_err(|e| anyhow!("txt plat: {e}"))?;
+        let port_s = port.to_string();
+        txt.insert("port", &port_s).map_err(|e| anyhow!("txt port: {e}"))?;
+        if let Some(ip) = crate::discovery::primary_ipv4() {
+            let ip_s = ip.to_string();
+            txt.insert("ip", &ip_s).map_err(|e| anyhow!("txt ip: {e}"))?;
+        }
+        service.set_txt_record(txt);
+
+        service.set_registered_callback(Box::new(
+            |result: zeroconf::Result<zeroconf::ServiceRegistration>, _ctx: Option<Arc<dyn Any + Send + Sync>>| {
+                match result {
+                    Ok(reg) => tracing::info!("ios bonjour registered as {}", reg.name()),
+                    Err(e) => tracing::error!("ios bonjour register callback: {e}"),
+                }
+            },
+        ));
+
+        let event_loop = service.register().map_err(|e| anyhow!("register: {e}"))?;
+        // 轮询直到改名;退出内层后 event_loop/service 析构 → 注销旧名字,再以新名字注册。
+        while generation.load(Ordering::SeqCst) == my_gen {
+            event_loop.poll(POLL_INTERVAL).map_err(|e| anyhow!("register poll: {e}"))?;
+        }
+        tracing::info!("ios bonjour re-registering with new name");
     }
 }
 

@@ -6,11 +6,12 @@ use crate::store::{Identity, TransferConfig};
 use crate::transfer::manager::SessionManager;
 use crate::transfer::tls::TlsConfig;
 use std::path::PathBuf;
+use std::sync::Mutex as SyncMutex;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub struct AppState {
-    pub identity: Identity,
+    pub identity: SyncMutex<Identity>,
     pub identity_dir: PathBuf,
     pub discovery: Arc<dyn Discovery>,
     pub sessions: Arc<SessionManager>,

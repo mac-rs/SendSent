@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
             val nsd = NsdBridge(this)
             nsd.register(name, identity?.optString("device_id") ?: "", "android", 52225, "")
             nsd.browse()
+            core.nsd = nsd
+            core.port = 52225
             core.refresh()
             core.start(lifecycleScope)
         } else {

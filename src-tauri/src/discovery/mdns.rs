@@ -15,6 +15,7 @@ pub struct MdnsDiscovery {
     registry: Arc<Mutex<PeerRegistry>>,
     tx: mpsc::UnboundedSender<PeerEvent>,
     identity: Mutex<crate::store::Identity>,
+    last_fullname: Mutex<Option<String>>,
     port: u16,
 }
 
@@ -29,9 +30,24 @@ impl MdnsDiscovery {
             registry: Arc::new(Mutex::new(PeerRegistry::new())),
             tx,
             identity: Mutex::new(identity),
+            last_fullname: Mutex::new(None),
             port,
         }
     }
+}
+
+fn build_info(id: &crate::store::Identity, port: u16) -> Result<ServiceInfo> {
+    let host_name = format!("{}.local.", id.name.replace(' ', "-"));
+    let my_ip = pick_primary_ip().ok_or_else(|| anyhow!("no usable ipv4"))?;
+    let mut props = HashMap::<String, String>::new();
+    props.insert("v".into(), "1".into());
+    props.insert("id".into(), id.device_id.clone());
+    props.insert("name".into(), id.name.clone());
+    props.insert("plat".into(), id.platform.clone());
+    props.insert("port".into(), port.to_string());
+    props.insert("ip".into(), my_ip.to_string());
+    ServiceInfo::new(SERVICE_TYPE, &id.name, &host_name, my_ip, port, props)
+        .map_err(|e| anyhow!("mdns info: {e}"))
 }
 
 #[async_trait]
@@ -39,18 +55,10 @@ impl Discovery for MdnsDiscovery {
     async fn start(&self) -> Result<()> {
         let daemon = ServiceDaemon::new().map_err(|e| anyhow!("mdns daemon: {e}"))?;
         let id = self.identity.lock().await.clone();
-        let host_name = format!("{}.local.", id.name.replace(' ', "-"));
-        let my_ip = pick_primary_ip().ok_or_else(|| anyhow!("no usable ipv4"))?;
-        let mut props = HashMap::<String, String>::new();
-        props.insert("v".into(), "1".into());
-        props.insert("id".into(), id.device_id.clone());
-        props.insert("name".into(), id.name.clone());
-        props.insert("plat".into(), id.platform.clone());
-        props.insert("port".into(), self.port.to_string());
-        props.insert("ip".into(), my_ip.to_string());
-        let info = ServiceInfo::new(SERVICE_TYPE, &id.name, &host_name, my_ip, self.port, props)
-            .map_err(|e| anyhow!("mdns info: {e}"))?;
+        let info = build_info(&id, self.port)?;
+        let fullname = info.get_fullname().to_string();
         daemon.register(info).map_err(|e| anyhow!("mdns register: {e}"))?;
+        *self.last_fullname.lock().await = Some(fullname);
 
         let recv = daemon.browse(SERVICE_TYPE).map_err(|e| anyhow!("mdns browse: {e}"))?;
         let registry = self.registry.clone();
@@ -94,7 +102,23 @@ impl Discovery for MdnsDiscovery {
 
     async fn peers(&self) -> Vec<Peer> { self.registry.lock().await.list() }
 
-    async fn set_display_name(&self, _name: &str) -> Result<()> { Ok(()) }
+    async fn set_display_name(&self, name: &str) -> Result<()> {
+        {
+            let mut id = self.identity.lock().await;
+            id.name = name.to_string();
+        }
+        let daemon_guard = self.daemon.lock().await;
+        let Some(daemon) = daemon_guard.as_ref() else { return Ok(()) };
+        if let Some(old) = self.last_fullname.lock().await.take() {
+            let _ = daemon.unregister(&old);
+        }
+        let id = self.identity.lock().await.clone();
+        let info = build_info(&id, self.port)?;
+        let fullname = info.get_fullname().to_string();
+        daemon.register(info).map_err(|e| anyhow!("mdns register: {e}"))?;
+        *self.last_fullname.lock().await = Some(fullname);
+        Ok(())
+    }
 
     async fn add_manual_peer(&self, addr: std::net::SocketAddr) -> Result<()> {
         let id = format!("manual-{}", uuid::Uuid::new_v4());

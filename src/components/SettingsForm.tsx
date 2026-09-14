@@ -24,7 +24,7 @@ export function SettingsForm() {
     try {
       await setDisplayName(name.trim());
       setSaved(name.trim());
-      setMsg({ type: "ok", text: "已保存,重启应用后生效" });
+      setMsg({ type: "ok", text: "已保存" });
     } catch (e) {
       setMsg({ type: "err", text: "保存失败: " + String(e) });
     }

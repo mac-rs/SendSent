@@ -27,6 +27,10 @@ data class MyAddr(val iface: String, val ip: String)
 class Core private constructor() {
     companion object { val shared = Core() }
 
+    /** NsdManager 广播桥(MainActivity 注入)。改名后需要用它重新广播新名字。 */
+    var nsd: NsdBridge? = null
+    var port: Int = 52225
+
     private val _peers = MutableStateFlow<List<Peer>>(emptyList())
     val peers: StateFlow<List<Peer>> = _peers
 
@@ -134,7 +138,14 @@ class Core private constructor() {
         runCatching { Native.nativeClearHistory() }
         _history.value = emptyList()
     }
-    fun rename(name: String) { runCatching { Native.nativeSetDisplayName(name) }; refresh(); flash("已保存") }
+    fun rename(name: String) {
+        runCatching { Native.nativeSetDisplayName(name) }
+        refresh()
+        // 广播名字不会自动变:重新向 NsdManager 注册,别的设备无需重启即可看到新名字。
+        val id = _identity.value
+        nsd?.register(name, id?.deviceId ?: "", id?.platform ?: "android", port, "")
+        flash("已保存")
+    }
     fun setConfig(conns: Int, chunkKb: Long, splitMb: Long) {
         runCatching { Native.nativeSetConfig(conns, chunkKb, splitMb) }
         flash("已保存")

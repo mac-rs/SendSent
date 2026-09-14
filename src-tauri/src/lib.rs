@@ -175,7 +175,7 @@ pub fn run() {
             }
             // macOS 系统红绿灯的位置由 tauri.conf.json 的 trafficLightPosition
             // 在启动期设到屏幕外(-100,-100),此处不再运行时调整。
-            app.manage(AppState { identity, identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history, port });
+            app.manage(AppState { identity: std::sync::Mutex::new(identity), identity_dir: data_dir, discovery, sessions, save_dir, transfer_config, tls_config, history, port });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
