@@ -8,7 +8,7 @@ struct RadarView: View {
     @State private var selected: Peer?
     @State private var showImporter = false
     @State private var showAdd = false
-    @State private var secure = true
+    @State private var secure = false
     @State private var verify = false
     @State private var pulse = false
     @State private var spin = false
