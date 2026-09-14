@@ -86,11 +86,32 @@ impl Discovery for MdnsDiscovery {
         let registry = self.registry.clone();
         let tx = self.tx.clone();
         tokio::spawn(async move {
-            let mut t = tokio::time::interval(Duration::from_secs(20));
+            // mdns-sd 会从自己的缓存里反复重发 ServiceResolved,单看 last_seen 感知不到
+            // 设备下线(iOS/Android 用系统 mDNS 能秒感知,桌面不能)。这里主动 TCP 探活:
+            // 连不上对端接收端口即视为下线,连续 miss 若干次后移除。
+            let mut misses: HashMap<String, u8> = HashMap::new();
+            let mut t = tokio::time::interval(Duration::from_secs(10));
             loop {
                 t.tick().await;
-                let mut r = registry.lock().await;
-                for ev in r.sweep() {
+                for p in registry.lock().await.list() {
+                    let id = p.device_id.clone();
+                    if probe_alive(&p.addrs).await {
+                        misses.remove(&id);
+                        registry.lock().await.touch(&id);
+                    } else {
+                        let c = misses.entry(id.clone()).or_insert(0);
+                        *c += 1;
+                        if *c >= 2 {
+                            misses.remove(&id);
+                            if let Some(ev) = registry.lock().await.remove(&id) {
+                                tracing::info!("peer {id} unreachable, removed");
+                                let _ = tx.send(ev);
+                            }
+                        }
+                    }
+                }
+                // 兜底:长时间没被 touch 的也清掉。
+                for ev in registry.lock().await.sweep() {
                     let _ = tx.send(ev);
                 }
             }
@@ -160,6 +181,19 @@ async fn handle_removed(reg: &Arc<Mutex<PeerRegistry>>, instance: &str) -> Optio
 }
 
 fn pick_primary_ip() -> Option<IpAddr> { local_ip_iter().into_iter().next() }
+
+/// 主动探活:能否 TCP 连上对端任一地址(其接收监听端口)。用于感知设备下线。
+async fn probe_alive(addrs: &[std::net::SocketAddr]) -> bool {
+    for a in addrs {
+        if tokio::time::timeout(Duration::from_millis(1200), tokio::net::TcpStream::connect(a))
+            .await
+            .is_ok_and(|r| r.is_ok())
+        {
+            return true;
+        }
+    }
+    false
+}
 
 fn local_ip_iter() -> Vec<IpAddr> {
     use std::net::UdpSocket;

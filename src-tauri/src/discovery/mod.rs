@@ -105,6 +105,10 @@ impl PeerRegistry {
     pub fn remove(&mut self, device_id: &str) -> Option<PeerEvent> {
         if self.peers.remove(device_id).is_some() { Some(PeerEvent::Lost(device_id.to_string())) } else { None }
     }
+    /// 刷新某设备的 last_seen(探活成功时用)。
+    pub fn touch(&mut self, device_id: &str) {
+        if let Some(p) = self.peers.get_mut(device_id) { p.last_seen_ms = now_ms(); }
+    }
     pub fn sweep(&mut self) -> Vec<PeerEvent> { self.sweep_with_now(now_ms()) }
     fn sweep_with_now(&mut self, now: u128) -> Vec<PeerEvent> {
         let stale: Vec<String> = self.peers.iter()
