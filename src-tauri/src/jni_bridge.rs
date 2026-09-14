@@ -188,8 +188,9 @@ pub extern "system" fn Java_com_mankong_sendsent_Native_nativeSetConfig(
     conns: jint,
     chunk_kb: jlong,
     split_mb: jlong,
+    zerocopy: jboolean,
 ) -> jstring {
-    match engine::set_config(conns as u32, chunk_kb as u64, split_mb as u64) {
+    match engine::set_config(conns as u32, chunk_kb as u64, split_mb as u64, zerocopy != 0) {
         Ok(()) => std::ptr::null_mut(),
         Err(e) => err(&mut env, e),
     }

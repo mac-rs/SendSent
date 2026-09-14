@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var conns = 16
     @State private var chunkKb = 1024
     @State private var splitMb = 8
+    @State private var zerocopy = false
     @State private var loaded = false
 
     var body: some View {
@@ -41,10 +42,13 @@ struct SettingsView: View {
                     Stepper(value: $splitMb, in: 1...1024) {
                         numRow("分片阈值", "\(splitMb) MB")
                     }
+                    Toggle(isOn: $zerocopy) {
+                        Text("零拷贝传输")
+                    }
                 } header: {
                     Text("传输")
                 } footer: {
-                    Text("连接越多越快、占用越高;超过阈值的文件会切段并行传输。")
+                    Text("连接越多越快、占用越高;超过阈值的文件会切段并行传输。零拷贝用 sendfile 减少一次内存拷贝,仅明文生效(加密自动回退)。")
                 }
 
                 Section("关于") {
@@ -62,6 +66,7 @@ struct SettingsView: View {
             .onChange(of: conns) { _, _ in save() }
             .onChange(of: chunkKb) { _, _ in save() }
             .onChange(of: splitMb) { _, _ in save() }
+            .onChange(of: zerocopy) { _, _ in save() }
         }
     }
 
@@ -77,12 +82,13 @@ struct SettingsView: View {
         name = core.identity?.name ?? ""
         if let c = try? ffiConfig() {
             conns = Int(c.conns); chunkKb = Int(c.chunk_size / 1024); splitMb = Int(c.split_threshold / 1_048_576)
+            zerocopy = c.zerocopy ?? false
         }
         DispatchQueue.main.async { loaded = true }
     }
 
     private func save() {
         guard loaded else { return }
-        core.setConfig(conns: UInt32(conns), chunkKb: UInt64(chunkKb), splitMb: UInt64(splitMb))
+        core.setConfig(conns: UInt32(conns), chunkKb: UInt64(chunkKb), splitMb: UInt64(splitMb), zerocopy: zerocopy)
     }
 }

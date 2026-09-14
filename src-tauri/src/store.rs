@@ -69,15 +69,20 @@ pub struct TransferConfig {
     pub conns: u32,
     pub chunk_size: u64,   // bytes
     pub split_threshold: u64, // bytes
+    /// 零拷贝(sendfile)开关;默认关闭。仅明文路径可用,加密模式自动回退。
+    #[serde(default)]
+    pub zerocopy: bool,
 }
 
 impl TransferConfig {
     pub const DEFAULT_CONNS: u32 = 16;
     pub const DEFAULT_CHUNK: u64 = 1024 * 1024;       // 1 MiB (== MAX_DATA_PAYLOAD)
     pub const DEFAULT_SPLIT: u64 = 8 * 1024 * 1024;   // 8 MiB (<8MB 的文件不切分,≥8MB 用多连接并行)
+    pub const DEFAULT_ZEROCOPY: bool = false;
 
     pub fn defaults() -> Self {
-        Self { conns: Self::DEFAULT_CONNS, chunk_size: Self::DEFAULT_CHUNK, split_threshold: Self::DEFAULT_SPLIT }
+        Self { conns: Self::DEFAULT_CONNS, chunk_size: Self::DEFAULT_CHUNK,
+               split_threshold: Self::DEFAULT_SPLIT, zerocopy: Self::DEFAULT_ZEROCOPY }
     }
 
     /// clamp 到合法区间,避免恶意/手抖配置
@@ -105,6 +110,7 @@ pub fn load_or_create_transfer_config(data_dir: &Path) -> TransferConfig {
     if let Ok(v) = std::env::var("SENDSENT_CONNS") && let Ok(n) = v.parse::<u32>() { cfg.conns = n; }
     if let Ok(v) = std::env::var("SENDSENT_CHUNK_KB") && let Ok(n) = v.parse::<u64>() { cfg.chunk_size = n * 1024; }
     if let Ok(v) = std::env::var("SENDSENT_SPLIT_MB") && let Ok(n) = v.parse::<u64>() { cfg.split_threshold = n * 1024 * 1024; }
+    if let Ok(v) = std::env::var("SENDSENT_ZEROCOPY") { cfg.zerocopy = v == "1" || v.eq_ignore_ascii_case("true"); }
     cfg.sanitized()
 }
 
@@ -136,7 +142,7 @@ mod tests {
 
     #[test]
     fn transfer_config_sanitizes() {
-        let c = TransferConfig { conns: 99, chunk_size: 10, split_threshold: 1 }.sanitized();
+        let c = TransferConfig { conns: 99, chunk_size: 10, split_threshold: 1, zerocopy: false }.sanitized();
         assert_eq!(c.conns, 32);
         assert_eq!(c.chunk_size, 64 * 1024);
         assert_eq!(c.split_threshold, c.chunk_size);
@@ -147,7 +153,7 @@ mod tests {
         let tmp = std::env::temp_dir().join(format!("ss-tcfg-{}", Uuid::new_v4()));
         let c1 = load_or_create_transfer_config(&tmp);
         assert_eq!(c1.conns, TransferConfig::DEFAULT_CONNS);
-        let custom = TransferConfig { conns: 2, chunk_size: 256 * 1024, split_threshold: 8 * 1024 * 1024 };
+        let custom = TransferConfig { conns: 2, chunk_size: 256 * 1024, split_threshold: 8 * 1024 * 1024, zerocopy: false };
         std::fs::create_dir_all(&tmp).unwrap();
         std::fs::write(tmp.join("transfer.json"), serde_json::to_string(&custom).unwrap()).unwrap();
         let c2 = load_or_create_transfer_config(&tmp);

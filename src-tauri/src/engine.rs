@@ -300,13 +300,14 @@ pub fn get_config_json() -> String {
     serde_json::to_string(&*core().unwrap().config.lock().unwrap()).unwrap()
 }
 
-pub fn set_config(conns: u32, chunk_kb: u64, split_mb: u64) -> Result<(), String> {
+pub fn set_config(conns: u32, chunk_kb: u64, split_mb: u64, zerocopy: bool) -> Result<(), String> {
     let c = core().ok_or("not initialized")?;
     let sanitized = {
         let mut cfg = c.config.lock().unwrap();
         cfg.conns = conns;
         cfg.chunk_size = chunk_kb * 1024;
         cfg.split_threshold = split_mb * 1024 * 1024;
+        cfg.zerocopy = zerocopy;
         let s = cfg.clone().sanitized();
         *cfg = s.clone();
         s

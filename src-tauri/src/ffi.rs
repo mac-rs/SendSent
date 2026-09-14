@@ -167,8 +167,8 @@ pub extern "C" fn sendsent_ios_get_transfer_config() -> *mut c_char {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_set_transfer_config(conns: u32, chunk_kb: u64, split_mb: u64) -> *mut c_char {
-    ffi_try(engine::set_config(conns, chunk_kb, split_mb))
+pub extern "C" fn sendsent_ios_set_transfer_config(conns: u32, chunk_kb: u64, split_mb: u64, zerocopy: bool) -> *mut c_char {
+    ffi_try(engine::set_config(conns, chunk_kb, split_mb, zerocopy))
 }
 
 #[unsafe(no_mangle)]

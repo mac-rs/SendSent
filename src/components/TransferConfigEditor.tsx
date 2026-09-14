@@ -58,6 +58,8 @@ export function TransferConfigEditor() {
   const [conns, setConns] = useState(8);
   const [chunkKb, setChunkKb] = useState(1024);
   const [splitMb, setSplitMb] = useState(4);
+  const [zerocopy, setZerocopy] = useState(false);
+  const [orig, setOrig] = useState<{ c: number; k: number; s: number; z: boolean } | null>(null);
   const [msg, setMsg] = useState<Msg | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -67,19 +69,22 @@ export function TransferConfigEditor() {
         setConns(c.conns);
         setChunkKb(Math.round(c.chunk_size / 1024));
         setSplitMb(Math.round(c.split_threshold / (1024 * 1024)));
+        setZerocopy(c.zerocopy);
+        setOrig({ c: c.conns, k: Math.round(c.chunk_size / 1024), s: Math.round(c.split_threshold / (1024 * 1024)), z: c.zerocopy });
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, []);
 
-  const dirty = loaded && (
-    conns !== 8 || chunkKb !== 1024 || splitMb !== 4
+  const dirty = loaded && !!orig && (
+    conns !== orig.c || chunkKb !== orig.k || splitMb !== orig.s || zerocopy !== orig.z
   );
 
   const save = async () => {
     try {
-      await setTransferConfig(conns, chunkKb, splitMb);
-      setMsg({ type: "ok", text: "已保存,重启应用后生效" });
+      await setTransferConfig(conns, chunkKb, splitMb, zerocopy);
+      setOrig({ c: conns, k: chunkKb, s: splitMb, z: zerocopy });
+      setMsg({ type: "ok", text: "已保存" });
     } catch (e) {
       setMsg({ type: "err", text: "保存失败: " + String(e) });
     }
@@ -109,6 +114,17 @@ export function TransferConfigEditor() {
           <small>超过此大小的文件会被拆成多连接并行</small>
         </div>
         <Stepper value={splitMb} min={1} max={1024} onChange={setSplitMb} />
+      </div>
+
+      <div className="config-row">
+        <div className="name">
+          零拷贝传输
+          <small>大文件走 sendfile 零拷贝,减少一次内存拷贝;仅明文路径生效,加密模式自动回退</small>
+        </div>
+        <label className="toggle">
+          <input type="checkbox" checked={zerocopy} onChange={(e) => setZerocopy(e.target.checked)} />
+          <span className="switch" />
+        </label>
       </div>
 
       <div className="row" style={{ justifyContent: "flex-end" }}>

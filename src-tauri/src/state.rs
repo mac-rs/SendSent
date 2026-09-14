@@ -16,7 +16,7 @@ pub struct AppState {
     pub discovery: Arc<dyn Discovery>,
     pub sessions: Arc<SessionManager>,
     pub save_dir: PathBuf,
-    pub transfer_config: TransferConfig,
+    pub transfer_config: SyncMutex<TransferConfig>,
     pub tls_config: TlsConfig,
     pub history: Arc<Mutex<HistoryStore>>,
     pub port: u16,

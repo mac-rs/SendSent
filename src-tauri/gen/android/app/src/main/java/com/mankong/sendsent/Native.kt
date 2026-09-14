@@ -16,7 +16,7 @@ object Native {
     external fun nativeRespond(sessionId: String, accept: Boolean): String?
     external fun nativeDeleteHistory(sessionId: String): String?
     external fun nativeClearHistory()
-    external fun nativeSetConfig(conns: Int, chunkKb: Long, splitMb: Long): String?
+    external fun nativeSetConfig(conns: Int, chunkKb: Long, splitMb: Long, zerocopy: Boolean): String?
     external fun nativeSetDisplayName(name: String): String?
     external fun nativeOnService(name: String, host: String, port: Int, txtJson: String)
     external fun nativeOnServiceLost(name: String)

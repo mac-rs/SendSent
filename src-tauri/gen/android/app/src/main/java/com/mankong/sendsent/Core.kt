@@ -21,7 +21,7 @@ data class HistoryItem(
 )
 data class RequestInfo(val sessionId: String, val senderName: String, val count: Long, val size: Long)
 data class Identity(val deviceId: String, val name: String, val platform: String)
-data class Config(val conns: Int, val chunkKb: Long, val splitMb: Long)
+data class Config(val conns: Int, val chunkKb: Long, val splitMb: Long, val zerocopy: Boolean = false)
 data class MyAddr(val iface: String, val ip: String)
 
 class Core private constructor() {
@@ -146,14 +146,14 @@ class Core private constructor() {
         nsd?.register(name, id?.deviceId ?: "", id?.platform ?: "android", port, "")
         flash("已保存")
     }
-    fun setConfig(conns: Int, chunkKb: Long, splitMb: Long) {
-        runCatching { Native.nativeSetConfig(conns, chunkKb, splitMb) }
+    fun setConfig(conns: Int, chunkKb: Long, splitMb: Long, zerocopy: Boolean) {
+        runCatching { Native.nativeSetConfig(conns, chunkKb, splitMb, zerocopy) }
         flash("已保存")
     }
     fun config(): Config? =
         runCatching {
             val o = JSONObject(Native.nativeGetConfig())
-            Config(o.optInt("conns"), o.optLong("chunk_size") / 1024, o.optLong("split_threshold") / 1048576)
+            Config(o.optInt("conns"), o.optLong("chunk_size") / 1024, o.optLong("split_threshold") / 1048576, o.optBoolean("zerocopy"))
         }.getOrNull()
 
     fun qrBase64(): String? =

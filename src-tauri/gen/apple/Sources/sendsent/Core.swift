@@ -161,8 +161,8 @@ final class Core: ObservableObject {
         reloadPeers()
     }
 
-    func setConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) {
-        do { try ffiSetConfig(conns: conns, chunkKb: chunkKb, splitMb: splitMb); flash("已保存") }
+    func setConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64, zerocopy: Bool) {
+        do { try ffiSetConfig(conns: conns, chunkKb: chunkKb, splitMb: splitMb, zerocopy: zerocopy); flash("已保存") }
         catch { flash("保存失败: \(error.localizedDescription)") }
     }
 

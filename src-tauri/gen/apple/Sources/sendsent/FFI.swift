@@ -29,7 +29,7 @@ func sendsent_ios_delete_history(_ sessionId: UnsafePointer<CChar>?) -> UnsafeMu
 @_silgen_name("sendsent_ios_get_transfer_config")
 func sendsent_ios_get_transfer_config() -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_set_transfer_config")
-func sendsent_ios_set_transfer_config(_ conns: UInt32, _ chunkKb: UInt64, _ splitMb: UInt64) -> UnsafeMutablePointer<CChar>?
+func sendsent_ios_set_transfer_config(_ conns: UInt32, _ chunkKb: UInt64, _ splitMb: UInt64, _ zerocopy: Bool) -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_set_display_name")
 func sendsent_ios_set_display_name(_ name: UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
 @_silgen_name("sendsent_ios_reactivate")
@@ -94,8 +94,8 @@ func ffiClearHistory() throws { try throwIfError(sendsent_ios_clear_history()) }
 func ffiDeleteHistory(sessionId: String) throws {
     try sessionId.withCString { try throwIfError(sendsent_ios_delete_history($0)) }
 }
-func ffiSetConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64) throws {
-    try throwIfError(sendsent_ios_set_transfer_config(conns, chunkKb, splitMb))
+func ffiSetConfig(conns: UInt32, chunkKb: UInt64, splitMb: UInt64, zerocopy: Bool) throws {
+    try throwIfError(sendsent_ios_set_transfer_config(conns, chunkKb, splitMb, zerocopy))
 }
 func ffiSetDisplayName(_ name: String) throws {
     try name.withCString { try throwIfError(sendsent_ios_set_display_name($0)) }

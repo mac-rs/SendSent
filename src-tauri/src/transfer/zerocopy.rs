@@ -1,24 +1,14 @@
 use std::fs::File;
 use std::io;
-use std::sync::atomic::{AtomicU8, Ordering};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
-/// 零拷贝开关。默认**关闭**:先用 `SENDSENT_ZEROCOPY=1` 验证正确性,确认无误再考虑默认开启。
-static ZEROCOPY: AtomicU8 = AtomicU8::new(2); // 2=未决, 1=开, 0=关
-
-pub fn enabled() -> bool {
-    match ZEROCOPY.load(Ordering::Relaxed) {
-        1 => true,
-        0 => false,
-        _ => {
-            let on = std::env::var("SENDSENT_ZEROCOPY")
-                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-                .unwrap_or(false);
-            ZEROCOPY.store(if on { 1 } else { 0 }, Ordering::Relaxed);
-            on
-        }
+/// 是否使用零拷贝。环境变量 `SENDSENT_ZEROCOPY` 优先(便于压测),否则用配置里的值。
+pub fn enabled(configured: bool) -> bool {
+    if let Ok(v) = std::env::var("SENDSENT_ZEROCOPY") {
+        return v == "1" || v.eq_ignore_ascii_case("true");
     }
+    configured
 }
 
 /// 把 file 中 [offset, offset+len) 的字节推到 socket。

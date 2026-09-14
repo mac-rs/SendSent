@@ -87,7 +87,7 @@ pub async fn send_files(app: tauri::AppHandle, state: State<'_, AppState>, peer_
     };
     tracing::info!("send_files → '{}' addrs={:?} port={} files={}", p.name, p.addrs, p.port, files.len());
     tracing::debug!("send_files paths: {:?}", files);
-    state.sessions.start_send(p, files, state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
+    state.sessions.start_send(p, files, state.transfer_config.lock().unwrap().clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -101,7 +101,7 @@ pub async fn send_text(state: State<'_, AppState>, peer_device_id: String, text:
     let Some(p) = peers.into_iter().find(|x| x.device_id == peer_device_id) else {
         return Err("peer not found".into());
     };
-    state.sessions.start_send(p, vec![file], state.transfer_config.clone(), secure, verify).map_err(|e| e.to_string())
+    state.sessions.start_send(p, vec![file], state.transfer_config.lock().unwrap().clone(), secure, verify).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -118,21 +118,26 @@ pub async fn cancel(_state: State<'_, AppState>, _session_id: Uuid) -> Result<()
 
 #[tauri::command]
 pub fn get_transfer_config(state: State<'_, AppState>) -> Result<crate::store::TransferConfig, String> {
-    Ok(state.transfer_config.clone())
+    Ok(state.transfer_config.lock().unwrap().clone())
 }
 
 #[tauri::command]
-pub fn set_transfer_config(state: State<'_, AppState>, conns: u32, chunk_kb: u64, split_mb: u64) -> Result<(), String> {
-    let mut cfg = state.transfer_config.clone();
-    cfg.conns = conns;
-    cfg.chunk_size = chunk_kb * 1024;
-    cfg.split_threshold = split_mb * 1024 * 1024;
-    let sanitized = cfg.sanitized();
-    let data_dir = state.identity_dir.clone();
-    let p = data_dir.join("transfer.json");
+pub fn set_transfer_config(state: State<'_, AppState>, conns: u32, chunk_kb: u64, split_mb: u64, zerocopy: bool) -> Result<(), String> {
+    // 就地更新内存配置 + 落盘,这样无需重启即可生效。
+    let sanitized = {
+        let mut cfg = state.transfer_config.lock().map_err(|e| e.to_string())?;
+        cfg.conns = conns;
+        cfg.chunk_size = chunk_kb * 1024;
+        cfg.split_threshold = split_mb * 1024 * 1024;
+        cfg.zerocopy = zerocopy;
+        let s = cfg.clone().sanitized();
+        *cfg = s.clone();
+        s
+    };
+    let p = state.identity_dir.join("transfer.json");
     let s = serde_json::to_string_pretty(&sanitized).map_err(|e| e.to_string())?;
     std::fs::write(&p, s).map_err(|e| format!("write transfer.json: {e}"))?;
-    tracing::info!("transfer config updated: conns={} chunk={} split={}", sanitized.conns, sanitized.chunk_size, sanitized.split_threshold);
+    tracing::info!("transfer config updated: conns={} chunk={} split={} zerocopy={}", sanitized.conns, sanitized.chunk_size, sanitized.split_threshold, sanitized.zerocopy);
     Ok(())
 }
 

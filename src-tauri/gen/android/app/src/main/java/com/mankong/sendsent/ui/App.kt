@@ -771,7 +771,8 @@ private fun SettingsScreen(core: Core, theme: String, onTheme: (String) -> Unit)
     var conns by remember { mutableLongStateOf((cfg?.conns ?: 16).toLong()) }
     var chunk by remember { mutableLongStateOf(cfg?.chunkKb ?: 1024) }
     var split by remember { mutableLongStateOf(cfg?.splitMb ?: 8) }
-    fun persist() = core.setConfig(conns.toInt(), chunk, split)
+    var zerocopy by remember { mutableStateOf(cfg?.zerocopy ?: false) }
+    fun persist() = core.setConfig(conns.toInt(), chunk, split, zerocopy)
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -816,9 +817,11 @@ private fun SettingsScreen(core: Core, theme: String, onTheme: (String) -> Unit)
                 Stepper("数据块", chunk, 64, "KB", 64, 1024) { chunk = it; persist() }
                 RowDivider()
                 Stepper("分片阈值", split, 1, "MB", 1, 1024) { split = it; persist() }
+                RowDivider()
+                SwitchRow("零拷贝传输", zerocopy) { zerocopy = it; persist() }
             }
             Text(
-                "连接越多越快、占用越高;超过阈值的文件会切段并行传输。",
+                "连接越多越快、占用越高;超过阈值的文件会切段并行传输。零拷贝用 sendfile 减少一次内存拷贝,仅明文生效(加密自动回退)。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
@@ -888,6 +891,17 @@ private fun ClickRow(label: String, value: String, onClick: (() -> Unit)?) {
             Spacer(Modifier.width(4.dp))
             Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
         }
+    }
+}
+
+@Composable
+private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, Modifier.weight(1f))
+        MiniSwitch(checked, onChange)
     }
 }
 

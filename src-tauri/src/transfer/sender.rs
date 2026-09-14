@@ -138,6 +138,7 @@ async fn run_sender_inner(
     });
 
     let mut handles = Vec::new();
+    let zc = config.zerocopy;
     for bucket in buckets.into_iter().filter(|b| !b.is_empty()) {
         let addrs = peer_addrs.clone();
         let done = total_done.clone();
@@ -145,7 +146,7 @@ async fn run_sender_inner(
         let handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
             // 不自动重试:重试会重发整个 bucket,receiver 会重复累加进度导致完成判定错乱。
             // 失败即止——局域网稳定,单连接失败概率低;失败由用户决定是否重发整个文件。
-            if let Err(e) = send_bucket(&addrs, &bucket, chunk, &done, sid, is_secure).await {
+            if let Err(e) = send_bucket(&addrs, &bucket, chunk, &done, sid, is_secure, zc).await {
                 tracing::error!("data bucket failed: {e}");
             }
         });
@@ -223,14 +224,14 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
     buckets
 }
 
-async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
+async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64, zerocopy: bool) -> Result<()> {
     use std::os::unix::fs::FileExt;
     let file = crate::misc::open_source(&seg.path)?;
     let mut off = seg.offset;
     let end = seg.offset + seg.len;
 
-    // 可选零拷贝路径(sendfile);默认关闭,用 SENDSENT_ZEROCOPY=1 启用并验证。
-    if crate::transfer::zerocopy::enabled() {
+    // 可选零拷贝路径(sendfile);由配置 / SENDSENT_ZEROCOPY 决定。
+    if crate::transfer::zerocopy::enabled(zerocopy) {
         use crate::proto::frame::write_data_header;
         while off < end {
             let n = chunk.min((end - off) as usize) as u32;
@@ -275,7 +276,7 @@ async fn connect_any(addrs: &[SocketAddr]) -> Result<TcpStream> {
     Err(anyhow!("connect failed: {:?}", last))
 }
 
-async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, done: &AtomicU64, sid: Uuid, secure: bool) -> Result<()> {
+async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, done: &AtomicU64, sid: Uuid, secure: bool, zerocopy: bool) -> Result<()> {
     let mut data = match connect_any(addrs).await {
         Ok(s) => { tracing::debug!("send_bucket {sid}: connected"); s }
         Err(e) => { tracing::warn!("send_bucket {sid}: connect failed: {e}"); return Err(e); }
@@ -303,7 +304,7 @@ async fn send_bucket(addrs: &[SocketAddr], bucket: &[Segment], chunk: usize, don
             }
         }
     } else {
-        for seg in bucket { send_segment(&mut data, seg, chunk, done).await?; }
+        for seg in bucket { send_segment(&mut data, seg, chunk, done, zerocopy).await?; }
         let _ = data.shutdown().await;
     }
     Ok(())

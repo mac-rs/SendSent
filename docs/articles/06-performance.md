@@ -94,11 +94,14 @@ macOS 的 `sendfile(fd, s, offset, *len, ...)` 里 `len` 是 value-result:
 真机验证:macOS→Android 传 **200 MiB** 且开启 **SHA-256 校验** → 接收端
 `complete=true`、无 hash mismatch。
 
-出于稳妥,零拷贝仍**默认关闭**,用环境变量按需开启:
+出于稳妥,零拷贝仍**默认关闭**,但已纳入 `TransferConfig`(持久化),三端设置页都有开关:
 
-```bash
-SENDSENT_ZEROCOPY=1 ./sendsent        # 桌面;未设置或 =0 时走缓冲路径
-```
+- 桌面:设置 → 传输参数 → **零拷贝传输**;
+- iOS:设置 → 传输 → **零拷贝传输**;
+- Android:设置 → 传输 → **零拷贝传输**。
+
+环境变量 `SENDSENT_ZEROCOPY` 可覆盖配置(便于压测):
+`SENDSENT_ZEROCOPY=1` 强制开、`=0` 强制关;不设则用配置值。
 
 在更广范围(不同文件系统/网络/平台)验证充分后,再考虑默认开启——
 毕竟它在千兆下的收益 <1%,不值得为它承担未经充分验证的风险。

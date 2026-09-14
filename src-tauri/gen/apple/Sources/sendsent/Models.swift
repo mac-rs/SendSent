@@ -27,6 +27,7 @@ struct TransferConfig: Codable {
     let conns: UInt32
     let chunk_size: UInt64
     let split_threshold: UInt64
+    let zerocopy: Bool?
 }
 
 // 事件载荷(对齐 Rust serde;内部 tag = kind)
