@@ -5,7 +5,7 @@ use mdns_sd::{ResolvedService, ServiceDaemon, ServiceEvent, ServiceInfo};
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::{mpsc, Mutex};
 
 const SERVICE_TYPE: &str = "_sendsent._tcp.local.";
@@ -72,8 +72,8 @@ impl Discovery for MdnsDiscovery {
                             let _ = tx.send(ev);
                         }
                     }
-                    Ok(ServiceEvent::ServiceRemoved(_instance, fullname)) => {
-                        if let Some(ev) = handle_removed(&registry, &fullname).await {
+                    Ok(ServiceEvent::ServiceRemoved(instance, _fullname)) => {
+                        if let Some(ev) = handle_removed(&registry, &instance).await {
                             let _ = tx.send(ev);
                         }
                     }
@@ -86,11 +86,11 @@ impl Discovery for MdnsDiscovery {
         let registry = self.registry.clone();
         let tx = self.tx.clone();
         tokio::spawn(async move {
-            let mut t = tokio::time::interval(Duration::from_secs(60));
+            let mut t = tokio::time::interval(Duration::from_secs(20));
             loop {
                 t.tick().await;
                 let mut r = registry.lock().await;
-                for ev in r.sweep(Instant::now()) {
+                for ev in r.sweep() {
                     let _ = tx.send(ev);
                 }
             }
@@ -127,7 +127,7 @@ impl Discovery for MdnsDiscovery {
             platform: Platform::Unknown, proto_version: 1,
             addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
         };
-        if let Some(ev) = self.registry.lock().await.upsert(Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().await.upsert(p) {
             let _ = self.tx.send(ev);
         }
         Ok(())
@@ -147,13 +147,15 @@ async fn handle_resolved(reg: &Arc<Mutex<PeerRegistry>>, info: &ResolvedService,
         .map(|ip| std::net::SocketAddr::new(ip.to_ip_addr(), port))
         .collect();
     let peer = Peer { device_id, name, platform, proto_version, addrs, port, last_seen_ms: 0 };
-    reg.lock().await.upsert(Instant::now(), peer)
+    reg.lock().await.upsert(peer)
 }
 
-async fn handle_removed(reg: &Arc<Mutex<PeerRegistry>>, fullname: &str) -> Option<PeerEvent> {
-    let instance = fullname.split('.').next().unwrap_or("");
+async fn handle_removed(reg: &Arc<Mutex<PeerRegistry>>, instance: &str) -> Option<PeerEvent> {
     let mut r = reg.lock().await;
-    let hit = r.list().into_iter().find(|p| p.name.replace(' ', "-") == instance);
+    // mDNS 实例名 = 设备显示名(与 TXT `name` 一致)。之前用 fullname 首段和
+    // `name.replace(' ','-')` 比对,空格/转义对不上,导致下线设备删不掉。
+    let hit = r.list().into_iter()
+        .find(|p| p.name == instance || p.name.replace(' ', "-") == instance);
     if let Some(p) = hit { r.remove(&p.device_id) } else { None }
 }
 

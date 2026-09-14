@@ -9,7 +9,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tauri::Wry;
 use tokio::sync::{mpsc, Mutex};
 
@@ -61,16 +61,15 @@ impl Discovery for NsdDiscovery {
                 tick.tick().await;
                 match nsd.poll().await {
                     Ok(services) => {
-                        let now = Instant::now();
                         let mut reg = registry.lock().await;
                         for svc in &services {
                             if let Some(peer) = peer_from_service(svc)
-                                && let Some(ev) = reg.upsert(now, peer)
+                                && let Some(ev) = reg.upsert(peer)
                             {
                                 let _ = tx.send(ev);
                             }
                         }
-                        for ev in reg.sweep(now) {
+                        for ev in reg.sweep() {
                             let _ = tx.send(ev);
                         }
                     }
@@ -94,7 +93,7 @@ impl Discovery for NsdDiscovery {
             platform: crate::discovery::Platform::Unknown, proto_version: 1,
             addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
         };
-        if let Some(ev) = self.registry.lock().await.upsert(Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().await.upsert(p) {
             let _ = self.tx.send(ev);
         }
         Ok(())

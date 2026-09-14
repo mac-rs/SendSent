@@ -15,7 +15,7 @@ use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::mpsc;
 use zeroconf::prelude::*;
 use zeroconf::{BrowserEvent, MdnsBrowser, MdnsService, ServiceDiscovery, ServiceType, TxtRecord};
@@ -94,7 +94,7 @@ impl Discovery for BonjourDiscovery {
             platform: Platform::Unknown, proto_version: 1,
             addrs: vec![addr], port: addr.port(), last_seen_ms: 0,
         };
-        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(p) {
             let _ = self.tx.send(ev);
         }
         Ok(())
@@ -168,7 +168,7 @@ fn run_browser(
                         return;
                     }
                     let mut r = reg.lock().expect("registry lock");
-                    if let Some(ev) = r.upsert(Instant::now(), peer) {
+                    if let Some(ev) = r.upsert(peer) {
                         let _ = txc.send(ev);
                     }
                 }

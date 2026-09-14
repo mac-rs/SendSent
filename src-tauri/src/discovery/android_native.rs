@@ -8,7 +8,6 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 use tokio::sync::mpsc;
 
 pub struct AndroidNativeDiscovery {
@@ -55,7 +54,7 @@ impl Discovery for AndroidNativeDiscovery {
             port: addr.port(),
             last_seen_ms: 0,
         };
-        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(p) {
             let _ = self.tx.send(ev);
         }
         Ok(())
@@ -82,7 +81,7 @@ impl Discovery for AndroidNativeDiscovery {
             last_seen_ms: 0,
         };
         self.by_name.lock().expect("by_name lock").insert(sname.to_string(), id);
-        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(Instant::now(), p) {
+        if let Some(ev) = self.registry.lock().expect("registry lock").upsert(p) {
             let _ = self.tx.send(ev);
         }
     }

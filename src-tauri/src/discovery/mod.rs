@@ -85,10 +85,18 @@ pub trait Discovery: Send + Sync {
 #[derive(Default)]
 pub struct PeerRegistry { peers: HashMap<String, Peer> }
 
+/// 单调递增的毫秒时间戳(自进程启动),用于过期判定。
+/// 之前每次都用「新建 Instant 的 elapsed」,永远是 0,sweep 从不生效。
+fn now_ms() -> u128 {
+    use std::sync::OnceLock;
+    static BASE: OnceLock<Instant> = OnceLock::new();
+    BASE.get_or_init(Instant::now).elapsed().as_millis()
+}
+
 impl PeerRegistry {
     pub fn new() -> Self { Self::default() }
-    pub fn upsert(&mut self, now: Instant, mut p: Peer) -> Option<PeerEvent> {
-        p.last_seen_ms = now.elapsed().as_millis();
+    pub fn upsert(&mut self, mut p: Peer) -> Option<PeerEvent> {
+        p.last_seen_ms = now_ms();
         let id = p.device_id.clone();
         let existed = self.peers.contains_key(&id);
         self.peers.insert(id.clone(), p.clone());
@@ -97,10 +105,10 @@ impl PeerRegistry {
     pub fn remove(&mut self, device_id: &str) -> Option<PeerEvent> {
         if self.peers.remove(device_id).is_some() { Some(PeerEvent::Lost(device_id.to_string())) } else { None }
     }
-    pub fn sweep(&mut self, now: Instant) -> Vec<PeerEvent> {
-        let now_ms = now.elapsed().as_millis();
+    pub fn sweep(&mut self) -> Vec<PeerEvent> { self.sweep_with_now(now_ms()) }
+    fn sweep_with_now(&mut self, now: u128) -> Vec<PeerEvent> {
         let stale: Vec<String> = self.peers.iter()
-            .filter(|(_, p)| now_ms.saturating_sub(p.last_seen_ms) > STALE_AFTER.as_millis())
+            .filter(|(_, p)| now.saturating_sub(p.last_seen_ms) > STALE_AFTER.as_millis())
             .map(|(k, _)| k.clone()).collect();
         stale.into_iter().filter_map(|k| self.remove(&k)).collect()
     }
@@ -110,6 +118,11 @@ impl PeerRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    impl PeerRegistry {
+        fn set_last_seen(&mut self, id: &str, ms: u128) {
+            if let Some(p) = self.peers.get_mut(id) { p.last_seen_ms = ms; }
+        }
+    }
     fn peer(id: &str) -> Peer {
         Peer { device_id: id.into(), name: id.into(), platform: Platform::Macos,
                proto_version: 1, addrs: vec!["127.0.0.1:52225".parse().unwrap()],
@@ -118,18 +131,28 @@ mod tests {
     #[test]
     fn upsert_dedup_emits_only_once() {
         let mut r = PeerRegistry::new();
-        let now = Instant::now();
-        assert!(matches!(r.upsert(now, peer("a")), Some(PeerEvent::Found(_))));
-        assert!(r.upsert(now, peer("a")).is_none());
+        assert!(matches!(r.upsert(peer("a")), Some(PeerEvent::Found(_))));
+        assert!(r.upsert(peer("a")).is_none());
         assert_eq!(r.list().len(), 1);
     }
     #[test]
     fn remove_emits_lost() {
         let mut r = PeerRegistry::new();
-        let now = Instant::now();
-        r.upsert(now, peer("a"));
+        r.upsert(peer("a"));
         assert!(matches!(r.remove("a"), Some(PeerEvent::Lost(_))));
         assert!(r.list().is_empty());
+    }
+    #[test]
+    fn sweep_removes_only_stale() {
+        let mut r = PeerRegistry::new();
+        r.upsert(peer("fresh"));
+        r.upsert(peer("old"));
+        let big = STALE_AFTER.as_millis() + 2000;
+        r.set_last_seen("fresh", big);
+        r.set_last_seen("old", 0);
+        let lost = r.sweep_with_now(big + 1);
+        assert!(lost.iter().any(|e| matches!(e, PeerEvent::Lost(id) if id == "old")), "stale peer should be swept");
+        assert!(r.list().iter().any(|p| p.device_id == "fresh"), "fresh peer must survive");
     }
     #[test]
     fn platform_labels_map() {
