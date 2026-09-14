@@ -93,7 +93,11 @@ impl Discovery for MdnsDiscovery {
             let mut t = tokio::time::interval(Duration::from_secs(10));
             loop {
                 t.tick().await;
-                for p in registry.lock().await.list() {
+                // 注意:必须先把列表取出来放变量,释放 mutex 后再进循环。
+                // 若写成 `for p in registry.lock().await.list()`,guard 临时量会活到循环结束,
+                // 循环体里再 lock 就死锁(任务卡死、永不移除)。
+                let peers = registry.lock().await.list();
+                for p in peers {
                     let id = p.device_id.clone();
                     if probe_alive(&p.addrs).await {
                         misses.remove(&id);
@@ -111,7 +115,8 @@ impl Discovery for MdnsDiscovery {
                     }
                 }
                 // 兜底:长时间没被 touch 的也清掉。
-                for ev in registry.lock().await.sweep() {
+                let stale = registry.lock().await.sweep();
+                for ev in stale {
                     let _ = tx.send(ev);
                 }
             }
