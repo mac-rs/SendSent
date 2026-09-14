@@ -1,7 +1,25 @@
 use std::fs::File;
 use std::io;
+use std::sync::atomic::{AtomicU8, Ordering};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
+
+/// 零拷贝开关。默认**关闭**:先用 `SENDSENT_ZEROCOPY=1` 验证正确性,确认无误再考虑默认开启。
+static ZEROCOPY: AtomicU8 = AtomicU8::new(2); // 2=未决, 1=开, 0=关
+
+pub fn enabled() -> bool {
+    match ZEROCOPY.load(Ordering::Relaxed) {
+        1 => true,
+        0 => false,
+        _ => {
+            let on = std::env::var("SENDSENT_ZEROCOPY")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
+            ZEROCOPY.store(if on { 1 } else { 0 }, Ordering::Relaxed);
+            on
+        }
+    }
+}
 
 /// 把 file 中 [offset, offset+len) 的字节推到 socket。
 /// macOS/BSD:sendfile(2); Linux:sendfile(2); 其它:pread 到缓冲 + write 回退。
@@ -30,6 +48,13 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
         let rc = unsafe {
             libc::sendfile(in_fd, out_fd, off, &mut to_send, std::ptr::null_mut(), 0)
         };
+        // macOS 的 len 是 value-result:返回时它 = "已发送字节数",**出错(EAGAIN/EINTR)时也一样**。
+        // 之前只在成功路径累加进度;EAGAIN(非阻塞 socket 缓冲写满,大文件/慢接收端必现)时
+        // 直接 continue,于是从同一 offset 重发 → 线上出现重复字节且没有新帧头 → 对端帧解析
+        // 错位 → 断连 → 发送端 EPIPE(broken-pipe)。这里无论成功失败都先记账。
+        let progressed = to_send.clamp(0, remaining as libc::off_t) as usize;
+        off += progressed as i64;
+        remaining -= progressed;
         if rc < 0 {
             let e = io::Error::last_os_error();
             if e.kind() == io::ErrorKind::WouldBlock {
@@ -38,11 +63,9 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
             }
             return Err(e);
         }
-        if to_send == 0 {
+        if progressed == 0 {
             return Err(io::Error::new(io::ErrorKind::WriteZero, "sendfile made no progress"));
         }
-        off += to_send;
-        remaining -= to_send as usize;
     }
     Ok(())
 }
@@ -141,6 +164,50 @@ mod tests {
         let mut got = Vec::new();
         server.read_to_end(&mut got).await.unwrap();
         assert_eq!(got, &payload[1000..3000]);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn sendfile_eagain_no_duplication() {
+        use socket2::SockRef;
+        let dir = std::env::temp_dir().join(format!("ss-zc-eagain-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("f.bin");
+        let payload: Vec<u8> = (0..512 * 1024u32).map(|i| (i % 251) as u8).collect();
+        std::fs::write(&path, &payload).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let client = TcpStream::connect(addr).await.unwrap();
+        // 故意压小发送缓冲,逼出 sendfile 的 EAGAIN(部分发送),这是老代码会重复发送的场景。
+        let _ = SockRef::from(&client).set_send_buffer_size(8 * 1024);
+        let (mut server, _) = listener.accept().await.unwrap();
+
+        let n = payload.len();
+        let sender = tokio::spawn(async move {
+            let mut c = client;
+            send_payload(&mut c, &file, 0, n).await.unwrap();
+            let _ = c.shutdown().await;
+        });
+
+        // 读端稍后开始读(独立线程),让发送端先撞上 EAGAIN;整体加超时防挂。
+        let receive = async {
+            tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+            use tokio::io::AsyncReadExt;
+            let mut got = Vec::new();
+            server.read_to_end(&mut got).await.unwrap();
+            got
+        };
+        let got = tokio::time::timeout(std::time::Duration::from_secs(20), receive)
+            .await
+            .expect("sendfile stalled");
+        sender.await.unwrap();
+
+        assert_eq!(got.len(), payload.len(), "length mismatch (duplication/omission)");
+        assert_eq!(got, payload, "content mismatch");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

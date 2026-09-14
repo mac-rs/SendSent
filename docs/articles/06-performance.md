@@ -43,7 +43,7 @@ sref.set_recv_buffer_size(BUF); sref.set_send_buffer_size(BUF);
 stream.set_nodelay(true);
 ```
 
-## 零拷贝:一个"存在但当前未启用"的原语
+## 零拷贝:一次被回退的实验
 
 仓库里有一份**零拷贝原语** `transfer/zerocopy.rs`,在 macOS/Linux 上用
 `sendfile(2)` 把文件内容直接从文件描述符推到 socket,绕过用户态:
@@ -55,16 +55,53 @@ async fn sendfile_macos(socket: &TcpStream, file: &File, offset: u64, len: usize
 }
 ```
 
-它配套 `write_data_header`(先写 29 字节帧头,再用 `sendfile` 推载荷)以及测试,
-是 v2 速度设计的组成部分。但需要如实说明两点:
+它配套 `write_data_header`(先写 29 字节帧头,再用 `sendfile` 推载荷)以及测试。
+需要如实说明的是:**这条路曾经真的接进了发送热路径,后来被主动回退。**
 
-1. **当前发送热路径走的是缓冲版**:`send_bucket` 里的 `send_segment` 是
-   `pread` 到缓冲 + `write_data`。零拷贝原语**有实现、有测试,但尚未接进发送路径**。
-2. **加密模式天然用不了它**:`sendfile` 只能把文件字节推进裸 socket,
-   无法经过 TLS 层;安全模式必须回退到 `pread` + `write`。
+- `641d9da` 引入 `write_data_header` + `send_payload`(macOS `sendfile`);
+- `10a22bd` 把它接进 v2 多连接发送;
+- `299fb13` **回退**:commit message 明确写着——
+  > Write-data-header + flush + sendfile still causes broken-pipe on
+  > macOS→Android. Keep pread + write_data (combined frame), memcpy overhead
+  > <1% at Gbps. Zero-copy code preserved in zerocopy.rs for future investigation.
 
-因此当前实际生效的提速手段是:**多连接 + 1 MiB 块 + 16 MiB 缓冲 + TCP_NODELAY**;
-零拷贝是已备好的下一档优化(以及它在移动端/加密下的回退路径 `fallback_send_payload` 已经就绪)。
+即:**macOS `sendfile` 跨网络(macOS→Android)会 broken-pipe,即便先 `flush`
+帧头也没解决**。于是当前发送热路径改回 `pread` 到缓冲 + `write_data`
+(帧头与载荷合并写),作者评估在千兆下多一次 memcpy 的开销 <1%,不值得为此冒险。
+`zerocopy.rs` 与测试被保留,供将来继续排查。
+
+另外,**加密模式天然用不了它**:`sendfile` 只能把文件字节推进裸 socket,
+无法经过 TLS 层,安全模式必须走 `fallback_send_payload`(即 `pread` + `write`)。
+
+因此当前实际生效的提速手段是:**多连接 + 1 MiB 块 + 16 MiB 缓冲 + TCP_NODELAY**。
+零拷贝原语已就绪但**未启用**(且不是"没写完",而是**踩过坑后有意回退**),
+`fallback_send_payload` 这条回退路径则同时服务于加密模式。
+
+### 后续:根因已定位并修复(可选启用)
+
+回溯那次回退,根因是一个很具体的错误:**macOS `sendfile` 在 `EAGAIN` 时的记账漏了**。
+
+macOS 的 `sendfile(fd, s, offset, *len, ...)` 里 `len` 是 value-result:
+返回时它 = "已发送字节数",而且**在 `EAGAIN`(非阻塞 socket 缓冲写满)时也会写回**。
+旧代码只在成功路径累加进度,`EAGAIN` 时直接 `continue` → **从同一 offset 重发** →
+线上出现重复字节且没有新帧头 → 对端帧解析错位 → 断连 → 发送端 `EPIPE`(broken-pipe)。
+小文件不触发 `EAGAIN`,所以"看着没事";macOS→Android 大文件最容易撞上。
+
+修复:无论成功失败,都先把 `*len`(已发送字节)计入 `off/remaining`,再决定重试还是报错。
+并补了一个**确定性回归测试**(把发送缓冲压到 8 KiB + 延迟读取,逼出 `EAGAIN`):
+旧逻辑下该测试失败(长度不一致),新逻辑下通过。
+
+真机验证:macOS→Android 传 **200 MiB** 且开启 **SHA-256 校验** → 接收端
+`complete=true`、无 hash mismatch。
+
+出于稳妥,零拷贝仍**默认关闭**,用环境变量按需开启:
+
+```bash
+SENDSENT_ZEROCOPY=1 ./sendsent        # 桌面;未设置或 =0 时走缓冲路径
+```
+
+在更广范围(不同文件系统/网络/平台)验证充分后,再考虑默认开启——
+毕竟它在千兆下的收益 <1%,不值得为它承担未经充分验证的风险。
 
 ## 进度与统计:别让 UI 拖慢传输
 

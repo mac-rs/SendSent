@@ -226,8 +226,24 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
 async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
     use std::os::unix::fs::FileExt;
     let file = crate::misc::open_source(&seg.path)?;
+    let mut off = seg.offset;
+    let end = seg.offset + seg.len;
+
+    // 可选零拷贝路径(sendfile);默认关闭,用 SENDSENT_ZEROCOPY=1 启用并验证。
+    if crate::transfer::zerocopy::enabled() {
+        use crate::proto::frame::write_data_header;
+        while off < end {
+            let n = chunk.min((end - off) as usize) as u32;
+            write_data_header(data, seg.file_id, off, n).await?;
+            data.flush().await?; // 确保 29 字节帧头先于 sendfile 到达对端
+            crate::transfer::zerocopy::send_payload(data, &file, off, n as usize).await?;
+            off += n as u64;
+            done.fetch_add(n as u64, Ordering::Relaxed);
+        }
+        return Ok(());
+    }
+
     let mut buf = vec![0u8; chunk];
-    let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
         let n = chunk.min((end - off) as usize);
         let read = file.read_at(&mut buf[..n], off)?;
