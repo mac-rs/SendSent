@@ -1,240 +1,279 @@
 //! Android JNI 桥：Kotlin `object Native` 通过 JNI 调用共享 engine。
 #![cfg(target_os = "android")]
 
+use jni::errors::LogErrorAndDefault;
 use jni::objects::{JObject, JString};
+use jni::refs::Reference as _;
 use jni::sys::{jboolean, jint, jlong, jstring};
-use jni::JNIEnv;
+use jni::{Env, EnvUnowned};
 
 use crate::engine;
 
-fn js(env: &mut JNIEnv, s: String) -> jstring {
-    env.new_string(s).map(|j| j.into_raw()).unwrap_or(std::ptr::null_mut())
+fn js(env: &mut Env<'_>, s: String) -> jstring {
+    env.new_string(s).map(|j| j.as_raw()).unwrap_or(std::ptr::null_mut())
 }
 
-fn s_arg(env: &mut JNIEnv, s: &JString) -> Option<String> {
-    env.get_string(s).ok().map(|g| g.into())
+fn s_arg(env: &Env<'_>, s: &JString<'_>) -> Option<String> {
+    if s.is_null() { None } else { s.try_to_string(env).ok() }
 }
 
-fn err(env: &mut JNIEnv, msg: impl Into<String>) -> jstring {
+fn err(env: &mut Env<'_>, msg: impl Into<String>) -> jstring {
     js(env, serde_json::json!({ "error": msg.into() }).to_string())
 }
 
-/// 捕获 Rust panic，避免跨 FFI abort，并记录原因。
-fn safe<R>(fallback: R, f: impl FnOnce() -> R) -> R {
-    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
-        Ok(r) => r,
-        Err(e) => {
-            let msg = e
-                .downcast_ref::<&str>()
-                .map(|s| s.to_string())
-                .or_else(|| e.downcast_ref::<String>().cloned())
-                .unwrap_or_else(|| "panic".to_string());
-            log::error!("RUST PANIC in jni: {msg}");
-            fallback
-        }
-    }
-}
+// jni 0.22: native 方法收 EnvUnowned,经 with_env 升级为 &mut Env;
+// panic/错误由 LogErrorAndDefault 记日志并返回默认值(null/0),不抛 Java 异常,
+// 与 Kotlin 侧"解析 JSON、null 即失败"的约定一致。
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeInit(
-    mut env: JNIEnv,
-    _this: JObject,
-    data_dir: JString,
-    save_dir: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    data_dir: JString<'_>,
+    save_dir: JString<'_>,
     port: jint,
 ) -> jint {
-    let (Some(d), Some(s)) = (s_arg(&mut env, &data_dir), s_arg(&mut env, &save_dir)) else {
-        return 1;
-    };
-    engine::init(std::path::PathBuf::from(d), std::path::PathBuf::from(s), port as u16, None)
+    env.with_env(|env| -> jni::errors::Result<jint> {
+        let (Some(d), Some(s)) = (s_arg(env, &data_dir), s_arg(env, &save_dir)) else {
+            return Ok(1);
+        };
+        Ok(engine::init(
+            std::path::PathBuf::from(d),
+            std::path::PathBuf::from(s),
+            port as u16,
+            None,
+        ))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativePollEvents(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    js(&mut env, engine::poll_events())
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(js(env, engine::poll_events()))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeIdentity(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    js(&mut env, engine::identity_json())
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(js(env, engine::identity_json()))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativePeers(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    js(&mut env, engine::peers_json())
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(js(env, engine::peers_json()))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeHistory(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    js(&mut env, engine::history_json())
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(js(env, engine::history_json()))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeAddresses(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    match engine::addresses_json() {
-        Ok(s) => js(&mut env, s),
-        Err(e) => err(&mut env, e),
-    }
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(match engine::addresses_json() {
+            Ok(s) => js(env, s),
+            Err(e) => err(env, e),
+        })
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeQr(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
     size: jint,
 ) -> jstring {
-    match engine::qr_json(size as u32, None) {
-        Ok(s) => js(&mut env, s),
-        Err(e) => err(&mut env, e),
-    }
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(match engine::qr_json(size as u32, None) {
+            Ok(s) => js(env, s),
+            Err(e) => err(env, e),
+        })
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeGetConfig(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) -> jstring {
-    js(&mut env, engine::get_config_json())
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(js(env, engine::get_config_json()))
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeAddPeer(
-    mut env: JNIEnv,
-    _this: JObject,
-    addr: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    addr: JString<'_>,
 ) -> jstring {
-    let Some(a) = s_arg(&mut env, &addr) else { return err(&mut env, "bad addr") };
-    match engine::add_peer(&a) {
-        Ok(()) => std::ptr::null_mut(),
-        Err(e) => err(&mut env, e),
-    }
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        let Some(a) = s_arg(env, &addr) else { return Ok(err(env, "bad addr")) };
+        Ok(match engine::add_peer(&a) {
+            Ok(()) => std::ptr::null_mut(),
+            Err(e) => err(env, e),
+        })
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeSend(
-    mut env: JNIEnv,
-    _this: JObject,
-    peer: JString,
-    files: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    peer: JString<'_>,
+    files: JString<'_>,
     secure: jboolean,
     verify: jboolean,
 ) -> jstring {
-    safe(std::ptr::null_mut(), || {
-        let (Some(p), Some(f)) = (s_arg(&mut env, &peer), s_arg(&mut env, &files)) else {
-            return err(&mut env, "bad args");
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        let (Some(p), Some(f)) = (s_arg(env, &peer), s_arg(env, &files)) else {
+            return Ok(err(env, "bad args"));
         };
-        match engine::send(&p, &f, secure != 0, verify != 0) {
-            Ok(s) => js(&mut env, s),
-            Err(e) => err(&mut env, e),
-        }
+        Ok(match engine::send(&p, &f, secure, verify) {
+            Ok(s) => js(env, s),
+            Err(e) => err(env, e),
+        })
     })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeRespond(
-    mut env: JNIEnv,
-    _this: JObject,
-    sid: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    sid: JString<'_>,
     accept: jboolean,
 ) -> jstring {
-    safe(std::ptr::null_mut(), || {
-        let Some(s) = s_arg(&mut env, &sid) else { return err(&mut env, "bad sid") };
-        match engine::respond(&s, accept != 0) {
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        let Some(s) = s_arg(env, &sid) else { return Ok(err(env, "bad sid")) };
+        Ok(match engine::respond(&s, accept) {
             Ok(()) => std::ptr::null_mut(),
-            Err(e) => err(&mut env, e),
-        }
+            Err(e) => err(env, e),
+        })
     })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeDeleteHistory(
-    mut env: JNIEnv,
-    _this: JObject,
-    sid: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    sid: JString<'_>,
 ) -> jstring {
-    if let Some(s) = s_arg(&mut env, &sid) {
-        engine::delete_history(&s);
-    }
-    std::ptr::null_mut()
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        if let Some(s) = s_arg(env, &sid) {
+            engine::delete_history(&s);
+        }
+        Ok(std::ptr::null_mut())
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeClearHistory(
-    _env: JNIEnv,
-    _this: JObject,
+    _env: EnvUnowned<'_>,
+    _this: JObject<'_>,
 ) {
     engine::clear_history();
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeSetConfig(
-    mut env: JNIEnv,
-    _this: JObject,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
     conns: jint,
     chunk_kb: jlong,
     split_mb: jlong,
     zerocopy: jboolean,
 ) -> jstring {
-    match engine::set_config(conns as u32, chunk_kb as u64, split_mb as u64, zerocopy != 0) {
-        Ok(()) => std::ptr::null_mut(),
-        Err(e) => err(&mut env, e),
-    }
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        Ok(match engine::set_config(conns as u32, chunk_kb as u64, split_mb as u64, zerocopy) {
+            Ok(()) => std::ptr::null_mut(),
+            Err(e) => err(env, e),
+        })
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeSetDisplayName(
-    mut env: JNIEnv,
-    _this: JObject,
-    name: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    name: JString<'_>,
 ) -> jstring {
-    let Some(n) = s_arg(&mut env, &name) else { return err(&mut env, "bad name") };
-    match engine::set_display_name(&n) {
-        Ok(()) => std::ptr::null_mut(),
-        Err(e) => err(&mut env, e),
-    }
+    env.with_env(|env| -> jni::errors::Result<jstring> {
+        let Some(n) = s_arg(env, &name) else { return Ok(err(env, "bad name")) };
+        Ok(match engine::set_display_name(&n) {
+            Ok(()) => std::ptr::null_mut(),
+            Err(e) => err(env, e),
+        })
+    })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeOnService(
-    mut env: JNIEnv,
-    _this: JObject,
-    name: JString,
-    host: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    name: JString<'_>,
+    host: JString<'_>,
     port: jint,
-    txt: JString,
+    txt: JString<'_>,
 ) {
-    safe((), || {
+    env.with_env(|env| -> jni::errors::Result<()> {
         let (Some(n), Some(h), Some(t)) =
-            (s_arg(&mut env, &name), s_arg(&mut env, &host), s_arg(&mut env, &txt))
+            (s_arg(env, &name), s_arg(env, &host), s_arg(env, &txt))
         else {
-            return;
+            return Ok(());
         };
         engine::on_service(&n, &h, port as u16, &t);
+        Ok(())
     })
+    .resolve::<LogErrorAndDefault>()
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_com_mankong_sendsent_Native_nativeOnServiceLost(
-    mut env: JNIEnv,
-    _this: JObject,
-    name: JString,
+    mut env: EnvUnowned<'_>,
+    _this: JObject<'_>,
+    name: JString<'_>,
 ) {
-    if let Some(n) = s_arg(&mut env, &name) {
-        engine::on_service_lost(&n);
-    }
+    env.with_env(|env| -> jni::errors::Result<()> {
+        if let Some(n) = s_arg(env, &name) {
+            engine::on_service_lost(&n);
+        }
+        Ok(())
+    })
+    .resolve::<LogErrorAndDefault>()
 }

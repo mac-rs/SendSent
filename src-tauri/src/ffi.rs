@@ -41,15 +41,19 @@ fn ffi_res(r: Result<String, String>) -> *mut c_char {
     }
 }
 
+/// # Safety
+/// `ptr` 必须是 `to_c` 返回、尚未释放的指针,或 null。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_free_string(ptr: *mut c_char) {
+pub unsafe extern "C" fn sendsent_ios_free_string(ptr: *mut c_char) {
     if !ptr.is_null() {
         drop(unsafe { CString::from_raw(ptr) });
     }
 }
 
+/// # Safety
+/// `data_dir`/`save_dir` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(返回错误码)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_init(
+pub unsafe extern "C" fn sendsent_ios_init(
     data_dir: *const c_char,
     save_dir: *const c_char,
     port: u16,
@@ -94,14 +98,18 @@ pub extern "C" fn sendsent_ios_addresses() -> *mut c_char {
     ffi_res(engine::addresses_json())
 }
 
+/// # Safety
+/// `ip` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_qr(size: u32, ip: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn sendsent_ios_qr(size: u32, ip: *const c_char) -> *mut c_char {
     let ip = if ip.is_null() { None } else { unsafe { cstr(ip) }.ok() };
     ffi_res(engine::qr_json(size, ip))
 }
 
+/// # Safety
+/// `addr` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(返回错误 JSON)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_add_peer(addr: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn sendsent_ios_add_peer(addr: *const c_char) -> *mut c_char {
     let a = match unsafe { cstr(addr) } {
         Ok(s) => s,
         Err(e) => return err(e),
@@ -109,8 +117,10 @@ pub extern "C" fn sendsent_ios_add_peer(addr: *const c_char) -> *mut c_char {
     ffi_try(engine::add_peer(&a))
 }
 
+/// # Safety
+/// `peer_id`/`files_json` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(返回错误 JSON)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_send(
+pub unsafe extern "C" fn sendsent_ios_send(
     peer_id: *const c_char,
     files_json: *const c_char,
     secure: bool,
@@ -127,8 +137,10 @@ pub extern "C" fn sendsent_ios_send(
     ffi_res(engine::send(&p, &f, secure, verify))
 }
 
+/// # Safety
+/// `session_id` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(返回错误 JSON)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_respond(session_id: *const c_char, accept: bool) -> *mut c_char {
+pub unsafe extern "C" fn sendsent_ios_respond(session_id: *const c_char, accept: bool) -> *mut c_char {
     let s = match unsafe { cstr(session_id) } {
         Ok(s) => s,
         Err(e) => return err(e),
@@ -150,8 +162,10 @@ pub extern "C" fn sendsent_ios_clear_history() -> *mut c_char {
     std::ptr::null_mut()
 }
 
+/// # Safety
+/// `session_id` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(无操作)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_delete_history(session_id: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn sendsent_ios_delete_history(session_id: *const c_char) -> *mut c_char {
     if let Ok(s) = unsafe { cstr(session_id) } {
         engine::delete_history(&s);
     }
@@ -171,8 +185,10 @@ pub extern "C" fn sendsent_ios_set_transfer_config(conns: u32, chunk_kb: u64, sp
     ffi_try(engine::set_config(conns, chunk_kb, split_mb, zerocopy))
 }
 
+/// # Safety
+/// `name` 必须指向合法的 NUL 结尾 UTF-8 字符串,或传 null(返回错误 JSON)。
 #[unsafe(no_mangle)]
-pub extern "C" fn sendsent_ios_set_display_name(name: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn sendsent_ios_set_display_name(name: *const c_char) -> *mut c_char {
     let n = match unsafe { cstr(name) } {
         Ok(s) => s,
         Err(e) => return err(e),

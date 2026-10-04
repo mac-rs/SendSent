@@ -88,10 +88,10 @@ impl Discovery for AndroidNativeDiscovery {
 
     async fn on_service_lost(&self, sname: &str) {
         let id = self.by_name.lock().expect("by_name lock").remove(sname);
-        if let Some(id) = id {
-            if let Some(ev) = self.registry.lock().expect("registry lock").remove(&id) {
-                let _ = self.tx.send(ev);
-            }
+        if let Some(id) = id
+            && let Some(ev) = self.registry.lock().expect("registry lock").remove(&id)
+        {
+            let _ = self.tx.send(ev);
         }
     }
 }
