@@ -108,7 +108,10 @@ jobs:
         run: brew install xcodegen xcbeautify
       - name: Generate Xcode project
         working-directory: src-tauri/gen/apple
-        run: xcodegen generate
+        run: |
+          # assets/ 被 gitignore,但 project.yml 引用了它,缺失会让 xcodegen 校验失败
+          mkdir -p assets
+          xcodegen generate
       - name: Build (generic/platform=iOS, no codesign)
         working-directory: src-tauri/gen/apple
         run: |
@@ -134,7 +137,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      # runner 预装 Android SDK(许可已接受);NDK 用 setup-ndk 钉版本
       - uses: nttld/setup-ndk@v1
         id: ndk
         with:
