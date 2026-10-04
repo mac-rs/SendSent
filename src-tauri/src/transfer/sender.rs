@@ -225,7 +225,6 @@ fn plan_buckets(manifest: &Manifest, file_map: &HashMap<Uuid, PathBuf>, conns: u
 }
 
 async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &AtomicU64, zerocopy: bool) -> Result<()> {
-    use std::os::unix::fs::FileExt;
     let file = crate::misc::open_source(&seg.path)?;
     let mut off = seg.offset;
     let end = seg.offset + seg.len;
@@ -247,7 +246,7 @@ async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &
     let mut buf = vec![0u8; chunk];
     while off < end {
         let n = chunk.min((end - off) as usize);
-        let read = file.read_at(&mut buf[..n], off)?;
+        let read = crate::misc::read_at(&file, &mut buf[..n], off)?;
         if read == 0 { return Err(anyhow!("file short at {}", off)); }
         write_data(data, seg.file_id, off, &buf[..read]).await?;
         off += read as u64; done.fetch_add(read as u64, Ordering::Relaxed);
@@ -256,13 +255,12 @@ async fn send_segment(data: &mut TcpStream, seg: &Segment, chunk: usize, done: &
 }
 
 async fn send_segment_secure(data: &mut TlsStream<TcpStream>, seg: &Segment, chunk: usize, done: &AtomicU64) -> Result<()> {
-    use std::os::unix::fs::FileExt;
     let file = crate::misc::open_source(&seg.path)?;
     let mut buf = vec![0u8; chunk];
     let mut off = seg.offset; let end = seg.offset + seg.len;
     while off < end {
         let n = chunk.min((end - off) as usize);
-        let read = file.read_at(&mut buf[..n], off)?;
+        let read = crate::misc::read_at(&file, &mut buf[..n], off)?;
         if read == 0 { return Err(anyhow!("file short at {}", off)); }
         write_data(data, seg.file_id, off, &buf[..read]).await?;
         off += read as u64; done.fetch_add(read as u64, Ordering::Relaxed);

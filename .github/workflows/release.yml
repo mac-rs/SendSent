@@ -122,6 +122,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build and upload bundles
         uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ needs.prepare.outputs.tag }}
           releaseName: SendSent ${{ needs.prepare.outputs.tag }}

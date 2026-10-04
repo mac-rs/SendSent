@@ -52,7 +52,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev mingw-w64
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -64,6 +64,15 @@ jobs:
         run: cargo clippy --all-targets --locked -- -D warnings
       - name: Tests
         run: cargo test --locked
+      # Windows 代码在别的平台上极易漂移:用 mingw 做跨平台类型检查兜底
+      - name: Windows cross type-check
+        run: |
+          rustup target add x86_64-pc-windows-gnu
+          cargo check --lib --locked --target x86_64-pc-windows-gnu
+        env:
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc
+          CC_x86_64_pc_windows_gnu: x86_64-w64-mingw32-gcc
+          AR_x86_64_pc_windows_gnu: x86_64-w64-mingw32-ar
 
   # ── Rust macOS:宿主 clippy/测试(覆盖 macOS 专属代码)+ iOS 核心交叉检查 ──
   rust-macos:

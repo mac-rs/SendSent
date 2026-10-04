@@ -147,6 +147,22 @@ pub fn register_fd(path: String, fd: i32) {
     fd_map().lock().unwrap().insert(path, fd);
 }
 
+/// 定位读:unix 走 pread;Windows 走 OVERLAPPED seek_read(不动文件指针,
+/// 可并发);其余平台回退 seek + read。调用方各自持有句柄或只做并发定位读。
+pub fn read_at(file: &std::fs::File, buf: &mut [u8], offset: u64) -> std::io::Result<usize> {
+    #[cfg(unix)]
+    { use std::os::unix::fs::FileExt; file.read_at(buf, offset) }
+    #[cfg(windows)]
+    { use std::os::windows::fs::FileExt; file.seek_read(buf, offset) }
+    #[cfg(not(any(unix, windows)))]
+    {
+        use std::io::{Read, Seek, SeekFrom};
+        let mut f = file;
+        f.seek(SeekFrom::Start(offset))?;
+        f.read(buf)
+    }
+}
+
 /// 打开发送源：Android 上若该路径已注册 fd，则 dup 后直接读，避免路径 open。
 pub fn open_source(path: &std::path::Path) -> std::io::Result<std::fs::File> {
     #[cfg(target_os = "android")]

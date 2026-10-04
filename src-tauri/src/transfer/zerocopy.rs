@@ -85,13 +85,12 @@ async fn sendfile_linux(socket: &mut TcpStream, file: &File, offset: u64, len: u
 
 /// 通用回退:pread + write (TLS 模式下 sendfile 不可用时走此路径)。
 pub async fn fallback_send_payload<W: AsyncWriteExt + Unpin>(socket: &mut W, file: &File, offset: u64, len: usize) -> io::Result<()> {
-    use std::os::unix::fs::FileExt;
     let mut buf = vec![0u8; 64 * 1024];
     let mut off = offset;
     let mut remaining = len;
     while remaining > 0 {
         let n = buf.len().min(remaining);
-        let read = file.read_at(&mut buf[..n], off)?;
+        let read = crate::misc::read_at(file, &mut buf[..n], off)?;
         if read == 0 { return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "file short")); }
         socket.write_all(&buf[..read]).await?;
         off += read as u64;
