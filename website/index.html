@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SendSent · 局域网文件直传</title>
+<meta name="description" content="SendSent —— 局域网点对点文件直传。16 条连接并行打满网卡,TLS+PIN 可选加密,无云端、无账号、无遥测。macOS / Windows / Linux / iOS / Android。">
+<meta property="og:title" content="SendSent · 局域网文件直传">
+<meta property="og:description" content="打满你的网,不过一朵云。16 连接并行 · rustls 加密 · Rust 核心。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d13'/%3E%3Cpath d='M8 20 L16 10 L24 20' stroke='%234d8dff' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M8 25 L24 25' stroke='%233be0ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   SendSent · 产品页 —— 暗色仪器面板 (dark instrument panel)
+   单文件,零依赖。字体:系统中文 + ui-monospace 技术读数。
+   ============================================================ */
+:root{
+  --bg:#07080c;
+  --bg-2:#0b0d13;
+  --panel:rgba(255,255,255,.028);
+  --panel-2:rgba(255,255,255,.05);
+  --line:rgba(255,255,255,.07);
+  --line-2:rgba(255,255,255,.13);
+  --text:#e9ebf2;
+  --text-2:rgba(233,235,242,.62);
+  --text-3:rgba(233,235,242,.45);
+  --blue:#4d8dff;
+  --blue-deep:#2563eb;
+  --cyan:#3be0ff;
+  --green:#2fe6a0;
+  --amber:#ffb224;
+  --red:#ff5d5d;
+  --mono:"SF Mono","JetBrains Mono","Cascadia Code",ui-monospace,"Menlo","Consolas",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","MiSans","Microsoft YaHei","Segoe UI",sans-serif;
+  --w:1120px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+::selection{background:rgba(77,141,255,.35);color:#fff}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.mono{font-family:var(--mono)}
+
+/* ── 背景氛围:蓝图网格 + 双侧光晕 ─────────────────────── */
+.bg{position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(1100px 560px at 72% -8%, rgba(77,141,255,.16), transparent 62%),
+    radial-gradient(860px 480px at 6% 106%, rgba(59,224,255,.06), transparent 60%),
+    var(--bg);
+}
+.bg::before{content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);
+  background-size:54px 54px;
+  -webkit-mask-image:radial-gradient(ellipse 95% 72% at 50% 0%,#000 0%,transparent 78%);
+          mask-image:radial-gradient(ellipse 95% 72% at 50% 0%,#000 0%,transparent 78%);
+}
+.bg::after{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+}
+
+/* ── 布局基元 ─────────────────────────────────────────── */
+.wrap{max-width:var(--w);margin:0 auto;padding:0 28px}
+section{padding:104px 0}
+.sec-head{display:flex;align-items:baseline;gap:18px;margin-bottom:14px}
+.sec-idx{font:500 12px/1 var(--mono);color:var(--blue);letter-spacing:.14em;
+  border:1px solid rgba(77,141,255,.35);border-radius:4px;padding:6px 9px 5px;white-space:nowrap}
+.sec-head h2{font-size:clamp(26px,3.6vw,40px);font-weight:700;letter-spacing:.01em}
+.sec-sub{color:var(--text-2);max-width:620px;margin-bottom:52px;font-size:15.5px}
+.rule{height:1px;background:linear-gradient(90deg,var(--line-2),var(--line) 40%,transparent);position:relative}
+.rule::before,.rule::after{content:"";position:absolute;top:-3px;width:1px;height:7px;background:var(--line-2)}
+.rule::before{left:0}.rule::after{left:54px}
+
+/* ── 导航 ─────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;
+  background:rgba(7,8,12,.62);backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border-bottom:1px solid transparent;transition:border-color .3s;
+}
+nav.scrolled{border-bottom-color:var(--line)}
+.nav-in{max-width:var(--w);margin:0 auto;padding:0 28px;height:60px;
+  display:flex;align-items:center;gap:28px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;letter-spacing:.01em}
+.logo svg{display:block}
+.logo .port{font:500 10.5px/1 var(--mono);color:var(--text-3);letter-spacing:.08em;
+  border:1px solid var(--line-2);border-radius:4px;padding:4px 6px 3px;margin-left:2px}
+.nav-links{display:flex;gap:26px;margin-left:auto;font-size:13.5px;color:var(--text-2)}
+.nav-links a{transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-gh{display:inline-flex;align-items:center;gap:7px;font:500 12.5px/1 var(--mono);
+  color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:8px 13px;
+  transition:border-color .2s,background .2s}
+.nav-gh:hover{border-color:rgba(77,141,255,.55);background:rgba(77,141,255,.08)}
+@media (max-width:760px){
+  .nav-links{display:none}
+  .logo .port{display:none}
+  .sec-head{flex-direction:column;align-items:flex-start;gap:12px}
+}
+
+/* ── Hero ─────────────────────────────────────────────── */
+.hero{padding:138px 0 84px;position:relative}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);
+  gap:64px;align-items:center}
+@media (max-width:960px){.hero-grid{grid-template-columns:1fr;gap:56px}}
+.kicker{display:inline-flex;align-items:center;gap:10px;
+  font:500 11.5px/1 var(--mono);letter-spacing:.16em;color:var(--cyan);
+  margin-bottom:26px}
+.kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 10px rgba(47,230,160,.8);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+h1{font-size:clamp(40px,6vw,64px);line-height:1.16;font-weight:800;letter-spacing:.005em;margin-bottom:26px}
+h1 .accent{color:var(--blue);position:relative;white-space:nowrap}
+h1 .accent::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:3px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;
+  transform:scaleX(0);transform-origin:left;animation:underline 1s .9s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes underline{to{transform:scaleX(1)}}
+h1 .cursor{display:inline-block;width:.5em;height:.9em;margin-left:.08em;vertical-align:-.08em;
+  background:var(--cyan);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero-sub{color:var(--text-2);font-size:16.5px;max-width:480px;margin-bottom:38px}
+.hero-sub strong{color:var(--text);font-weight:600}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:9px;
+  padding:13px 24px;border-radius:11px;font-size:15px;font-weight:600;color:#fff;
+  background:linear-gradient(135deg,var(--blue-deep),#7c5bf5);
+  box-shadow:0 8px 28px -8px rgba(77,141,255,.55),inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 36px -8px rgba(77,141,255,.65),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn-primary:active{transform:translateY(0) scale(.98)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:11px;
+  font-size:15px;color:var(--text-2);border:1px solid var(--line-2);
+  transition:color .2s,border-color .2s,background .2s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.3);background:var(--panel)}
+.btn-ghost svg{transition:transform .25s}
+.btn-ghost:hover svg{transform:translateY(3px)}
+
+/* ── Hero 仪器:实时传输监视仪 ────────────────────────── */
+.scope{position:relative;border:1px solid var(--line-2);border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.07);
+  overflow:hidden}
+.scope::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.014) 3px 4px)}
+.scope-head{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 18px;border-bottom:1px solid var(--line);
+  font:500 10.5px/1 var(--mono);letter-spacing:.13em;color:var(--text-3)}
+.scope-head .led{display:inline-flex;align-items:center;gap:6px;color:var(--amber)}
+.scope-head .led i{width:6px;height:6px;border-radius:50%;background:var(--amber);
+  box-shadow:0 0 8px rgba(255,178,36,.8);animation:pulse 1.6s infinite}
+.scope-head .led.on{color:var(--green)}
+.scope-head .led.on i{background:var(--green);box-shadow:0 0 8px rgba(47,230,160,.8)}
+
+.wire{position:relative;height:158px;margin:6px 18px 0}
+.node{position:absolute;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:8px}
+.node .dev{border:1.5px solid var(--line-2);background:var(--bg-2);border-radius:10px;position:relative}
+.node.laptop{left:0}
+.node.laptop .dev{width:74px;height:48px;border-radius:8px 8px 3px 3px}
+.node.laptop .dev::before{content:"";position:absolute;left:-12px;right:-12px;bottom:-9px;height:5px;
+  background:var(--bg-2);border:1.5px solid var(--line-2);border-radius:3px}
+.node.laptop .dev::after{content:"";position:absolute;inset:5px 8px;border-radius:3px;
+  background:linear-gradient(135deg,rgba(77,141,255,.22),rgba(59,224,255,.08))}
+.node.phone{right:0}
+.node.phone .dev{width:40px;height:72px;border-radius:9px}
+.node.phone .dev::before{content:"";position:absolute;top:5px;left:50%;transform:translateX(-50%);
+  width:12px;height:3px;border-radius:2px;background:var(--line-2)}
+.node.phone .dev::after{content:"";position:absolute;inset:13px 5px 9px;border-radius:2px;
+  background:linear-gradient(160deg,rgba(47,230,160,.2),rgba(77,141,255,.1))}
+.node .tag{font:500 10px/1 var(--mono);color:var(--text-3);letter-spacing:.06em}
+
+.beam{position:absolute;left:96px;right:56px;top:0;bottom:0}
+.beam .lane{position:absolute;left:0;right:0;height:1px;background:var(--line)}
+.pkt{position:absolute;top:-3px;height:7px;border-radius:4px;
+  background:linear-gradient(90deg,rgba(77,141,255,.25),var(--cyan));
+  box-shadow:0 0 12px rgba(59,224,255,.45);
+  animation:fly linear infinite}
+@keyframes fly{from{left:-6%;opacity:0}8%{opacity:1}92%{opacity:1}to{left:104%;opacity:0}}
+.pkt.snd{background:linear-gradient(90deg,rgba(124,91,245,.2),var(--green));
+  box-shadow:0 0 12px rgba(47,230,160,.35);animation-name:flyback}
+@keyframes flyback{from{left:104%;opacity:0}8%{opacity:1}92%{opacity:1}to{left:-6%;opacity:0}}
+
+.scope-read{padding:14px 18px 16px;border-top:1px solid var(--line)}
+.read-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.speed{font:600 30px/1 var(--mono);letter-spacing:-.02em;color:var(--cyan);
+  text-shadow:0 0 22px rgba(59,224,255,.35);font-variant-numeric:tabular-nums}
+.speed small{font-size:13px;font-weight:500;color:var(--text-3);margin-left:5px;letter-spacing:.04em}
+.eta{font:500 11.5px/1 var(--mono);color:var(--text-3);letter-spacing:.08em}
+.eta b{color:var(--text-2);font-weight:500;font-variant-numeric:tabular-nums}
+.bar{margin-top:12px;height:5px;border-radius:3px;background:rgba(255,255,255,.1);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0;transform-origin:left;
+  background:linear-gradient(90deg,var(--blue-deep),var(--cyan));
+  border-radius:3px}
+.bar::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 26px,rgba(7,8,12,.55) 26px 28px)}
+.file-line{display:flex;justify-content:space-between;gap:10px;margin-top:10px;
+  font:500 11px/1.5 var(--mono);color:var(--text-3);letter-spacing:.03em;min-height:16px}
+.file-line .fname{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-line .pct{color:var(--cyan);font-variant-numeric:tabular-nums;flex-shrink:0}
+.file-line .done{color:var(--green)}
+
+/* ── 统计条 ───────────────────────────────────────────── */
+.stats{margin-top:58px;display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  background:var(--panel)}
+@media (max-width:860px){.stats{grid-template-columns:1fr 1fr}}
+.stat{padding:26px 26px 22px;position:relative}
+.stat+.stat{border-left:1px solid var(--line)}
+@media (max-width:860px){.stat:nth-child(3){border-left:none}.stat:nth-child(n+3){border-top:1px solid var(--line)}}
+.stat .num{font:650 32px/1.1 var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat .num em{font-style:normal;color:var(--blue);font-size:16px;margin-left:4px;font-weight:500}
+.stat:nth-child(1) .num{color:var(--cyan)}
+.stat .lbl{font-size:12.5px;color:var(--text-3);margin-top:7px;letter-spacing:.02em}
+
+/* ── 特性卡片 ─────────────────────────────────────────── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:860px){.grid-2{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:16px;padding:28px;
+  background:var(--panel);position:relative;overflow:hidden;
+  transition:border-color .25s,background .25s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.card:hover{border-color:rgba(77,141,255,.4);background:var(--panel-2);transform:translateY(-3px)}
+.card .glyph{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid rgba(77,141,255,.3);background:rgba(77,141,255,.07);margin-bottom:20px}
+.card .glyph svg{display:block}
+.card h3{font-size:17.5px;font-weight:650;margin-bottom:9px;letter-spacing:.01em}
+.card p{font-size:14px;color:var(--text-2)}
+.card .idx{position:absolute;top:24px;right:24px;font:500 11px/1 var(--mono);
+  color:var(--text-3);letter-spacing:.1em}
+.card code{font:500 12px/1 var(--mono);color:var(--cyan);
+  background:rgba(59,224,255,.07);border:1px solid rgba(59,224,255,.16);
+  border-radius:5px;padding:2px 6px}
+
+/* ── 安全:双模式 ─────────────────────────────────────── */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media (max-width:860px){.modes{grid-template-columns:1fr}}
+.mode{border:1px solid var(--line);border-radius:16px;padding:28px;background:var(--panel)}
+.mode.hot{border-color:rgba(47,230,160,.32);
+  background:linear-gradient(180deg,rgba(47,230,160,.05),var(--panel))}
+.mode .badge{display:inline-flex;align-items:center;gap:7px;font:600 11px/1 var(--mono);
+  letter-spacing:.14em;padding:6px 10px;border-radius:6px;margin-bottom:18px}
+.mode .badge.fast{color:var(--cyan);background:rgba(59,224,255,.08);border:1px solid rgba(59,224,255,.25)}
+.mode .badge.secure{color:var(--green);background:rgba(47,230,160,.08);border:1px solid rgba(47,230,160,.28)}
+.mode h3{font-size:19px;font-weight:650;margin-bottom:10px}
+.mode p{font-size:14px;color:var(--text-2)}
+.pin-row{display:flex;gap:8px;margin-top:18px}
+.pin{width:38px;height:46px;border-radius:9px;border:1px solid var(--line-2);
+  display:grid;place-items:center;font:600 18px/1 var(--mono);color:var(--text);
+  background:var(--bg-2)}
+.pin.on{border-color:var(--green);color:var(--green);box-shadow:0 0 16px rgba(47,230,160,.18)}
+.pin.pop{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{40%{transform:scale(1.12)}}
+.sec-strip{border:1px solid var(--line);border-radius:14px;padding:22px 28px;
+  display:flex;gap:34px;flex-wrap:wrap;align-items:center;background:var(--panel)}
+.sec-strip .item{display:flex;align-items:center;gap:11px;font-size:13.5px;color:var(--text-2)}
+.sec-strip .item b{color:var(--text);font-weight:600}
+.sec-strip .item svg{flex-shrink:0}
+
+/* ── 发现:雷达 ───────────────────────────────────────── */
+.disc-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+@media (max-width:920px){.disc-grid{grid-template-columns:1fr}}
+.radar{position:relative;aspect-ratio:1/1;max-width:430px;margin:0 auto;width:100%}
+.radar .ring{position:absolute;inset:0;border:1px solid var(--line);border-radius:50%}
+.radar .ring:nth-child(2){inset:16.5%}
+.radar .ring:nth-child(3){inset:33%}
+.radar .ring:nth-child(4){inset:41.5%;border-color:rgba(77,141,255,.4)}
+.radar .sweep{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.radar .sweep::before{content:"";position:absolute;left:50%;top:50%;width:50%;height:2px;
+  transform-origin:left center;
+  background:linear-gradient(90deg,rgba(77,141,255,.55),transparent);
+  animation:sweep 4s linear infinite}
+@keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.radar .sweep::after{content:"";position:absolute;left:50%;top:50%;width:50%;height:44px;
+  transform-origin:left center;border-radius:0 50% 50% 0 / 0 100% 100% 0;
+  background:conic-gradient(from 0deg,rgba(77,141,255,.14),transparent 60deg);
+  animation:sweep 4s linear infinite}
+.peer{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px;
+  transform:translate(-50%,-50%)}
+.peer i{width:11px;height:11px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 0 0 rgba(59,224,255,.5);animation:ping 2.6s ease-out infinite}
+.peer.g i{background:var(--green);box-shadow:0 0 0 0 rgba(47,230,160,.5)}
+.peer span{font:500 10px/1 var(--mono);color:var(--text-3);letter-spacing:.05em;white-space:nowrap}
+@keyframes ping{70%{box-shadow:0 0 0 14px rgba(59,224,255,0)}100%{box-shadow:0 0 0 0 rgba(59,224,255,0)}}
+.radar .me{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:15px;height:15px;border-radius:50%;background:var(--blue);
+  box-shadow:0 0 20px rgba(77,141,255,.8)}
+.radar .me::after{content:"THIS MAC";position:absolute;top:22px;left:50%;transform:translateX(-50%);
+  font:500 9.5px/1 var(--mono);color:var(--text-3);letter-spacing:.12em;white-space:nowrap}
+.disc-points{display:flex;flex-direction:column;gap:26px}
+.dp{display:flex;gap:16px}
+.dp .n{font:650 15px/1 var(--mono);color:var(--blue);flex-shrink:0;padding-top:3px}
+.dp h3{font-size:16.5px;font-weight:650;margin-bottom:6px}
+.dp p{font-size:14px;color:var(--text-2)}
+.dp .note{display:inline-block;margin-top:8px;font-size:12px;color:var(--amber);
+  background:rgba(255,178,36,.07);border:1px solid rgba(255,178,36,.2);
+  border-radius:6px;padding:4px 10px}
+
+/* ── 平台 ─────────────────────────────────────────────── */
+.plats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media (max-width:1000px){.plats{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:640px){.plats{grid-template-columns:repeat(2,1fr)}}
+.plat{border:1px solid var(--line);border-radius:14px;padding:22px 20px;background:var(--panel);
+  text-align:center;transition:border-color .25s,background .25s,transform .25s}
+.plat:hover{border-color:rgba(77,141,255,.4);background:var(--panel-2);transform:translateY(-3px)}
+.plat .os{font:600 13px/1 var(--mono);letter-spacing:.06em;margin-bottom:10px;color:var(--text)}
+.plat .shell{font-size:12px;color:var(--text-3)}
+.plat .glyph{width:36px;height:36px;margin:0 auto 12px;border-radius:9px;display:grid;place-items:center;
+  border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2)}
+.core-bar{margin-top:18px;border:1px dashed rgba(77,141,255,.35);border-radius:14px;
+  padding:22px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  background:linear-gradient(90deg,rgba(77,141,255,.06),transparent 65%)}
+.core-bar .rust{font:700 13px/1 var(--mono);color:#ff8a5c;letter-spacing:.1em;white-space:nowrap}
+.core-bar p{font-size:13.5px;color:var(--text-2);flex:1;min-width:260px}
+.core-bar p b{color:var(--text);font-weight:600}
+
+/* ── CTA / Footer ─────────────────────────────────────── */
+.final{text-align:center;padding:120px 0 110px}
+.final h2{font-size:clamp(28px,4.4vw,46px);font-weight:800;margin-bottom:18px}
+.final p{color:var(--text-2);margin-bottom:36px;font-size:15.5px}
+footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color:var(--text-3)}
+.foot-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-start}
+.foot-col{display:flex;flex-direction:column;gap:9px}
+.foot-col .h{font:600 11px/1 var(--mono);letter-spacing:.16em;color:var(--text-2);margin-bottom:4px}
+.foot-col a:hover{color:var(--text)}
+.foot-bottom{margin-top:36px;padding-top:22px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  font:500 11px/1.8 var(--mono);letter-spacing:.05em}
+
+/* ── 入场动效 ─────────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(26px);
+  transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}
+.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+
+<nav id="nav">
+  <div class="nav-in">
+    <a class="logo" href="#top" aria-label="SendSent">
+      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#0e1119" stroke="rgba(255,255,255,.14)"/>
+        <path d="M8 20 L16 10 L24 20" stroke="#4d8dff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 25 L24 25" stroke="#3be0ff" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      SendSent
+      <span class="port">:52225</span>
+    </a>
+    <div class="nav-links">
+      <a href="#speed">速度</a>
+      <a href="#security">安全</a>
+      <a href="#discovery">发现</a>
+      <a href="#platforms">平台</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="kicker"><span class="dot"></span>LAN · P2P · RUST CORE</div>
+        <h1>同一张网,<br>文件<span class="accent">直达</span><span class="cursor" aria-hidden="true"></span></h1>
+        <p class="hero-sub">
+          SendSent 在局域网内自动发现你的设备,<strong>16 条连接并行直传</strong>,
+          吞吐以网卡为上限——没有云端、没有账号,文件永远不离开你的网络。
+        </p>
+        <div class="cta-row">
+          <a class="btn-primary" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
+            GitHub 获取
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="btn-ghost" href="#speed">
+            它是怎么做到的
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="scope" id="scope" aria-label="传输过程示意">
+        <div class="scope-head">
+          <span>SESSION&nbsp;<span id="sid">7F3A</span>&nbsp;·&nbsp;P2P&nbsp;·&nbsp;<span id="conns">16</span>&nbsp;CONNS</span>
+          <span class="led" id="led"><i></i><span id="ledTxt">SECURE&nbsp;OFF</span></span>
+        </div>
+        <div class="wire">
+          <div class="node laptop">
+            <div class="dev"></div>
+            <span class="tag">MacBook&nbsp;Pro</span>
+          </div>
+          <div class="beam" id="beam" aria-hidden="true"></div>
+          <div class="node phone">
+            <div class="dev"></div>
+            <span class="tag">iPhone</span>
+          </div>
+        </div>
+        <div class="scope-read">
+          <div class="read-row">
+            <div class="speed"><span id="mbps">112.4</span><small>MB/s</small></div>
+            <div class="eta">ETA&nbsp;<b id="eta">00:41</b>&nbsp;·&nbsp;<b id="pctBig">68%</b></div>
+          </div>
+          <div class="bar"><i id="bar"></i></div>
+          <div class="file-line">
+            <span class="fname" id="fname">4K_毕业旅行.mov · 12.6 GB</span>
+            <span class="pct" id="pct">68.2%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats reveal">
+      <div class="stat"><div class="num mono" data-count="16">0</div><div class="lbl">并行 TCP 连接,大文件分片直传</div></div>
+      <div class="stat"><div class="num mono" data-count="112" data-suffix=" MB/s">0</div><div class="lbl">千兆网卡轻松打满,万兆留有余量</div></div>
+      <div class="stat"><div class="num mono" data-count="0">0</div><div class="lbl">云端中转 · 账号 · 遥测,一个都没有</div></div>
+      <div class="stat"><div class="num mono" data-count="5" data-suffix=" 端">0</div><div class="lbl">macOS / Windows / Linux / iOS / Android</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ══ 01 速度 ══ -->
+  <section id="speed">
+    <div class="wrap">
+      <div class="sec-head reveal"><span class="sec-idx">01 · SPEED</span><h2>快,是工程出来的</h2></div>
+      <div class="rule reveal" style="margin-bottom:18px"></div>
+      <p class="sec-sub reveal">从协议帧到内核调用,每一层都为吞吐让路。不是"优化过",是从第一行代码就按打满网卡设计。</p>
+      <div class="grid-2">
+        <div class="card reveal d1">
+          <span class="idx">S/01</span>
+          <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 5h18M3 12h18M3 19h18" stroke="#4d8dff" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="5" r="2" fill="#3be0ff"/><circle cx="15" cy="12" r="2" fill="#3be0ff"/><circle cx="7" cy="19" r="2" fill="#3be0ff"/></svg></div>
+          <h3>多连接分片</h3>
+          <p>大文件按字节区间切开,分散到 16 条 TCP 连接同时收发;小文件轮询分发、流水线发送,不排队。网卡有几快,它就有几快。</p>
+        </div>
+        <div class="card reveal d2">
+          <span class="idx">S/02</span>
+          <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v4m0 10v4M3 12h4m10 0h4" stroke="#4d8dff" stroke-width="2" stroke-linecap="round"/><rect x="8" y="8" width="8" height="8" rx="2" stroke="#3be0ff" stroke-width="2"/></svg></div>
+          <h3>零拷贝 sendfile</h3>
+          <p>数据在内核态从文件描述符直达网卡,绕过用户态拷贝(默认可开关);TLS 模式或不支持时自动回退 <code>pread</code> + write,速度与兼容兼得。</p>
+        </div>
+        <div class="card reveal d3">
+          <span class="idx">S/03</span>
+          <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 17V9m5 8V5m5 12v-6m5 6V8" stroke="#4d8dff" stroke-width="2.4" stroke-linecap="round"/><path d="M2 21h20" stroke="#3be0ff" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <h3>为局域网调优</h3>
+          <p>16 MiB Socket 收发缓冲、<code>TCP_NODELAY</code>、极简二进制协议帧——控制帧与数据帧分离,协议本身几乎零开销。</p>
+        </div>
+        <div class="card reveal d4">
+          <span class="idx">S/04</span>
+          <div class="glyph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="#4d8dff" stroke-width="2" stroke-linejoin="round"/></svg></div>
+          <h3>Rust 核心,原生界面</h3>
+          <p>传输引擎是一个共享的 Rust core:桌面、iOS、Android 跑同一份代码,速度与行为三端一致,没有 WebView 的性能税。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 安全 ══ -->
+  <section id="security">
+    <div class="wrap">
+      <div class="sec-head reveal"><span class="sec-idx">02 · SECURITY</span><h2>隐私是默认值</h2></div>
+      <div class="rule reveal" style="margin-bottom:18px"></div>
+      <p class="sec-sub reveal">文件走点对点直连,架构上就不存在"经过我们服务器"这回事。需要更多确定性时,再打开加密。</p>
+      <div class="modes">
+        <div class="mode reveal d1">
+          <span class="badge fast">PLAIN · 极速模式</span>
+          <h3>速度优先</h3>
+          <p>默认明文 + sendfile 零拷贝,吞吐拉满。适合可信的家庭与个人局域网——毕竟数据压根不出门。</p>
+          <div class="pin-row" aria-hidden="true">
+            <div class="pin mono">—</div><div class="pin mono">—</div><div class="pin mono">—</div>
+            <div class="pin mono">—</div><div class="pin mono">—</div><div class="pin mono">—</div>
+          </div>
+        </div>
+        <div class="mode hot reveal d2">
+          <span class="badge secure">TLS · 加密模式</span>
+          <h3>全链路加密 + PIN 配对</h3>
+          <p>勾选"加密"后,1 条控制连接与全部数据连接升级为 TLS(rustls · 自签 ECDSA 证书);发送端生成 6 位 PIN,接收端输入确认,陌生设备无法接入。</p>
+          <div class="pin-row" id="pinRow" aria-hidden="true">
+            <div class="pin mono">·</div><div class="pin mono">·</div><div class="pin mono">·</div>
+            <div class="pin mono">·</div><div class="pin mono">·</div><div class="pin mono">·</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-strip reveal d3">
+        <div class="item">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-3Z" stroke="#2fe6a0" stroke-width="2" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke="#2fe6a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><b>逐文件 SHA-256</b>&nbsp;完整性校验</span>
+        </div>
+        <div class="item">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2.5" stroke="#4d8dff" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#4d8dff" stroke-width="2"/></svg>
+          <span><b>无服务器</b>&nbsp;这是架构保证,不是隐私政策承诺</span>
+        </div>
+        <div class="item">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#3be0ff" stroke-width="2"/><path d="M12 7v5l3.5 2" stroke="#3be0ff" stroke-width="2" stroke-linecap="round"/></svg>
+          <span><b>双模式随时切换</b>&nbsp;同一会话互不干扰</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 03 发现 ══ -->
+  <section id="discovery">
+    <div class="wrap">
+      <div class="sec-head reveal"><span class="sec-idx">03 · DISCOVERY</span><h2>打开,就在</h2></div>
+      <div class="rule reveal" style="margin-bottom:18px"></div>
+      <div class="disc-grid">
+        <div class="disc-points">
+          <div class="dp reveal d1">
+            <span class="n">A</span>
+            <div>
+              <h3>零配置自动发现</h3>
+              <p>基于 mDNS / Bonjour / NSD,同一局域网里的 SendSent 设备互相广播、自动出现在列表里。装好即用,没有"添加设备"这一步。</p>
+            </div>
+          </div>
+          <div class="dp reveal d2">
+            <span class="n">B</span>
+            <div>
+              <h3>扫码或 IP 直连</h3>
+              <p>不在同一网段?扫一扫二维码完成配对,或输入 <span class="mono" style="font-size:12.5px">ip:52225</span> 手动直连,跨子网也能用。</p>
+            </div>
+          </div>
+          <div class="dp reveal d3">
+            <span class="n">C</span>
+            <div>
+              <h3>离线即刻感知</h3>
+              <p>设备下线实时移出列表,配合主动 TCP 探活,不等到超时才知道对方已经不在。</p>
+              <span class="note">iOS 后台会暂停广播 · 保持前台即可被发现</span>
+            </div>
+          </div>
+        </div>
+        <div class="radar reveal d2" aria-hidden="true">
+          <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+          <div class="sweep"></div>
+          <div class="me"></div>
+          <div class="peer" style="left:26%;top:30%"><i style="animation-delay:.3s"></i><span>iPhone</span></div>
+          <div class="peer g" style="left:72%;top:24%"><i style="animation-delay:1.1s"></i><span>Pixel</span></div>
+          <div class="peer" style="left:78%;top:66%"><i style="animation-delay:1.8s"></i><span>Surface</span></div>
+          <div class="peer g" style="left:24%;top:72%"><i style="animation-delay:.7s"></i><span>Mac&nbsp;mini</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 04 平台 ══ -->
+  <section id="platforms">
+    <div class="wrap">
+      <div class="sec-head reveal"><span class="sec-idx">04 · PLATFORMS</span><h2>一套核心,原生体验</h2></div>
+      <div class="rule reveal" style="margin-bottom:18px"></div>
+      <p class="sec-sub reveal">不做"能跑就行"的跨平台。每一端都是原生 UI,共享同一个 Rust 传输引擎。</p>
+      <div class="plats">
+        <div class="plat reveal d1"><div class="glyph mono">mac</div><div class="os">macOS</div><div class="shell">Tauri 2 · 原生窗口</div></div>
+        <div class="plat reveal d1"><div class="glyph mono">win</div><div class="os">Windows</div><div class="shell">Tauri 2 · 原生窗口</div></div>
+        <div class="plat reveal d2"><div class="glyph mono">lnx</div><div class="os">Linux</div><div class="shell">Tauri 2 · 原生窗口</div></div>
+        <div class="plat reveal d2"><div class="glyph mono">iOS</div><div class="os">iOS</div><div class="shell">SwiftUI 原生</div></div>
+        <div class="plat reveal d3"><div class="glyph mono">and</div><div class="os">Android</div><div class="shell">Kotlin · Compose</div></div>
+      </div>
+      <div class="core-bar reveal d3">
+        <span class="rust">⬢ RUST CORE</span>
+        <p>传输协议、发现、加密、校验全部实现在一个 Rust core 里——<b>三端跑同一份代码</b>,速度与安全逻辑完全一致,桌面与移动互传无感。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CTA ══ -->
+  <section class="final">
+    <div class="wrap reveal">
+      <h2>下一次传文件,<br>别再走云端了。</h2>
+      <p>项目开源,从源码构建你的第一个 SendSent。</p>
+      <div class="cta-row" style="justify-content:center">
+        <a class="btn-primary" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
+          前往 GitHub
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <span class="h">SENDSENT</span>
+        <span>局域网点对点文件直传</span>
+        <span style="color:var(--text-3)">以网卡为上限,以隐私为默认。</span>
+      </div>
+      <div class="foot-col">
+        <span class="h">项目</span>
+        <a href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">GitHub · mac-rs/SendSent</a>
+        <a href="https://github.com/mac-rs/SendSent/issues" target="_blank" rel="noopener">反馈与 Issue</a>
+      </div>
+      <div class="foot-col">
+        <span class="h">协议</span>
+        <span class="mono" style="font-size:12px">_sendsent._tcp.local.</span>
+        <span class="mono" style="font-size:12px">TCP · 52225</span>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SENDSENT · BUILT WITH RUST ⬢</span>
+      <span>NO CLOUD · NO ACCOUNT · NO TELEMETRY</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── 导航滚动态 ─────────────────────────────────────────── */
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), {passive:true});
+
+/* ── 入场 reveal ────────────────────────────────────────── */
+const io = new IntersectionObserver(es => {
+  for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}, {threshold:.15, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ── 统计数字 count-up ──────────────────────────────────── */
+const cio = new IntersectionObserver(es => {
+  for (const e of es) {
+    if (!e.isIntersecting) continue;
+    cio.unobserve(e.target);
+    const el = e.target, target = +el.dataset.count, suffix = el.dataset.suffix || '';
+    const t0 = performance.now(), dur = 1400;
+    (function tick(t) {
+      const p = Math.min((t - t0) / dur, 1), ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * ease) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+}, {threshold:.6});
+document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
+
+/* ── 数据包粒子:16 条泳道,速度各异 ────────────────────── */
+const beam = document.getElementById('beam');
+const laneYs = [12,22,32,42,52,62,72,82,92,102,112,122,132,142,27,37];  /* 16 lanes */
+laneYs.forEach((y, i) => {
+  const p = document.createElement('i');
+  p.className = 'pkt';
+  p.style.top = y + 'px';
+  const big = i % 4 === 0;
+  p.style.width = big ? '30px' : (12 + (i * 5) % 18) + 'px';
+  p.style.opacity = (big ? .95 : .4 + (i % 3) * .18).toFixed(2);
+  p.style.animationDuration = (1.05 + (i % 5) * .28) + 's';
+  p.style.animationDelay = ((i * .17) % 1.6) + 's';
+  beam.appendChild(p);
+});
+/* 回程小包(ACK) */
+for (let i = 0; i < 3; i++) {
+  const p = document.createElement('i');
+  p.className = 'pkt snd';
+  p.style.top = (148 - i * 10) + 'px';
+  p.style.width = '10px';
+  p.style.animationDuration = (2.1 + i * .5) + 's';
+  p.style.animationDelay = (i * .8) + 's';
+  p.style.opacity = .5;
+  beam.appendChild(p);
+}
+
+/* ── 仪表模拟:速度抖动 + 进度循环 + 文件轮换 ───────────── */
+const FILES = [
+  {n:'4K_毕业旅行.mov',   gb:12.6},
+  {n:'设计稿_v12.fig',    gb:1.8},
+  {n:'全家福_2016-2026.zip', gb:5.4},
+  {n:'LLM_权重_int8.bin', gb:7.9},
+];
+const $ = id => document.getElementById(id);
+let fi = 0, sent = 0, lastT = performance.now(), doneAt = 0;
+const fmt = v => v >= 1024 ? (v/1024).toFixed(2) + ' TB' : v.toFixed(1) + ' GB';
+
+function step(t) {
+  const dt = (t - lastT) / 1000; lastT = t;
+  const total = FILES[fi].gb * 1024;                 /* MB */
+  const wob = Math.sin(t/900) * 6 + Math.sin(t/211) * 3.2;
+  const spd = Math.max(86, 118 + wob);               /* MB/s */
+  sent = Math.min(sent + spd * dt, total);
+  let done = sent >= total;
+  if (done && !doneAt) doneAt = t;
+  if (done && t - doneAt > 1100) {                   /* 停留 1.1s 后换下一个文件 */
+    fi = (fi + 1) % FILES.length; sent = 0; doneAt = 0; done = false;
+    $('fname').textContent = FILES[fi].n + ' · ' + fmt(FILES[fi].gb * 1024);
+  }
+  const frac = sent / total;
+  const remain = Math.max(0, (total - sent) / spd);
+  $('mbps').textContent = done ? '0.0' : spd.toFixed(1);
+  $('bar').style.transform = 'scaleX(' + Math.min(frac, 1) + ')';
+  $('pct').textContent = done ? '✓ 已送达' : (frac * 100).toFixed(1) + '%';
+  $('pct').className = done ? 'pct done' : 'pct';
+  $('pctBig').textContent = Math.round(frac * 100) + '%';
+  const mm = String(Math.floor(remain / 60)).padStart(2, '0');
+  const ss = String(Math.floor(remain % 60)).padStart(2, '0');
+  $('eta').textContent = done ? '00:00' : mm + ':' + ss;
+  requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+
+/* 每 8s 切换一次会话号 / 加密状态,展示双模式 */
+const SIDS = ['7F3A','C21B','09E4'];
+let si = 0, secure = false;
+setInterval(() => {
+  si = (si + 1) % SIDS.length;
+  secure = !secure;
+  $('sid').textContent = SIDS[si];
+  const led = $('led');
+  led.classList.toggle('on', secure);
+  $('ledTxt').textContent = secure ? 'TLS+PIN' : 'SECURE OFF';
+  $('conns').textContent = secure ? 4 : 16;
+}, 8000);
+
+/* ── PIN 演示:逐位点亮 ─────────────────────────────────── */
+const pins = document.querySelectorAll('#pinRow .pin');
+const pinDemo = '491726';
+let pi = 0;
+setInterval(() => {
+  pins.forEach(p => { p.classList.remove('on'); p.textContent = '·'; });
+  pi = 0;
+  const iv = setInterval(() => {
+    if (pi >= 6) {
+      pins.forEach(p => p.classList.add('pop'));
+      setTimeout(() => pins.forEach(p => p.classList.remove('pop')), 400);
+      clearInterval(iv); return;
+    }
+    pins[pi].textContent = pinDemo[pi];
+    pins[pi].classList.add('on');
+    pi++;
+  }, 260);
+}, 4600);
+pins.forEach(p => p.addEventListener('animationend', () => p.classList.remove('pop')));
+</script>
+</body>
+</html>
