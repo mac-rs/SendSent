@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Android adaptive foreground: brand glyph scaled into the safe zone (center ~66%) -->
+  <defs>
+    <linearGradient id="chev" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6ea8ff"/>
+      <stop offset="1" stop-color="#2f6bff"/>
+    </linearGradient>
+    <radialGradient id="dotGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3be0ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3be0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- glyph scaled 0.62 about (512,512) from the full-bleed art -->
+  <path d="M353 591 L512 393 L671 591" fill="none" stroke="url(#chev)" stroke-width="60"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M353 686 H671" stroke="#3be0ff" stroke-width="60" stroke-linecap="round"/>
+
+  <circle cx="705" cy="413" r="52" fill="url(#dotGlow)"/>
+  <circle cx="705" cy="413" r="33" fill="#3be0ff"/>
+</svg>
