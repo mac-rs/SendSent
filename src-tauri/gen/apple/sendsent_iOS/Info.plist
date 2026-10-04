@@ -38,7 +38,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>SendSent uses the camera to scan a device QR code.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>SendSent uses your local network to discover nearby devices and transfer files.</string>
+	<string>SendSent needs local network access to discover nearby devices and transfer files.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
