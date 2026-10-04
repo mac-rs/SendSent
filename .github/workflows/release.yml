@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的 tag(如 v0.1.0,须已存在于 CHANGELOG.md)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ── 建草稿 Release:校验版本号一致性,从 CHANGELOG.md 抽取该版本正文 ──
+  prepare:
+    name: Prepare draft release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve tag
+        id: tag
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          case "$TAG" in
+            v*) ;;
+            *) echo "tag 必须以 v 开头: $TAG"; exit 1 ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+      - name: Verify version consistency
+        run: |
+          VERSION='${{ steps.tag.outputs.version }}'
+          grep -q "\"version\": \"$VERSION\"" src-tauri/tauri.conf.json \
+            || { echo "tauri.conf.json 版本号与 tag v$VERSION 不一致"; exit 1; }
+          grep -q "\"version\": \"$VERSION\"" package.json \
+            || { echo "package.json 版本号与 tag v$VERSION 不一致"; exit 1; }
+      - name: Extract CHANGELOG section
+        run: |
+          python3 - <<'EOF'
+          import re
+          version = "${{ steps.tag.outputs.version }}"
+          text = open("CHANGELOG.md", encoding="utf-8").read()
+          m = re.search(rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)", text, re.S | re.M)
+          body = m.group(1).strip() if m else ""
+          if not body:
+              raise SystemExit(f"CHANGELOG.md 中找不到 [{version}] 小节")
+          open("/tmp/body.md", "w", encoding="utf-8").write(body + "\n")
+          EOF
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: SendSent ${{ steps.tag.outputs.tag }}
+          draft: true
+          prerelease: false
+          body_path: /tmp/body.md
+
+  # ── 桌面三平台打包上传(dmg×2 架构 / nsis+msi / deb+rpm+AppImage)──
+  desktop:
+    name: Desktop · ${{ matrix.name }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS aarch64
+            os: macos-latest
+            args: '--config {"bundle":{"macOS":{"signingIdentity":"-"}}}'
+            rust-targets: ''
+          - name: macOS x86_64
+            os: macos-latest
+            args: '--target x86_64-apple-darwin --config {"bundle":{"macOS":{"signingIdentity":"-"}}}'
+            rust-targets: x86_64-apple-darwin
+          - name: Linux
+            os: ubuntu-latest
+            args: ''
+            rust-targets: ''
+          - name: Windows
+            os: windows-latest
+            args: ''
+            rust-targets: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: release-${{ matrix.name }}
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build and upload bundles
+        uses: tauri-apps/tauri-action@v0
+        with:
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseName: SendSent ${{ needs.prepare.outputs.tag }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # ── Android:debug 签名 APK(正式签名密钥就绪后切换 assembleRelease)──
+  android:
+    name: Android · APK
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: 27.0.12077973
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: release-android
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Assemble debug APK
+        working-directory: src-tauri/gen/android
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk_path }}
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Rename APK
+        run: |
+          mv gen/android/app/build/outputs/apk/debug/app-debug.apk \
+             "SendSent_${{ needs.prepare.outputs.version }}_android_arm64-debug.apk"
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          draft: true
+          files: src-tauri/SendSent_${{ needs.prepare.outputs.version }}_android_arm64-debug.apk
+
+  # ── 收尾:全部产物就位后提示草稿可发布(iOS 需本地签名构建,见 README)──
+  done:
+    name: All artifacts uploaded
+    needs: [prepare, desktop, android]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Summary
+        run: |
+          echo "### Release draft ready: ${{ needs.prepare.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Desktop: macOS (aarch64/x86_64 dmg), Windows (nsis/msi), Linux (deb/rpm/AppImage)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Android: debug APK (arm64)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- iOS: 需本地 Xcode 签名构建(见 README)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "到 Releases 页面核对后发布草稿。" >> "$GITHUB_STEP_SUMMARY"

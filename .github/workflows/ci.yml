@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ── 前端:tsc 严格类型检查 + vite 构建 ─────────────────────
+  frontend:
+    name: Frontend (tsc + vite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build (tsc && vite build)
+        run: pnpm build
+
+  # ── Rust 桌面/Linux:clippy -D warnings + 全部测试(含 loopback e2e)──
+  rust-linux:
+    name: Rust (Linux · clippy + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: linux
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Tests
+        run: cargo test --locked
+
+  # ── Rust macOS:宿主 clippy/测试(覆盖 macOS 专属代码)+ iOS 核心交叉检查 ──
+  rust-macos:
+    name: Rust (macOS · clippy + tests + iOS core)
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: aarch64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: macos
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Tests
+        run: cargo test --locked
+      - name: iOS core check (shared engine, no tauri)
+        run: cargo check --lib --locked --target aarch64-apple-ios --no-default-features
+
+  # ── iOS App:xcodegen 生成工程 + xcodebuild 免签设备构建(含 Rust 静态库)──
+  ios-app:
+    name: iOS App (xcodebuild, unsigned)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ios-app
+      - name: Install xcodegen
+        run: brew install xcodegen xcbeautify
+      - name: Generate Xcode project
+        working-directory: src-tauri/gen/apple
+        run: xcodegen generate
+      - name: Build (generic/platform=iOS, no codesign)
+        working-directory: src-tauri/gen/apple
+        run: |
+          set -o pipefail
+          xcodebuild -project sendsent.xcodeproj \
+            -scheme sendsent_iOS \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | xcbeautify --quieter
+
+  # ── Android:Rust 核心交叉检查 + Gradle 组装 debug APK ──
+  android:
+    name: Android (rust core + assembleDebug)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: 27.0.12077973
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - name: Rust core check (aarch64-linux-android)
+        run: cargo check --lib --locked --target aarch64-linux-android --no-default-features
+        env:
+          CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
+          CC_aarch64_linux_android: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
+          AR_aarch64_linux_android: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Assemble debug APK
+        working-directory: src-tauri/gen/android
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk_path }}
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sendsent-debug-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
