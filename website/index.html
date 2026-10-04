@@ -224,6 +224,28 @@ h1 .cursor{display:inline-block;width:.5em;height:.9em;margin-left:.08em;vertica
 .stat:nth-child(1) .num{color:var(--cyan)}
 .stat .lbl{font-size:12.5px;color:var(--text-3);margin-top:7px;letter-spacing:.02em}
 
+/* ── 下载 ─────────────────────────────────────────────── */
+.ver-chip{display:inline-flex;align-items:center;gap:8px;font:600 11px/1 var(--mono);
+  letter-spacing:.12em;color:var(--green);border:1px solid rgba(47,230,160,.3);
+  background:rgba(47,230,160,.06);border-radius:999px;padding:7px 12px 6px;margin-bottom:14px}
+.ver-chip i{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px rgba(47,230,160,.8)}
+.dl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media (max-width:1000px){.dl-grid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:640px){.dl-grid{grid-template-columns:1fr 1fr}}
+.dl{border:1px solid var(--line);border-radius:14px;padding:22px 18px;background:var(--panel);
+  display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+  transition:border-color .25s,background .25s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.dl:hover{border-color:rgba(77,141,255,.5);background:var(--panel-2);transform:translateY(-3px)}
+.dl .os{font:650 14px/1 var(--mono);letter-spacing:.05em}
+.dl .fmt{font-size:12px;color:var(--text-3)}
+.dl .arch{font:500 10.5px/1.5 var(--mono);color:var(--text-3);letter-spacing:.05em}
+.dl .go{position:absolute;top:16px;right:16px;color:var(--text-3);transition:color .25s,transform .25s}
+.dl:hover .go{color:var(--cyan);transform:translateY(2px)}
+.dl-note{margin-top:16px;font-size:12.5px;color:var(--text-3);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dl-note a{color:var(--text-2);border-bottom:1px dashed var(--line-2);transition:color .2s}
+.dl-note a:hover{color:var(--text)}
+
 /* ── 特性卡片 ─────────────────────────────────────────── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 @media (max-width:860px){.grid-2{grid-template-columns:1fr}}
@@ -360,6 +382,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color
       <span class="port">:52225</span>
     </a>
     <div class="nav-links">
+      <a href="#download">下载</a>
       <a href="#speed">速度</a>
       <a href="#security">安全</a>
       <a href="#discovery">发现</a>
@@ -383,13 +406,13 @@ footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color
           吞吐以网卡为上限——没有云端、没有账号,文件永远不离开你的网络。
         </p>
         <div class="cta-row">
-          <a class="btn-primary" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
-            GitHub 获取
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <a class="btn-primary" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+            下载 SendSent
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
           <a class="btn-ghost" href="#speed">
             它是怎么做到的
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         </div>
       </div>
@@ -434,6 +457,55 @@ footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color
 </header>
 
 <main>
+  <!-- ══ 下载 ══ -->
+  <section id="download">
+    <div class="wrap">
+      <span class="ver-chip"><i></i>v0.1.0 · LATEST</span>
+      <div class="sec-head reveal"><h2>获取 SendSent</h2></div>
+      <div class="rule reveal" style="margin-bottom:18px"></div>
+      <p class="sec-sub reveal">五个平台,一个下载页。CI 自动构建,产物附更新日志。</p>
+      <div class="dl-grid">
+        <a class="dl reveal d1" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+          <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="os">macOS</span>
+          <span class="arch">APPLE SILICON · INTEL</span>
+          <span class="fmt">.dmg × 2</span>
+        </a>
+        <a class="dl reveal d1" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+          <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="os">Windows</span>
+          <span class="arch">X64</span>
+          <span class="fmt">.exe · .msi</span>
+        </a>
+        <a class="dl reveal d2" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+          <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="os">Linux</span>
+          <span class="arch">X64</span>
+          <span class="fmt">.deb · .rpm · .AppImage</span>
+        </a>
+        <a class="dl reveal d2" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+          <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="os">Android</span>
+          <span class="arch">ARM64</span>
+          <span class="fmt">.apk</span>
+        </a>
+        <a class="dl reveal d3" href="https://github.com/mac-rs/SendSent#iosswiftui--rust-ffi" target="_blank" rel="noopener">
+          <span class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11 11 5m0 0H6.5M11 5v4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="os">iOS</span>
+          <span class="arch">需开发者签名</span>
+          <span class="fmt">Xcode 源码构建</span>
+        </a>
+      </div>
+      <p class="dl-note reveal d3">
+        <a href="https://github.com/mac-rs/SendSent/releases" target="_blank" rel="noopener">全部版本与更新日志</a>
+        <span>·</span>
+        <span>macOS 包为 ad-hoc 签名:首次打开请右键 →「打开」</span>
+        <span>·</span>
+        <span><a href="https://github.com/mac-rs/SendSent/blob/main/LICENSE" target="_blank" rel="noopener">MIT 开源</a></span>
+      </p>
+    </div>
+  </section>
+
   <!-- ══ 01 速度 ══ -->
   <section id="speed">
     <div class="wrap">
@@ -579,11 +651,15 @@ footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color
   <section class="final">
     <div class="wrap reveal">
       <h2>下一次传文件,<br>别再走云端了。</h2>
-      <p>项目开源,从源码构建你的第一个 SendSent。</p>
+      <p>v0.1.0 已发布 —— MIT 开源,下载即用,也欢迎从源码构建。</p>
       <div class="cta-row" style="justify-content:center">
-        <a class="btn-primary" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
-          前往 GitHub
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <a class="btn-primary" href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">
+          下载 SendSent
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn-ghost" href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          GitHub 源码
         </a>
       </div>
     </div>
@@ -601,16 +677,19 @@ footer{border-top:1px solid var(--line);padding:44px 0 40px;font-size:13px;color
       <div class="foot-col">
         <span class="h">项目</span>
         <a href="https://github.com/mac-rs/SendSent" target="_blank" rel="noopener">GitHub · mac-rs/SendSent</a>
+        <a href="https://github.com/mac-rs/SendSent/releases/latest" target="_blank" rel="noopener">下载最新版</a>
+        <a href="https://github.com/mac-rs/SendSent/blob/main/CHANGELOG.md" target="_blank" rel="noopener">更新日志</a>
         <a href="https://github.com/mac-rs/SendSent/issues" target="_blank" rel="noopener">反馈与 Issue</a>
       </div>
       <div class="foot-col">
         <span class="h">协议</span>
         <span class="mono" style="font-size:12px">_sendsent._tcp.local.</span>
         <span class="mono" style="font-size:12px">TCP · 52225</span>
+        <a href="https://github.com/mac-rs/SendSent/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 SENDSENT · BUILT WITH RUST ⬢</span>
+      <span>© 2026 SENDSENT · MIT · BUILT WITH RUST ⬢</span>
       <span>NO CLOUD · NO ACCOUNT · NO TELEMETRY</span>
     </div>
   </div>
