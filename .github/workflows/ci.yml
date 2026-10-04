@@ -137,11 +137,20 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      # runner 预装 Android SDK(许可已接受);NDK 用 setup-ndk 钉版本
-      - uses: nttld/setup-ndk@v1
-        id: ndk
-        with:
-          ndk-version: 27.0.12077973
+      # runner 预装 Android SDK(许可已接受);NDK 也预装了多个版本,
+      # 取最新一个即可 —— nttld/setup-ndk 对旧版本号会 404
+      - name: Use preinstalled Android NDK
+        run: |
+          NDK_HOME="$(ls -d "$ANDROID_HOME"/ndk/* 2>/dev/null | sort -V | tail -1)"
+          test -n "$NDK_HOME" || { echo "no preinstalled NDK"; exit 1; }
+          TC="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "NDK_HOME=$NDK_HOME"
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TC/aarch64-linux-android24-clang"
+            echo "CC_aarch64_linux_android=$TC/aarch64-linux-android24-clang"
+            echo "AR_aarch64_linux_android=$TC/llvm-ar"
+          } >> "$GITHUB_ENV"
+          echo "NDK: $NDK_HOME"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
@@ -151,10 +160,6 @@ jobs:
           key: android
       - name: Rust core check (aarch64-linux-android)
         run: cargo check --lib --locked --target aarch64-linux-android --no-default-features
-        env:
-          CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
-          CC_aarch64_linux_android: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang
-          AR_aarch64_linux_android: ${{ steps.ndk.outputs.ndk_path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
       - uses: gradle/actions/setup-gradle@v4
       - name: Assemble debug APK
         working-directory: src-tauri/gen/android
